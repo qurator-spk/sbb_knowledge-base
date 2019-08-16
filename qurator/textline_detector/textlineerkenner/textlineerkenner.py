@@ -31,7 +31,7 @@ with warnings.catch_warnings():
     
 __doc__=\
 """
-tool to detect textlines of a document.
+tool to extract table form data from alto xml data
 """
 
 class textlineerkenner:
@@ -432,8 +432,8 @@ class textlineerkenner:
         for ii in range(60):
             img = cv2.GaussianBlur(img,(15,15),0)
             
-        ###img=self.image.astype(np.uint8)
-        #img=self.otsu_copy(img)
+        #img=self.image.astype(np.uint8)
+        #img = cv2.medianBlur(img,5)
 
         
         img=img/255.0
@@ -452,7 +452,8 @@ class textlineerkenner:
     
         imgs=self.resize_image(imgs,img_org_copy.shape[0],img_org_copy.shape[1])
         
-        
+        #plt.imshow(imgs*255)
+        #plt.show()
     
         imgs=imgs.astype(np.uint8)
         imgray = cv2.cvtColor(imgs, cv2.COLOR_BGR2GRAY)
@@ -575,27 +576,7 @@ class textlineerkenner:
                     mask_true[index_y_d+offset:index_y_u-offset,index_x_d+offset:index_x_u-offset]=seg
                     prediction_true[index_y_d+offset:index_y_u-offset,index_x_d+offset:index_x_u-offset,:]=seg_color
     
-            prediction_plot=np.zeros(prediction_true.shape)
-    
-            prediction_plot[:,:,0][prediction_true[:,:,0]==1]=255
-            prediction_plot[:,:,1][prediction_true[:,:,1]==1]=255
-            prediction_plot[:,:,2][prediction_true[:,:,2]==1]=255
-            
-            prediction_plot[:,:,0][prediction_true[:,:,0]==2]=255
-            prediction_plot[:,:,1][prediction_true[:,:,1]==2]=0
-            prediction_plot[:,:,2][prediction_true[:,:,2]==2]=0
-            
-            prediction_plot[:,:,0][prediction_true[:,:,0]==3]=0
-            prediction_plot[:,:,1][prediction_true[:,:,1]==3]=255
-            prediction_plot[:,:,2][prediction_true[:,:,2]==3]=0
-            
-            prediction_plot[:,:,0][prediction_true[:,:,0]==4]=0
-            prediction_plot[:,:,1][prediction_true[:,:,1]==4]=0
-            prediction_plot[:,:,2][prediction_true[:,:,2]==4]=255
-            
-            prediction_plot[:,:,0][prediction_true[:,:,0]==5]=0
-            prediction_plot[:,:,1][prediction_true[:,:,1]==5]=255
-            prediction_plot[:,:,2][prediction_true[:,:,2]==5]=255
+
             prediction_true=prediction_true.astype(np.uint8)
             session_region.close()
             
@@ -632,7 +613,7 @@ class textlineerkenner:
         
         
         #commenst_contours=self.filter_contours_area_of_image(thresh,contours,hirarchy,max_area=0.0002,min_area=0.0001)
-        main_contours=self.filter_contours_area_of_image(thresh,contours,hirarchy,max_area=1,min_area=0.0002)
+        main_contours=self.filter_contours_area_of_image(thresh,contours,hirarchy,max_area=1,min_area=0.0001)
     
         img_comm=np.zeros(thresh.shape)
         img_comm_in=cv2.fillPoly(img_comm, pts =main_contours, color=(255,255,255))
@@ -698,8 +679,8 @@ class textlineerkenner:
             
             img=self.otsu_copy(img)
             img=img.astype(np.uint8)
-            for _ in range(4):
-                img = cv2.medianBlur(img,5)
+            #for _ in range(4):
+                #img = cv2.medianBlur(img,5)
             img=img/255.0
     
     
@@ -799,9 +780,9 @@ class textlineerkenner:
     
         peaks_real, _ = find_peaks(gaussian_filter1d(y, 3), height=0)
         if len(peaks_real)<=2 and len(peaks_real)>1:
-            sigma_gaus=16
-        else:
             sigma_gaus=8
+        else:
+            sigma_gaus=6
     
     
         z= gaussian_filter1d(y_help, sigma_gaus)
@@ -1437,6 +1418,7 @@ class textlineerkenner:
         boxes,contours=self.get_text_region_contours_and_boxes(text_regions)
         self.get_all_image_patches_based_on_text_regions(boxes,image_page)
         textline_mask_tot=self.textline_contours(image_page)
+        
         self.get_textlines_for_each_textregions(textline_mask_tot,boxes)
         self.get_slopes_for_each_text_region(contours)
         self.deskew_textline_patches(contours,boxes)
