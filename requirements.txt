@@ -1,7 +1,7 @@
 numpy
 pandas
-dask==1.1.4
-pyarrow==0.12.1
+dask
+pyarrow
 tqdm
 ipython
 ipdb
