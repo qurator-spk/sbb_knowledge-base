@@ -780,9 +780,9 @@ class textlineerkenner:
     
         peaks_real, _ = find_peaks(gaussian_filter1d(y, 3), height=0)
         if len(peaks_real)<=2 and len(peaks_real)>1:
-            sigma_gaus=8
+            sigma_gaus=10
         else:
-            sigma_gaus=6
+            sigma_gaus=8
     
     
         z= gaussian_filter1d(y_help, sigma_gaus)
