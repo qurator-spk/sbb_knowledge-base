@@ -20,7 +20,6 @@ setup(
     install_requires=install_requires,
     entry_points={
       'console_scripts': [
-        "modstool=qurator.modstool.modstool:main",
         "altotool=qurator.alto.xml2csv:main",
         "sqlitecreator=qurator.alto.sqlitecreator:sqlitecreator",
         "altocsv2corpus=qurator.bert.altocsv2corpus:main",

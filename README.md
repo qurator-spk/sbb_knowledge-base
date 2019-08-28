@@ -1,18 +1,9 @@
 ***
 # Preprocessing of digital collections:
-## Modstool
-
-Extract the MODS meta data of a bunch of METS files into a pandas Dataframe 
-that is saved as .pkl.  
-
-### Usage
-```
-modstool --help
-```
 
 ## Altotool
 
-Extract the OCR confidences as well as the text from a bunch of ALTO files 
+Extract the OCR confidences as well as the text from a bunch of ALTO files
 and save them into one large .csv file.
 
 ### Usage
