@@ -296,6 +296,10 @@ def tokenize_parts(tokenizer, text_parts):
     meta = []
 
     for part in text_parts:
+        # part[0] : surface text
+        # part[1] : page title of linked entity if available otherwise ''
+        # part[2] : type of entity or 'O'
+
         tmp = tokenizer.tokenize_paragraph(part[0])
 
         for tok_count, tok in enumerate(tmp):
