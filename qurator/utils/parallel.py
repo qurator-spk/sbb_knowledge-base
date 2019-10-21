@@ -1,4 +1,5 @@
 from multiprocessing import Pool
+import gc
 
 
 def run(tasks, **kwargs):
@@ -17,14 +18,26 @@ def run(tasks, **kwargs):
             for ta in tasks:
                 yield ta()
 
+                del ta
+
     with Pool(**kwargs) as pool:
 
-        for result in pool.imap(_run, tasks):
+        for it, result in enumerate(pool.imap(_run, tasks)):
 
             yield result
+
+            del result
+
+            if it % 1000 == 0:
+                gc.collect()
     return
 
 
 def _run(t):
 
-    return t()
+    ret = t()
+
+    del t
+
+    return ret
+
