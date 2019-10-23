@@ -281,6 +281,8 @@ def tokenize_links(cleaned_text, all_entities, redirects):
 
             redirect_target = redirects.loc[page_title].rd_title
 
+            page_title = redirect_target
+
             if redirect_target in all_entities.index:
                 entity_type = all_entities.loc[redirect_target].TYPE
 
@@ -303,7 +305,9 @@ def tokenize_parts(tokenizer, text_parts):
         tmp = tokenizer.tokenize_paragraph(part[0])
 
         for tok_count, tok in enumerate(tmp):
-            tokens.append(tok)
+            # some xml-tags cannot be removed correctly, for instance: '<ref name="20/7"> </ref>'
+            tokens.append(tok.replace(' ', '_'))
+
             meta.append((part[1], part[2] if part[2] == 'O' else 'B-' + part[2] if tok_count == 0 else 'I-' + part[2]))
 
     return tokens, meta
@@ -401,7 +405,7 @@ class EntityTask:
 def get_entity_tasks(full_text_file, selected_pages):
     fulltext = dd.read_parquet(full_text_file)
 
-    for page_index, page in tqdm(fulltext.iterrows()):
+    for page_index, page in tqdm(fulltext.iterrows(), total=len(fulltext)):
 
         if page.page_id not in selected_pages.index:
             continue
@@ -418,6 +422,11 @@ def get_entity_tasks(full_text_file, selected_pages):
 def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagged_parquet, processes,
                  chunksize=10000):
     """
+    full-text-file: apache parquet file that contains the per article fulltext
+    all-entities-file: pickle file that contains a pandas dataframe that describes the entities
+    wikipedia-sqlite-file: sqlite3 dump of wikipedia that contains the redirect table
+    tagget-parquet: result parquet file
+    prcoesses: number of parallel processes
     """
 
     all_entities = pd.read_pickle(all_entities_file)

@@ -7,15 +7,15 @@ from tqdm import tqdm
 @click.command()
 @click.argument('parquet-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('csv-file', type=click.Path(exists=False), required=True, nargs=1)
-@click.argument('chunk-size', type=int, default=100000, required=False, nargs=1)
-@click.argument('sep', type=str, default=";", required=False, nargs=1)
+@click.option('--chunk-size', type=int, default=100000, required=False, nargs=1)
+@click.option('--sep', type=str, default=";", required=False, nargs=1)
 def to_csv(parquet_file, csv_file, chunk_size, sep):
 
     df = dd.read_parquet(parquet_file)
 
     chunk = list()
 
-    for _, row in tqdm(df.reset_index().iterrows()):
+    for idx, row in tqdm(df.iterrows()):
 
         chunk.append(row)
 
