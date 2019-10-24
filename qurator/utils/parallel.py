@@ -1,12 +1,13 @@
 from multiprocessing import Pool
 import gc
+import types
 
 
 def run(tasks, **kwargs):
 
     if 'processes' in kwargs:
 
-        if kwargs['processes'] == 1:
+        if kwargs['processes'] == 0:
 
             if 'initializer' in kwargs:
 
@@ -16,8 +17,18 @@ def run(tasks, **kwargs):
                     kwargs['initializer']()
 
             for ta in tasks:
-                yield ta()
 
+                ret = ta()
+
+                if isinstance(ret, types.GeneratorType):
+
+                    for ret2 in ret:
+                        yield ret2
+
+                else:
+                    yield ret
+
+                del ret
                 del ta
 
     with Pool(**kwargs) as pool:
