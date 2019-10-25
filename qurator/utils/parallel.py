@@ -20,13 +20,7 @@ def run(tasks, **kwargs):
 
                 ret = ta()
 
-                if isinstance(ret, types.GeneratorType):
-
-                    for ret2 in ret:
-                        yield ret2
-
-                else:
-                    yield ret
+                yield ret
 
                 del ret
                 del ta
