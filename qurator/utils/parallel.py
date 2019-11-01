@@ -1,6 +1,5 @@
 from multiprocessing import Pool
 import gc
-import types
 
 
 def run(tasks, **kwargs):
