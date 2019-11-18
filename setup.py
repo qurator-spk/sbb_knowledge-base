@@ -20,7 +20,7 @@ setup(
     install_requires=install_requires,
     entry_points={
       'console_scripts': [
-        "altotool=qurator.alto.xml2csv:main",
+        "altotool=qurator.alto.xml:to_csv",
         "sqlitecreator=qurator.alto.sqlitecreator:sqlitecreator",
         "altocsv2corpus=qurator.bert.altocsv2corpus:main",
         "corpusentropy=qurator.bert.corpusentropy:main",
@@ -34,6 +34,7 @@ setup(
         "print-wiki-article=qurator.wikipedia.ner:print_article_command_line",
         "train-test-split-wiki=qurator.wikipedia.ner:train_test_split",
         "parquet2csv=qurator.utils.parquet:to_csv",
+        "ner=qurator.alto.ner:on_db_file"
       ]
     },
     python_requires='>=3.6.0',
