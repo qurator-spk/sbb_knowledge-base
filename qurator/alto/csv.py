@@ -18,7 +18,7 @@ def create_connection(db_file):
 @click.argument('alto-csv-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('sqlite-file', type=click.Path(), required=True, nargs=1)
 @click.option('--chunksize', default=10**4, help='size of chunks used for processing alto-csv-file')
-def sqlitecreator(alto_csv_file, sqlite_file, chunksize):
+def to_sqlite(alto_csv_file, sqlite_file, chunksize):
     """
     Reads the ALTO_CSV_FILE and converts it into SQLITE_FILE that can be used for more performant access.
     """
@@ -26,8 +26,7 @@ def sqlitecreator(alto_csv_file, sqlite_file, chunksize):
     with create_connection(sqlite_file) as conn:
 
         for ch, count in zip(tqdm(pd.read_csv(alto_csv_file, chunksize=chunksize)), itertools.count()):
-            ch_text = ch.rename(columns={'file name': 'file_name'}). \
-                          loc[:, ['file_name', 'ppn', 'text']]
+            ch_text = ch.loc[:, ['file_name', 'ppn', 'text']]
 
             ch_text['id'] = [i for i in range(count * chunksize, count * chunksize + len(ch_text))]
 

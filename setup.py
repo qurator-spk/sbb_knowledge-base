@@ -20,11 +20,11 @@ setup(
     install_requires=install_requires,
     entry_points={
       'console_scripts': [
-        "altotool=qurator.alto.xml:to_csv",
-        "sqlitecreator=qurator.alto.sqlitecreator:sqlitecreator",
+        "altotool=qurator.alto.xml:extract",
+        "altocsv2sqlite=qurator.alto.csv:to_sqlite",
+        "corpusentropy=qurator.alto.entropy:main",
+        "corpuslanguage=qurator.alto.language:main",
         "altocsv2corpus=qurator.bert.altocsv2corpus:main",
-        "corpusentropy=qurator.bert.corpusentropy:main",
-        "corpuslanguage=qurator.bert.corpuslanguage:main",
         "bert-pregenerate-trainingdata=qurator.bert.pregenerate_training_data:main",
         "bert-finetune=qurator.bert.finetune_on_pregenerated:main",
         "extract-wiki-full-text-parquet=qurator.wikipedia.xml:to_parquet",

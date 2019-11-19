@@ -24,6 +24,8 @@ def run(tasks, **kwargs):
                 del ret
                 del ta
 
+            return
+
     with Pool(**kwargs) as pool:
 
         for it, result in enumerate(pool.imap(_run, tasks)):
