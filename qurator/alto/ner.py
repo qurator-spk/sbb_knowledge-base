@@ -51,24 +51,20 @@ def on_db_file(fulltext_sqlite_file, selection_file, ner_endpoint, tagged_sqlite
                 ppn = row.ppn[3:]
 
             df = pd.read_sql_query("select file_name, text from text where ppn=? and file_name=?;", read_conn,
-                                   params=(ppn, row.filename)). \
-                sort_values('file_name')
+                                   params=(ppn, row.filename))
 
             if len(df) == 0:
 
                 ppn = row.ppn
 
                 df = pd.read_sql_query("select file_name, text from text where ppn=? and file_name=?;", read_conn,
-                                       params=(ppn, row.filename)). \
-                    sort_values('file_name')
+                                       params=(ppn, row.filename))
 
                 if len(df) == 0:
                     print("PPN {} with file {} not found!!!".format(ppn, row.filename))
                     continue
 
-            data = {'text': df.text.iloc[0]}
-
-            resp = requests.post(url=ner_endpoint, json=data)
+            resp = requests.post(url=ner_endpoint, json={'text': df.text.iloc[0]})
 
             result_sentences = json.loads(resp.content)
 
