@@ -4,6 +4,7 @@ from tqdm import tqdm as tqdm
 import click
 import codecs
 import os
+import sqlite3
 
 from qurator.utils.parallel import run as prun
 
@@ -63,16 +64,34 @@ class ChunkTask:
                 sort_index()
 
 
-def get_chunks(alto_csv_file, chunksize):
+def get_csv_chunks(alto_csv_file, chunksize):
 
     for ch in tqdm(pd.read_csv(alto_csv_file, chunksize=chunksize)):
 
         yield ch
 
 
+def get_sqlite_chunks(alto_sqlite_file, chunksize):
+
+    yield pd.DataFrame()
+
+    with sqlite3.connect(alto_sqlite_file) as conn:
+
+        conn.execute('pragma journal_mode=wal')
+
+        total = int(conn.execute('select count(*) from text;').fetchone()[0] / chunksize)
+
+        for ch in tqdm(pd.read_sql('select * from text', conn, chunksize=chunksize), total=total):
+
+            yield ch
+
+
 def get_chunk_tasks(chunks, min_len_len):
 
     for chunk in chunks:
+
+        if len(chunk) == 0:
+            continue
 
         yield ChunkTask(chunk, min_len_len)
 
@@ -100,22 +119,38 @@ def sentence_split(s, min_len):
 
 
 @click.command()
-@click.argument('alto-csv-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('alto-fulltext-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('selection-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('corpus-file', type=click.Path(), required=True, nargs=1)
-@click.option('--chunksize', default=10**4)
-@click.option('--processes', default=6)
-@click.option('--min-line-len', default=80)
-def main(alto_csv_file, selection_file, corpus_file, chunksize, processes, min_line_len):
+@click.option('--chunksize', default=10**4, help="Process the corpus in chunks of <chunksize>. default:10**4")
+@click.option('--processes', default=6, help="Number of parallel processes. default: 6")
+@click.option('--min-line-len', default=80, help="Lower bound of line length in output file. default:80")
+def main(alto_fulltext_file, selection_file, corpus_file, chunksize, processes, min_line_len):
+    """
+    Reads the fulltext from a CSV or SQLITE3 file (see also altotool) and write it to one big text file.
 
+    ALTO_FULLTEXT_FILE: The CSV or SQLITE3 file to read from.
+
+    SELECTION_FILE: Consider only a subset of all pages that is defined by the DataFrame
+    that is stored in <selection_file>.
+
+    CORPUS_FILE: The output file.
+    """
     os.makedirs(os.path.dirname(corpus_file), exist_ok=True)
 
     print('Open {}.'.format(corpus_file))
     corpus_fh = codecs.open(corpus_file, 'w+', 'utf-8')
     corpus_fh.write(u'\ufeff')
 
-    for text in prun(get_chunk_tasks(get_chunks(alto_csv_file, chunksize), min_line_len),
-                     processes=processes, initializer=ChunkTask.initialize, initargs=(selection_file,)):
+    if alto_fulltext_file.endswith('.csv'):
+        chunks = get_csv_chunks(alto_fulltext_file, chunksize)
+    elif alto_fulltext_file.endswith('.sqlite3'):
+        chunks = get_sqlite_chunks(alto_fulltext_file, chunksize)
+    else:
+        raise RuntimeError('Unsupported input file format.')
+
+    for text in prun(get_chunk_tasks(chunks, min_line_len), processes=processes, initializer=ChunkTask.initialize,
+                     initargs=(selection_file,)):
 
         corpus_fh.write(text)
 
@@ -126,7 +161,3 @@ def main(alto_csv_file, selection_file, corpus_file, chunksize, processes, min_l
 
 if __name__ == '__main__':
     main()
-
-
-
-

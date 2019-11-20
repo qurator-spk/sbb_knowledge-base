@@ -79,9 +79,11 @@ def get_chunk_tasks(chunks):
 @click.option('--processes', default=6, help='number of parallel processes')
 def main(alto_fulltext_file, language_file, chunksize, processes):
     """
-    Read the documents of the corpus from <alto-csv-file> where each line of the .csv file describes one document.
-    Foreach document classify its language by means of langid.
-    Store the classification results as a pickled pandas DataFrame in <language-file>.
+    Read the documents of the corpus from <ALTO_FULLTEXT_FILE> where each line of the .csv file
+    describes one page.
+
+    Foreach page classify its language by means of langid.
+    Store the classification results as a pickled pandas DataFrame in <LANGUAGE_FILE>.
     """
 
     target_path = os.path.dirname(language_file)

@@ -105,8 +105,11 @@ def to_sqlite(source_dir, output_file, processes):
 @click.option('--processes', default=6, help='number of parallel processes')
 def extract(source_dir, output_file, processes):
     """
-        Extract text from a bunch of alto XML files into one big CSV(.csv) or SQLITE3(.sqlite3) file.
-        """
+    Extract text from a bunch of alto XML files into one big CSV(.csv) or SQLITE3(.sqlite3) file.
+
+    SOURCE_DIR: The directory that contains subfolders with the ALTO xml files.
+    OUTPUT_FILE: Write the extracted fulltext to this file (either .csv or .sqlite3).
+    """
 
     if output_file.endswith('.sqlite3'):
         to_sqlite(source_dir, output_file, processes)

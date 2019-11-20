@@ -77,9 +77,11 @@ def get_chunk_tasks(chunks):
 @click.option('--processes', default=6, help='number of parallel processes')
 def main(alto_fulltext_file, entropy_file, chunksize, processes):
     """
-    Read the documents of the corpus from <alto-csv-file> where each line of the .csv file describes one document.
-    Foreach document compute its character entropy rate and store the result as a pickled pandas DataFrame
-    in <entropy-file>.
+    Read the documents of the corpus from <ALTO_FULLTEXT_FILE> where each line of the .csv file
+    describes one page.
+
+    Foreach page compute its character entropy rate and store the result as a pickled pandas DataFrame
+    in <ENTROPY_FILE>.
     """
 
     os.makedirs(os.path.dirname(entropy_file), exist_ok=True)

@@ -17,7 +17,7 @@ def create_connection(db_file):
 @click.command()
 @click.argument('alto-csv-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('sqlite-file', type=click.Path(), required=True, nargs=1)
-@click.option('--chunksize', default=10**4, help='size of chunks used for processing alto-csv-file')
+@click.option('--chunksize', default=10**4, help='size of chunks used for processing alto-csv-file. default:10**4')
 def to_sqlite(alto_csv_file, sqlite_file, chunksize):
     """
     Reads the ALTO_CSV_FILE and converts it into SQLITE_FILE that can be used for more performant access.

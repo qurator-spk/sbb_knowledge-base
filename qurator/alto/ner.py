@@ -21,8 +21,8 @@ def create_connection(db_file):
 @click.argument('selection-file', type=click.Path(), required=True, nargs=1)
 @click.argument('ner-endpoint', type=str, required=True, nargs=1)
 @click.argument('tagged-sqlite-file', type=click.Path(), required=True, nargs=1)
-@click.option('--chunksize', type=int, default=10**4, help='size of chunks used for processing')
-@click.option('--noproxy', type=bool, default=False, help='disable proxy')
+@click.option('--chunksize', type=int, default=10**4, help='size of chunks used for processing. default: 10**4')
+@click.option('--noproxy', type=bool, default=False, help='disable proxy. default: enabled.')
 def on_db_file(fulltext_sqlite_file, selection_file, ner_endpoint, tagged_sqlite_file, chunksize, noproxy):
     """
     Reads the text content per page of digitalized collections from sqlite file <fulltext-sqlite-file>.
