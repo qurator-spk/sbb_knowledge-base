@@ -24,6 +24,7 @@ setup(
         "altocsv2sqlite=qurator.alto.csv:to_sqlite",
         "corpusentropy=qurator.alto.entropy:main",
         "corpuslanguage=qurator.alto.language:main",
+        "select-by-lang-and-entropy=qurator.alto.select:by_lang_and_entropy",
         "altocsv2corpus=qurator.bert.altocsv2corpus:main",
         "bert-pregenerate-trainingdata=qurator.bert.pregenerate_training_data:main",
         "bert-finetune=qurator.bert.finetune_on_pregenerated:main",

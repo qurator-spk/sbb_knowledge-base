@@ -7,6 +7,7 @@ import csv
 import click
 import sqlite3
 import pandas as pd
+import json
 from qurator.utils.parallel import run as prun
 
 with warnings.catch_warnings():
@@ -41,10 +42,11 @@ class ExtractTask:
                 else:
                     text_s.append(str(np.NAN))
 
-            return self._filename, " ".join(text_s), " ".join(wc_s), self._ppn
+            return self._filename, " ".join(text_s), json.dumps(wc_s), self._ppn
 
-        except RuntimeError as e:
+        except Exception as e:
             print(e)
+            print(self._ppn, self._filename, self._source_dir)
             return None, None, None, None
 
     @staticmethod
