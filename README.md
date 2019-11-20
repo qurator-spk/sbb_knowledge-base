@@ -42,7 +42,7 @@ corpuslanguage --help
 ***
 # BERT-NER-Pre-training:
 
-## corpuscorpus
+## collectcorpus
 
 Takes the CSV/SQLITE3 file created with the altotool and converts it into one text
 file that can be used to generate data for BERT pre-training.
