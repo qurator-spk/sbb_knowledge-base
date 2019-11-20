@@ -103,7 +103,7 @@ def to_sqlite(source_dir, output_file, processes):
 @click.argument('source-dir', type=click.Path(), required=True, nargs=1)
 @click.argument('output-file', type=click.Path(), required=True, nargs=1)
 @click.option('--processes', default=6, help='number of parallel processes')
-def extract(source_dir, output_file, processes):
+def altotool(source_dir, output_file, processes):
     """
     Extract text from a bunch of alto XML files into one big CSV(.csv) or SQLITE3(.sqlite3) file.
 

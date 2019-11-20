@@ -20,22 +20,26 @@ setup(
     install_requires=install_requires,
     entry_points={
       'console_scripts': [
-        "altotool=qurator.alto.xml:extract",
-        "altocsv2sqlite=qurator.alto.csv:to_sqlite",
-        "corpusentropy=qurator.alto.entropy:main",
-        "corpuslanguage=qurator.alto.language:main",
-        "select-by-lang-and-entropy=qurator.alto.select:by_lang_and_entropy",
-        "altocsv2corpus=qurator.bert.altocsv2corpus:main",
+        "altotool=qurator.sbb.xml:altotool",
+        "corpusentropy=qurator.sbb.entropy:main",
+        "corpuslanguage=qurator.sbb.language:main",
+        "select-by-lang-and-entropy=qurator.sbb.select:by_lang_and_entropy",
+
+        "collectcorpus=qurator.bert.corpus:collect",
         "bert-pregenerate-trainingdata=qurator.bert.pregenerate_training_data:main",
         "bert-finetune=qurator.bert.finetune_on_pregenerated:main",
+
         "extract-wiki-full-text-parquet=qurator.wikipedia.xml:to_parquet",
         "extract-wiki-full-text-sqlite=qurator.wikipedia.xml:to_sqlite",
         "extract-wiki-ner-entities=qurator.wikipedia.entities:ner",
         "tag-wiki-entities=qurator.wikipedia.ner:tag_entities",
         "print-wiki-article=qurator.wikipedia.ner:print_article_command_line",
         "train-test-split-wiki=qurator.wikipedia.ner:train_test_split",
+
         "parquet2csv=qurator.utils.parquet:to_csv",
-        "ner=qurator.alto.ner:on_db_file",
+        "csv2sqlite=qurator.utils.csv:to_sqlite",
+        "ner=qurator.sbb.ner:on_db_file",
+
         "example=qurator.examples.multiprocessing:example"
       ]
     },

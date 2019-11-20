@@ -1,11 +1,15 @@
-from xml.etree.ElementTree import iterparse
-from tqdm import tqdm as tqdm
-import re
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-import click
-import sqlite3
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+
+    from xml.etree.ElementTree import iterparse
+    from tqdm import tqdm as tqdm
+    import re
+    import pandas as pd
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import click
+    import sqlite3
 
 
 def _get_namespace(tag):
@@ -19,14 +23,15 @@ def _get_namespace(tag):
 @click.command()
 @click.argument('wikipedia-xml-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('parquet-file', type=click.Path(), required=True, nargs=1)
-def to_parquet(wikipedia_xml_file, parquet_file, chunk_size=20000):
+@click.option('--chunk-size', default=2*10**4, help='size of parquet chunks. default:2*10**4')
+def to_parquet(wikipedia_xml_file, parquet_file, chunk_size):
     """
     Takes a wikipedia xml multistream dump file, extracts page_id, page_title and page_text of each article
     and writes that information into a chunked apache parquet file that can be read for instance by means of dask.
 
-    :param wikipedia_xml_file: wikipedia multistream xml dump of all pages
-    :param parquet_file: result file
-    :param chunk_size: size of parquet chunks
+    WIKIPEDIA_XML_FILE: wikipedia multistream xml dump of all pages.
+
+    PARQUET_FILE: result file.
     """
 
     context = iter(iterparse(wikipedia_xml_file, events=("end",)))
@@ -55,14 +60,15 @@ def to_parquet(wikipedia_xml_file, parquet_file, chunk_size=20000):
 @click.command()
 @click.argument('wikipedia-xml-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('sqlite-file', type=click.Path(), required=True, nargs=1)
-def to_sqlite(wikipedia_xml_file, sqlite_file, chunk_size=20000):
+@click.option('--chunk-size', default=2*10**4, help='size of parquet chunks. default:2*10**4')
+def to_sqlite(wikipedia_xml_file, sqlite_file, chunk_size):
     """
     Takes a wikipedia xml multistream dump file, extracts page_id, page_title and page_text of each article
     and writes that information into a sqlite file.
 
-    :param wikipedia_xml_file: wikipedia multistream xml dump of all pages
-    :param sqlite_file: result file
-    :param chunk_size: size of parquet chunks
+    WIKIPEDIA_XML_FILE: wikipedia multistream xml dump of all pages.
+
+    SQLITE_FILE: result file.
     """
 
     context = iter(iterparse(wikipedia_xml_file, events=("end",)))

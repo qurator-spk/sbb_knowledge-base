@@ -119,17 +119,17 @@ def sentence_split(s, min_len):
 
 
 @click.command()
-@click.argument('alto-fulltext-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('fulltext-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('selection-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('corpus-file', type=click.Path(), required=True, nargs=1)
 @click.option('--chunksize', default=10**4, help="Process the corpus in chunks of <chunksize>. default:10**4")
 @click.option('--processes', default=6, help="Number of parallel processes. default: 6")
 @click.option('--min-line-len', default=80, help="Lower bound of line length in output file. default:80")
-def main(alto_fulltext_file, selection_file, corpus_file, chunksize, processes, min_line_len):
+def collect(fulltext_file, selection_file, corpus_file, chunksize, processes, min_line_len):
     """
     Reads the fulltext from a CSV or SQLITE3 file (see also altotool) and write it to one big text file.
 
-    ALTO_FULLTEXT_FILE: The CSV or SQLITE3 file to read from.
+    FULLTEXT_FILE: The CSV or SQLITE3 file to read from.
 
     SELECTION_FILE: Consider only a subset of all pages that is defined by the DataFrame
     that is stored in <selection_file>.
@@ -142,10 +142,10 @@ def main(alto_fulltext_file, selection_file, corpus_file, chunksize, processes, 
     corpus_fh = codecs.open(corpus_file, 'w+', 'utf-8')
     corpus_fh.write(u'\ufeff')
 
-    if alto_fulltext_file.endswith('.csv'):
-        chunks = get_csv_chunks(alto_fulltext_file, chunksize)
-    elif alto_fulltext_file.endswith('.sqlite3'):
-        chunks = get_sqlite_chunks(alto_fulltext_file, chunksize)
+    if fulltext_file.endswith('.csv'):
+        chunks = get_csv_chunks(fulltext_file, chunksize)
+    elif fulltext_file.endswith('.sqlite3'):
+        chunks = get_sqlite_chunks(fulltext_file, chunksize)
     else:
         raise RuntimeError('Unsupported input file format.')
 

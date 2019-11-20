@@ -1,18 +1,22 @@
-import re
-import pyarrow as pa
-import pyarrow.parquet as pq
-import pandas as pd
-import numpy as np
-import dask.dataframe as dd
-# import os
-from tqdm import tqdm as tqdm
-from somajo import Tokenizer, SentenceSplitter
-import click
-import json
-from qurator.wikipedia.entities import get_redirects, get_disambiguation
-from qurator.utils.parallel import run as prun
-import sqlite3
-import html
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+
+    import re
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import pandas as pd
+    import numpy as np
+    import dask.dataframe as dd
+    # import os
+    from tqdm import tqdm as tqdm
+    from somajo import Tokenizer, SentenceSplitter
+    import click
+    import json
+    from qurator.wikipedia.entities import get_redirects, get_disambiguation
+    from qurator.utils.parallel import run as prun
+    import sqlite3
+    import html
 
 
 def clean_text(raw_text):
@@ -422,11 +426,15 @@ def get_entity_tasks(full_text_file, selected_pages):
 def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagged_parquet, processes,
                  chunksize=10000):
     """
-    full-text-file: apache parquet file that contains the per article fulltext
-    all-entities-file: pickle file that contains a pandas dataframe that describes the entities
-    wikipedia-sqlite-file: sqlite3 dump of wikipedia that contains the redirect table
-    tagget-parquet: result parquet file
-    prcoesses: number of parallel processes
+    FULL_TEXT_FILE: apache parquet file that contains the per article fulltext.
+    (see extract-wiki-full-text-parquet)
+
+    ALL_ENTITIES_FILE: pickle file that contains a pandas dataframe that describes the entities
+    (see extract-wiki-ner-entities).
+
+    WIKIPEDIA_SQLITE_FILE: sqlite3 dump of wikipedia that contains the redirect table.
+
+    TAGGED_PARQUET: result parquet file.
     """
 
     all_entities = pd.read_pickle(all_entities_file)
@@ -481,7 +489,7 @@ def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagge
 @click.argument('train-set-file', type=click.Path(exists=False), required=True, nargs=1)
 @click.argument('dev-set-file', type=click.Path(exists=False), required=True, nargs=1)
 @click.argument('test-set-file', type=click.Path(exists=False), required=True, nargs=1)
-@click.argument('seed', type=int, default=41, required=False, nargs=1)
+@click.option('--seed', type=int, default=41, help="Random number seed. default: 41.")
 def train_test_split(wikipedia_sqlite_file, train_fraction, dev_fraction, test_fraction,
                      train_set_file, dev_set_file, test_set_file, seed):
     assert (train_fraction > 0.0)
@@ -518,6 +526,7 @@ def train_test_split(wikipedia_sqlite_file, train_fraction, dev_fraction, test_f
 @click.argument('wikipedia-sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('articles', type=str, required=True, nargs=1)
 def print_article_command_line(tagged_parquet_file, wikipedia_sqlite_file, articles):
+
     html_text = print_article(wikipedia_sqlite_file, articles=articles, tagged_parquet_file=tagged_parquet_file)
 
     wrapper = """<html>

@@ -125,6 +125,14 @@ def get_disambiguation(sqlite3_file):
 @click.argument('sqlite3-file', type=click.Path(), required=True, nargs=1)
 @click.argument('entity-file', type=click.Path(), required=True, nargs=1)
 def ner(sqlite3_file, entity_file):
+    """
+
+    SQLITE3_FILE: Wikipedia database as sqlite3 file.
+
+    ==>REQUIRED tables: page, categorylinks, redirects.
+
+    ENTITY_FILE: Result file. Contains a pickled pandas DataFrame with all PER,LOC and ORG entities.
+    """
 
     with sqlite3.connect(sqlite3_file) as cnx:
 
