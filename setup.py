@@ -35,7 +35,8 @@ setup(
         "print-wiki-article=qurator.wikipedia.ner:print_article_command_line",
         "train-test-split-wiki=qurator.wikipedia.ner:train_test_split",
         "parquet2csv=qurator.utils.parquet:to_csv",
-        "ner=qurator.alto.ner:on_db_file"
+        "ner=qurator.alto.ner:on_db_file",
+        "example=qurator.examples.multiprocessing:example"
       ]
     },
     python_requires='>=3.6.0',
