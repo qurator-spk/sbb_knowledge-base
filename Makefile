@@ -25,5 +25,5 @@ $(DATA_DIR)/selection_de.pkl:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 $(DATA_DIR)/digisam-ner-tagged.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/selection_de.pkl
 	ner $? $(NER_ENDPOINT) $@
 
-all: $(DATA_DIR)/digisam-ner-tagged.sqlite3
+sbb-ner: $(DATA_DIR)/digisam-ner-tagged.sqlite3
 	

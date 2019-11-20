@@ -1,10 +1,12 @@
 ***
 # Preprocessing of digital collections:
 
+See Makefile for entire pre-processing chain.
+
 ## Altotool
 
 Extract the OCR confidences as well as the text from a bunch of ALTO files
-and save them into one large .csv file.
+and save them into one large CSV or SQLITE3 file.
 
 ### Usage
 
@@ -12,25 +14,11 @@ and save them into one large .csv file.
 altotool --help
 ```
 
-***
-# BERT-NER:
-
-## altocsv2corpus
-
-Takes the csv file created with the altotool and converts it into one text
-file that can be used to generate data for unsupervised
-BERT training.
-
-### Usage
-
-```
-altocsv2corpus --help
-```
 
 ## corpusentropy
 
-Read the documents of the corpus from a .csv file where each line of
-the .csv file describes one document. Foreach document compute its
+Read the documents of the corpus from a CSV or SQLITE3 file where each line/table row 
+describes one document page. Foreach page compute its
 character entropy rate and store the result as a pickled pandas DataFrame.
 
 ### Usage
@@ -41,10 +29,9 @@ corpusentropy --help
 
 ## corpuslanguage
 
-Read the documents of the corpus from a .csv file where each line of
-the .csv file describes one document. Foreach document classify its
-language by means of langid. Store the classification results as a pickled
-pandas DataFrame.
+Read the documents of the corpus from a CSV or SQLITE3 file where each line /table row 
+describes one document page. Foreach page classify its language by means of langid. 
+Store the classification results as a pickled pandas DataFrame.
 
 ### Usage
 
@@ -52,10 +39,24 @@ pandas DataFrame.
 corpuslanguage --help
 ```
 
+***
+# BERT-NER-Pre-training:
+
+## corpuscollect
+
+Takes the CSV/SQLITE3 file created with the altotool and converts it into one text
+file that can be used to generate data for BERT pre-training.
+
+### Usage
+
+```
+corpuscollect --help
+```
+
 ## bert-pregenerate-trainingdata
 
-Generate data for BERT unsupervised pre-training from a corpus text file where the documents are
-separated by an empty line (output of altocsv2corpus).
+Generate data for BERT pre-training from a corpus text file where 
+the documents are separated by an empty line (output of corpuscollect).
 
 ### Usage
 
@@ -65,7 +66,7 @@ bert-pregenerate-trainingdata --help
 
 ## bert-finetune
 
-Perform BERT unsupervised pre-training on pre-generated data.
+Perform BERT pre-training on pre-generated data.
 
 ### Usage
 
