@@ -84,7 +84,7 @@ def on_db_file(fulltext_sqlite_file, selection_file, ner_endpoint, tagged_sqlite
                 sentences.append(sen)
                 tags.append(ta)
 
-            tagged.append({'id': num, 'ppn': ppn, 'filenname': row.filename, 'text': json.dumps(sentences),
+            tagged.append({'id': num, 'ppn': ppn, 'file_name': row.filename, 'text': json.dumps(sentences),
                            'tags': json.dumps(tags)})
 
             if len(tagged) > chunksize:

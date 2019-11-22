@@ -14,6 +14,41 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
 
+def alto_iterate_string_elements(xml_file):
+
+    tree = ElementTree.parse(xml_file)
+    root = tree.getroot()
+
+    for string_elem in root.iter('{http://www.loc.gov/standards/alto/ns-v2#}String'):
+        if 'WC' in string_elem.attrib:
+            wc = string_elem.attrib['WC']
+        else:
+            wc = str(np.NAN)
+
+        if 'CONTENT' in string_elem.attrib:
+            content = string_elem.attrib['CONTENT']
+        else:
+            content = str(np.NAN)
+
+        yield content, wc, string_elem
+
+
+def alto_xml_files_from_dir(source_dir):
+
+    # Listing all sub-directories which are named with PPN
+    ppn_list = os.listdir(source_dir)
+
+    for ppn in tqdm(ppn_list):
+
+        current_ppn_dir = os.listdir(source_dir + '/' + ppn)
+        for filename in current_ppn_dir:
+
+            if not filename.endswith(".xml"):
+                continue
+
+            yield ppn, filename
+
+
 class ExtractTask:
 
     def __init__(self, source_dir, ppn,  filename):
@@ -25,24 +60,16 @@ class ExtractTask:
     def __call__(self, *args, **kwargs):
 
         try:
-            tree = ElementTree.parse(self._source_dir + '/' + self._ppn + '/' + self._filename)
-            root = tree.getroot()
+            string_contents = []
+            word_confidences = []
 
-            text_s = []
-            wc_s = []
+            for content, wc, _ in \
+                    alto_iterate_string_elements(self._source_dir + '/' + self._ppn + '/' + self._filename):
 
-            for str_ind in root.iter('{http://www.loc.gov/standards/alto/ns-v2#}String'):
-                if 'WC' in str_ind.attrib:
-                    wc_s.append(str_ind.attrib['WC'])
-                else:
-                    wc_s.append(str(np.NAN))
+                string_contents.append(content)
+                word_confidences.append(wc)
 
-                if 'CONTENT' in str_ind.attrib:
-                    text_s.append(str_ind.attrib['CONTENT'])
-                else:
-                    text_s.append(str(np.NAN))
-
-            return self._filename, " ".join(text_s), json.dumps(wc_s), self._ppn
+            return self._filename, " ".join(string_contents), json.dumps(word_confidences), self._ppn
 
         except Exception as e:
             print(e)
@@ -52,18 +79,9 @@ class ExtractTask:
     @staticmethod
     def get_all(source_dir):
 
-        # Listing all sub-directories which are named with PPN
-        ppn_list = os.listdir(source_dir)
+        for ppn, filename in alto_xml_files_from_dir(source_dir):
 
-        for ppn in tqdm(ppn_list):
-
-            current_ppn_dir = os.listdir(source_dir + '/' + ppn)
-            for filename in current_ppn_dir:
-
-                if not filename.endswith(".xml"):
-                    continue
-
-                yield ExtractTask(source_dir, ppn, filename)
+            yield ExtractTask(source_dir, ppn, filename)
 
 
 def to_csv(source_dir, output_file, processes):
@@ -117,3 +135,116 @@ def altotool(source_dir, output_file, processes):
         to_csv(source_dir, output_file, processes)
     else:
         raise RuntimeError("Output format not supported.")
+
+###################################
+
+
+class AnnotateTask:
+
+    conn = None
+
+    def __init__(self, source_dir, dest_dir, ppn,  filename):
+
+        self._source_dir = source_dir
+        self._dest_dir = dest_dir
+        self._ppn = ppn
+        self._filename = filename
+
+    def __call__(self, *args, **kwargs):
+
+        try:
+            df = pd.read_sql_query("select text, tags from tagged where ppn=? and filenname=?;", AnnotateTask.conn,
+                                   params=(self._ppn, self._filename))
+            if len(df) == 0:
+                self._ppn = 'PPN' + self._ppn
+
+                df = pd.read_sql_query("select text, tags from tagged where ppn=? and filenname=?;", AnnotateTask.conn,
+                                       params=(self._ppn, self._filename))
+
+                if len(df) == 0:
+                    print('Not found: {}, {}', self._ppn, self._filename)
+                    return None, None
+
+            ner_text = [w for s in json.loads(df.text.iloc[0]) for w in s]
+            ner_tags = [t for s in json.loads(df.tags.iloc[0]) for t in s]
+
+            string_contents = []
+            word_confidences = []
+            string_elements = []
+
+            for content, wc, string_elem in \
+                    alto_iterate_string_elements(self._source_dir + '/' + self._ppn + '/' + self._filename):
+
+                string_contents.append(content)
+                word_confidences.append(wc)
+                string_elements.append(string_elem)
+
+            assert len(ner_text) >= len(string_contents)
+
+            tagged_string_contents = []
+            ner_pos = 0
+            for content, wc, string_elem in zip(string_contents, word_confidences, string_elements):
+
+                if not content.startswith(ner_text[ner_pos]):
+                    continue
+
+                ner_word = ner_text[ner_pos]
+                ner_tag = {ner_tags[ner_pos]}
+                ner_pos += 1
+
+                while ner_word != content:
+                    try:
+                        ner_word += ner_text[ner_pos]
+                        ner_tag.add(ner_tags[ner_pos])
+                        ner_pos += 1
+                    except:
+                        import ipdb;ipdb.set_trace()
+
+                tagged_string_contents.append((content, ner_tag))
+
+            import ipdb;ipdb.set_trace()
+
+            return self._filename, self._ppn
+
+        except Exception as e:
+
+            raise e
+            # print(e)
+            # print(self._ppn, self._filename, self._source_dir, self._dest_dir)
+            # return None, None
+
+    @staticmethod
+    def initialize(tagged_sqlite_file):
+
+        AnnotateTask.conn = sqlite3.connect(tagged_sqlite_file)
+
+        AnnotateTask.conn.execute('pragma journal_mode=wal')
+
+    @staticmethod
+    def get_all(source_dir, dest_dir):
+
+        for ppn, filename in alto_xml_files_from_dir(source_dir):
+
+            yield AnnotateTask(source_dir, dest_dir, ppn, filename)
+
+
+@click.command()
+@click.argument('tagged-sqlite-file', type=click.Path(), required=True, nargs=1)
+@click.argument('source-dir', type=click.Path(), required=True, nargs=1)
+@click.argument('dest-dir', type=click.Path(), required=True, nargs=1)
+@click.option('--processes', default=0, help='number of parallel processes')
+def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
+
+    if not os.path.exists(dest_dir):
+
+        os.mkdir(dest_dir)
+
+    for ppn, filename, in prun(AnnotateTask.get_all(source_dir, dest_dir), processes=processes,
+                               initializer=AnnotateTask.initialize, initargs=(tagged_sqlite_file,)):
+
+        if ppn is None:
+            continue
+
+        print(ppn, filename)
+
+        break

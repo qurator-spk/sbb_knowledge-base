@@ -21,6 +21,7 @@ setup(
     entry_points={
       'console_scripts': [
         "altotool=qurator.sbb.xml:altotool",
+        "alto-annotator=qurator.sbb.xml:altoannotator",
         "corpusentropy=qurator.sbb.entropy:main",
         "corpuslanguage=qurator.sbb.language:main",
         "select-by-lang-and-entropy=qurator.sbb.select:by_lang_and_entropy",
