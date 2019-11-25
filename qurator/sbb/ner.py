@@ -48,7 +48,9 @@ class NERTask:
             sentences.append(sen)
             tags.append(ta)
 
-        return self._num, self._ppn, self._file_name, json.dumps(sentences), json.dumps(tags)
+        return self._num, self._ppn, self._file_name, json.dumps(sentences), json.dumps(tags), \
+                self._fulltext.replace(" ", ""), \
+                "".join([pred['word'] for rsen in result_sentences for pred in rsen]).replace(" ", "")
 
     @staticmethod
     def get_all(fulltext_sqlite_file, selection_file, ner_endpoint):
@@ -107,11 +109,16 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
 
         tagged = []
 
-        for num, ppn, file_name, text, tags in\
+        for num, ppn, file_name, text, tags, original_text, received_text in\
             prun(NERTask.get_all(fulltext_sqlite_file, selection_file, ner_endpoint),
                  processes=len(ner_endpoint)):
 
             tagged.append({'id': num, 'ppn': ppn, 'file_name': file_name, 'text': text, 'tags': tags})
+
+            try:
+                assert original_text == received_text
+            except AssertionError:
+                import ipdb;ipdb.set_trace()
 
             if len(tagged) > chunksize:
                 # noinspection PyTypeChecker
