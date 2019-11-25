@@ -39,7 +39,7 @@ setup(
 
         "parquet2csv=qurator.utils.parquet:to_csv",
         "csv2sqlite=qurator.utils.csv:to_sqlite",
-        "ner=qurator.sbb.ner:on_db_file",
+        "batchner=qurator.sbb.ner:on_db_file",
 
         "example=qurator.examples.multiprocessing:example"
       ]
