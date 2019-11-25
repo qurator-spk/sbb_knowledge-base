@@ -4,8 +4,9 @@ from tqdm import tqdm as tqdm
 import click
 import requests
 import os
-import json
+from flask import json
 from qurator.utils.parallel import run as prun
+import unicodedata
 
 
 def create_connection(db_file):
@@ -48,9 +49,14 @@ class NERTask:
             sentences.append(sen)
             tags.append(ta)
 
-        return self._num, self._ppn, self._file_name, json.dumps(sentences), json.dumps(tags), \
-                self._fulltext.replace(" ", ""), \
-                "".join([pred['word'] for rsen in result_sentences for pred in rsen]).replace(" ", "")
+        original_text = unicodedata.normalize('NFC', self._fulltext.replace(" ", ""))
+
+        received_text = unicodedata.normalize('NFC',
+                                              "".join([pred['word'] for rsen in result_sentences for pred in rsen]).
+                                              replace(" ", ""))
+
+        return self._num, self._ppn, self._file_name, json.dumps(sentences), json.dumps(tags), original_text, \
+               received_text
 
     @staticmethod
     def get_all(fulltext_sqlite_file, selection_file, ner_endpoint):
