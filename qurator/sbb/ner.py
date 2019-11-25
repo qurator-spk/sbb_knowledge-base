@@ -94,7 +94,7 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
     """
     Reads the text content per page of digitalized collections from sqlite file <fulltext-sqlite-file>.
     Considers only a subset of documents that is defined by <selection-file>.
-    Performs NER on the text content using the REST endpoint <ner-endpoint>.
+    Performs NER on the text content using the REST endpoint[s] <ner-endpoint ...>.
     Writes the NER results back to another sqlite file <tagged-sqlite-file>.
     Writes results in chunks of size <chunksize>.
     Suppress proxy with --noproxy=True
