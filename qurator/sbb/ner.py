@@ -7,6 +7,9 @@ import os
 from flask import json
 from qurator.utils.parallel import run as prun
 import unicodedata
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def create_connection(db_file):
@@ -59,11 +62,11 @@ class NERTask:
                received_text
 
     @staticmethod
-    def get_all(fulltext_sqlite_file, selection_file, ner_endpoint):
+    def get_all(fulltext_sqlite_file, selection_file, ner_endpoint, start_row):
 
         se = pd.read_pickle(selection_file)
 
-        se = se.loc[se.selected]
+        se = se.loc[se.selected].iloc[start_row:]
 
         with create_connection(fulltext_sqlite_file) as read_conn:
 
@@ -106,17 +109,26 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
     Suppress proxy with --noproxy=True
     """
 
-    print(ner_endpoint)
+    logging.info('Using endpoints: {}'.format(ner_endpoint))
 
     if noproxy:
         os.environ['no_proxy'] = '*'
+
+    start_row = 0
+    if os.path.exists(tagged_sqlite_file):
+
+        with create_connection(tagged_sqlite_file) as read_conn:
+
+            start_row = read_conn.execute('select max(id) from tagged').fetchone()[0] + 1
+
+            logger.info('Starting from: {}'.format(start_row))
 
     with create_connection(tagged_sqlite_file) as write_conn:
 
         tagged = []
 
         for num, ppn, file_name, text, tags, original_text, received_text in\
-            prun(NERTask.get_all(fulltext_sqlite_file, selection_file, ner_endpoint),
+            prun(NERTask.get_all(fulltext_sqlite_file, selection_file, ner_endpoint, start_row),
                  processes=len(ner_endpoint)):
 
             tagged.append({'id': num, 'ppn': ppn, 'file_name': file_name, 'text': text, 'tags': tags})
@@ -124,7 +136,8 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
             try:
                 assert original_text == received_text
             except AssertionError:
-                import ipdb;ipdb.set_trace()
+                logging.warning('PPN: {}, file_name: {}\n\n\nInput and output differ:\n\nInput: {}\n\nOutput:{}'.
+                                format(ppn, file_name, original_text, received_text))
 
             if len(tagged) > chunksize:
                 # noinspection PyTypeChecker

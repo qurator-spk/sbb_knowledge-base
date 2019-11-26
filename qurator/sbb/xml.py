@@ -8,6 +8,7 @@ import click
 import sqlite3
 import pandas as pd
 import json
+import unicodedata
 from qurator.utils.parallel import run as prun
 
 with warnings.catch_warnings():
@@ -153,19 +154,19 @@ class AnnotateTask:
     def __call__(self, *args, **kwargs):
 
         try:
-            df = pd.read_sql_query("select text, tags from tagged where ppn=? and filenname=?;", AnnotateTask.conn,
+            df = pd.read_sql_query("select text, tags from tagged where ppn=? and file_name=?;", AnnotateTask.conn,
                                    params=(self._ppn, self._filename))
             if len(df) == 0:
                 self._ppn = 'PPN' + self._ppn
 
-                df = pd.read_sql_query("select text, tags from tagged where ppn=? and filenname=?;", AnnotateTask.conn,
+                df = pd.read_sql_query("select text, tags from tagged where ppn=? and file_name=?;", AnnotateTask.conn,
                                        params=(self._ppn, self._filename))
 
                 if len(df) == 0:
                     print('Not found: {}, {}', self._ppn, self._filename)
                     return None, None
 
-            ner_text = [w for s in json.loads(df.text.iloc[0]) for w in s]
+            ner_text = [unicodedata.normalize('NFC', w) for s in json.loads(df.text.iloc[0]) for w in s]
             ner_tags = [t for s in json.loads(df.tags.iloc[0]) for t in s]
 
             string_contents = []
@@ -175,7 +176,7 @@ class AnnotateTask:
             for content, wc, string_elem in \
                     alto_iterate_string_elements(self._source_dir + '/' + self._ppn + '/' + self._filename):
 
-                string_contents.append(content)
+                string_contents.append(unicodedata.normalize('NFC', content))
                 word_confidences.append(wc)
                 string_elements.append(string_elem)
 
@@ -193,12 +194,9 @@ class AnnotateTask:
                 ner_pos += 1
 
                 while ner_word != content:
-                    try:
-                        ner_word += ner_text[ner_pos]
-                        ner_tag.add(ner_tags[ner_pos])
-                        ner_pos += 1
-                    except:
-                        import ipdb;ipdb.set_trace()
+                    ner_word += ner_text[ner_pos]
+                    ner_tag.add(ner_tags[ner_pos])
+                    ner_pos += 1
 
                 tagged_string_contents.append((content, ner_tag))
 
