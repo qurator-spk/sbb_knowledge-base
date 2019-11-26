@@ -72,6 +72,8 @@ class NERTask:
 
             for num, (idx, row) in enumerate(tqdm(se.iterrows(), total=len(se))):
 
+                import ipdb;ipdb.set_trace()
+
                 if row.ppn.startswith('PPN'):
                     ppn = row.ppn[3:]
 
@@ -89,7 +91,7 @@ class NERTask:
                         print("PPN {} with file {} not found!!!".format(ppn, row.filename))
                         continue
 
-                yield NERTask(num, ppn, row.filename, df.text.iloc[0], ner_endpoint[num % len(ner_endpoint)])
+                yield NERTask(idx, ppn, row.filename, df.text.iloc[0], ner_endpoint[num % len(ner_endpoint)])
 
 
 @click.command()
@@ -99,7 +101,8 @@ class NERTask:
 @click.argument('ner-endpoint', type=str, required=True, nargs=-1)
 @click.option('--chunksize', type=int, default=10**4, help='size of chunks used for processing. default: 10**4')
 @click.option('--noproxy', type=bool, default=False, help='disable proxy. default: enabled.')
-def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_endpoint, chunksize, noproxy):
+@click.option('--processes', type=int, default=None)
+def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_endpoint, chunksize, noproxy, processes):
     """
     Reads the text content per page of digitalized collections from sqlite file <fulltext-sqlite-file>.
     Considers only a subset of documents that is defined by <selection-file>.
@@ -129,7 +132,7 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
 
         for num, ppn, file_name, text, tags, original_text, received_text in\
             prun(NERTask.get_all(fulltext_sqlite_file, selection_file, ner_endpoint, start_row),
-                 processes=len(ner_endpoint)):
+                 processes=len(ner_endpoint) if processes is None else processes):
 
             tagged.append({'id': num, 'ppn': ppn, 'file_name': file_name, 'text': text, 'tags': tags})
 
