@@ -72,8 +72,6 @@ class NERTask:
 
             for num, (idx, row) in enumerate(tqdm(se.iterrows(), total=len(se))):
 
-                import ipdb;ipdb.set_trace()
-
                 if row.ppn.startswith('PPN'):
                     ppn = row.ppn[3:]
 
