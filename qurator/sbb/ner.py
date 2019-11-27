@@ -66,7 +66,7 @@ class NERTask:
 
         se = pd.read_pickle(selection_file)
 
-        se = se.loc[se.selected].iloc[start_row:]
+        se = se.loc[start_row:].loc[se.selected]
 
         with create_connection(fulltext_sqlite_file) as read_conn:
 
@@ -122,7 +122,7 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
 
             start_row = read_conn.execute('select max(id) from tagged').fetchone()[0] + 1
 
-            logger.info('Starting from: {}'.format(start_row))
+            logger.info('Starting from idx: {}'.format(start_row))
 
     with create_connection(tagged_sqlite_file) as write_conn:
 
