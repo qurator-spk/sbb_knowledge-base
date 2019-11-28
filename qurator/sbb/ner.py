@@ -95,12 +95,14 @@ class NERTask:
 @click.command()
 @click.argument('fulltext-sqlite-file', type=click.Path(), required=True, nargs=1)
 @click.argument('selection-file', type=click.Path(), required=True, nargs=1)
+@click.argument('model-name', type=str, required=True, nargs=1)
 @click.argument('tagged-sqlite-file', type=click.Path(), required=True, nargs=1)
 @click.argument('ner-endpoint', type=str, required=True, nargs=-1)
 @click.option('--chunksize', type=int, default=10**4, help='size of chunks used for processing. default: 10**4')
-@click.option('--noproxy', type=bool, default=False, help='disable proxy. default: enabled.')
+@click.option('--noproxy', is_flag=True, help='disable proxy. default: enabled.')
 @click.option('--processes', type=int, default=None)
-def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_endpoint, chunksize, noproxy, processes):
+def on_db_file(fulltext_sqlite_file, selection_file, model_name, tagged_sqlite_file, ner_endpoint, chunksize, noproxy,
+               processes):
     """
     Reads the text content per page of digitalized collections from sqlite file <fulltext-sqlite-file>.
     Considers only a subset of documents that is defined by <selection-file>.
@@ -110,10 +112,30 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
     Suppress proxy with --noproxy=True
     """
 
-    logging.info('Using endpoints: {}'.format(ner_endpoint))
-
     if noproxy:
         os.environ['no_proxy'] = '*'
+
+    logging.info('Using endpoints: {}'.format(ner_endpoint))
+
+    model_name = model_name.replace(" ", "")
+
+    ner_endpoint_tmp = []
+    for endpoint in ner_endpoint:
+
+        models = json.loads(requests.get("{}/models".format(endpoint)).content)
+
+        models = pd.DataFrame.from_dict(models)[['name', 'id']]
+
+        models['name'] = models['name'].str.replace(" ", "")
+
+        models = models.set_index('name')
+
+        ner_endpoint_tmp.append("{}/ner/{}".format(endpoint, models.loc[model_name]['id']))
+
+    ner_endpoint = ner_endpoint_tmp
+
+    tagged_sqlite_file = os.path.splitext(
+        os.path.basename(tagged_sqlite_file))[0] + "-" + model_name + ".sqlite3"
 
     start_row = 0
     if os.path.exists(tagged_sqlite_file):
@@ -148,6 +170,36 @@ def on_db_file(fulltext_sqlite_file, selection_file, tagged_sqlite_file, ner_end
 
                 tagged = []
 
-        write_conn.execute('create index idx_ppn on tagged(ppn);')
+        if len(tagged) > 0:
+            # noinspection PyTypeChecker
+            df_tagged = pd.DataFrame.from_dict(tagged).reset_index(drop=True).set_index('id')
+
+            df_tagged.to_sql('tagged', con=write_conn, if_exists='append', index_label='id')
+
+        try:
+            write_conn.execute('create index idx_ppn on tagged(ppn);')
+        except sqlite3.OperationalError:
+            pass
 
     return
+
+
+@click.command()
+@click.argument('ner-endpoint', type=str, required=True, nargs=-1)
+@click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: enabled.')
+def show_models(ner_endpoint, noproxy):
+
+    if noproxy:
+        os.environ['no_proxy'] = '*'
+
+    for endpoint in ner_endpoint:
+
+        models = json.loads(requests.get("{}/models".format(endpoint)).content)
+
+        models = pd.DataFrame.from_dict(models).set_index('id')[['name']]
+
+        models['name'] = models['name'].str.replace(" ", "")
+
+        print("\n{}:".format(endpoint))
+        print(models)
+        print('\n\n')

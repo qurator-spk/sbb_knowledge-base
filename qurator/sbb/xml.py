@@ -76,11 +76,6 @@ def alto_add_entity_map(root, entity_map):
     for entity_id, (entity_label, entity_type) in entity_map.items():
         named_entity_elem = ElementTree.Element('ns0:NamedEntityTag')
 
-        try:
-            assert entity_type in {'PER', 'LOC', 'ORG'}
-        except AssertionError:
-            import ipdb;ipdb.set_trace()
-
         named_entity_elem.set('ID', entity_type + str(entity_id))
         named_entity_elem.set('LABEL', entity_label)
 
@@ -95,11 +90,6 @@ def alto_add_entity_references(entity_map, tagged_contents):
             continue
 
         entity_label, entity_type = entity_map[entity_id]
-
-        try:
-            assert entity_type in {'PER', 'LOC', 'ORG'}
-        except AssertionError:
-            import ipdb;ipdb.set_trace()
 
         string_elem.set('TAGREFS', entity_type + str(entity_id))
 
@@ -232,17 +222,17 @@ class AnnotateTask:
             alto_add_entity_references(entity_map, tagged_contents)
 
             ppn_path = self._dest_dir + '/' + self._ppn
-            if not os.path.exists(ppn_path):
-                os.makedirs(ppn_path, exist_ok=True)
+
+            os.makedirs(ppn_path, exist_ok=True)
 
             tree.write(ppn_path + '/' + self._filename)
 
             return self._filename, self._ppn
 
         except Exception as exx:
-            import ipdb;ipdb.set_trace()
-
             logger.error(exx)
+
+            return None, None
 
     @staticmethod
     def tag_content(root, ner_data):
@@ -264,14 +254,10 @@ class AnnotateTask:
 
                     assert len(entity_type) < 2
 
-                    tag = 'O' if tag == 'O' else tag[2:]
+                    tag = tag if len(tag) < 3 else tag[2:]
 
-                    try:
-                        assert tag in {'O', 'PER', 'LOC', 'ORG'}
-                    except AssertionError:
-                        import ipdb;
-                        ipdb.set_trace()
-
+                    tag = tag if tag in {'PER', 'LOC', 'ORG'} else 'O'
+                    
                     if len(entity) > 0 and tag not in entity_type:
                         entity_list[-1] = (eid, " ".join(entity), list(entity_type)[0])
                         eid += 1
@@ -363,13 +349,10 @@ class AnnotateTask:
 @click.option('--processes', default=0, help='number of parallel processes')
 def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
 
-    if not os.path.exists(dest_dir):
+    dest_dir = "{}/{}".format(dest_dir, os.path.splitext(os.path.basename(tagged_sqlite_file))[0])
 
-        os.mkdir(dest_dir)
+    os.makedirs(dest_dir, exist_ok=True)
 
-    for ppn, filename, in prun(AnnotateTask.get_all(source_dir, dest_dir), processes=processes,
-                               initializer=AnnotateTask.initialize, initargs=(tagged_sqlite_file,)):
-        if ppn is None:
-            continue
-
-        # print(ppn, filename)
+    for _ in prun(AnnotateTask.get_all(source_dir, dest_dir), processes=processes,
+                  initializer=AnnotateTask.initialize, initargs=(tagged_sqlite_file,)):
+        pass
