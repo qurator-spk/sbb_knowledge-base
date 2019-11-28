@@ -33,7 +33,7 @@ $(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3:	$(DATA_D
 corpus:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 
 alto:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3
-	alto-annotator $? /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=20
+	alto-annotato $(DATA_DIR)/digisam-ner-tagged-DC-SBB+CONLL+GERMEVAL+SBB.sqlite3 /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=20
 
 sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL.sqlite3 $(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3
 	
