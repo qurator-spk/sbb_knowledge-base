@@ -37,4 +37,4 @@ def by_lang_and_entropy(language_file, entropy_file, output_file, min_lang_confi
                  (selector.entropy < selector.entropy.quantile(max_entropy_quantile)), 'selected'] = \
         True
 
-    selector[['ppn', 'filename', 'selected']].to_pickle(output_file)
+    selector[['ppn', 'filename', 'selected']].reset_index(drop=True).to_pickle(output_file)
