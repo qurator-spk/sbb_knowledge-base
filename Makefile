@@ -22,10 +22,10 @@ $(DATA_DIR)/language.pkl:	$(DATA_DIR)/fulltext.sqlite3
 	corpuslanguage $< $@ --processes=$(PROCESSES)
 
 $(DATA_DIR)/DE-NL-FR-EN.pkl:    $(DATA_DIR)/language.pkl
-    select-by-lang $? DE-NL-FR-EN.pkl DE NL FR EN
+	select-by-lang $? DE-NL-FR-EN.pkl DE NL FR EN
 
 $(DATA_DIR)/DE.pkl:    $(DATA_DIR)/language.pkl
-    select-by-lang $? DE.pkl DE
+	select-by-lang $? DE.pkl DE
 
 $(DATA_DIR)/selection_de.pkl:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 	select-by-lang-and-entropy $? $@ --min-lang-confidence=$(MIN_LANG_CONFIDENCE) --min-entropy-quantile=$(MIN_ENTROPY_QUANTILE) --max-entropy-quantile=$(MAX_ENTROPY_QUANTILE)
