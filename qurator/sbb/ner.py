@@ -28,7 +28,7 @@ class NERTask:
         self._num = num
         self._ppn = ppn
         self._file_name = file_name
-        self._fulltext = fulltext
+        self._fulltext = "" if fulltext is None else fulltext
         self._ner_endpoint = ner_endpoint
 
     def __call__(self, *args, **kwargs):
