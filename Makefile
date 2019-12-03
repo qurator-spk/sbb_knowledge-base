@@ -24,16 +24,22 @@ $(DATA_DIR)/language.pkl:	$(DATA_DIR)/fulltext.sqlite3
 $(DATA_DIR)/selection_de.pkl:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 	select-by-lang-and-entropy $? $@ --min-lang-confidence=$(MIN_LANG_CONFIDENCE) --min-entropy-quantile=$(MIN_ENTROPY_QUANTILE) --max-entropy-quantile=$(MAX_ENTROPY_QUANTILE)
 
-$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/selection_de.pkl
+$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/DE.pkl
 	batchner --noproxy $? DC-SBB+CONLL+GERMEVAL digisam-ner-tagged.sqlite3  $(NER_ENDPOINTS) --chunksize=1000
 
-$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/selection_de.pkl
+$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/DE.pkl
 	batchner --noproxy $? DC-SBB+CONLL+GERMEVAL+SBB digisam-ner-tagged.sqlite3  $(NER_ENDPOINTS) --chunksize=1000
+
+$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+GER-COMPLETE.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/DE.pkl
+	batchner --noproxy $? DC-SBB+GER-COMPLETE digisam-ner-tagged.sqlite3  $(NER_ENDPOINTS) --chunksize=1000
+
+$(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3:	$(DATA_DIR)/fulltext.sqlite3 $(DATA_DIR)/DE-NL-FR-EN.pkl
+	batchner --noproxy $? DC-SBB-MULTILANG digisam-ner-tagged.sqlite3  $(NER_ENDPOINTS) --chunksize=1000
 
 corpus:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 
-alto:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3
-	alto-annotato $(DATA_DIR)/digisam-ner-tagged-DC-SBB+CONLL+GERMEVAL+SBB.sqlite3 /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=20
+alto:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
+	alto-annotator $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=20
 
-sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL.sqlite3 $(DATA_DIR)/digisam-ner-tagged-DC-SBB\\+CONLL\\+GERMEVAL\\+SBB.sqlite3
+sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 	
