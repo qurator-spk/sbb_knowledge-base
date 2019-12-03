@@ -25,6 +25,7 @@ setup(
         "corpusentropy=qurator.sbb.entropy:main",
         "corpuslanguage=qurator.sbb.language:main",
         "select-by-lang-and-entropy=qurator.sbb.select:by_lang_and_entropy",
+        "select-by-lang=qurator.sbb.select:by_lang",
 
         "collectcorpus=qurator.bert.corpus:collect",
         "bert-pregenerate-trainingdata=qurator.bert.pregenerate_training_data:main",

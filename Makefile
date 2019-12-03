@@ -21,6 +21,12 @@ $(DATA_DIR)/entropy.pkl:	$(DATA_DIR)/fulltext.sqlite3
 $(DATA_DIR)/language.pkl:	$(DATA_DIR)/fulltext.sqlite3
 	corpuslanguage $< $@ --processes=$(PROCESSES)
 
+$(DATA_DIR)/DE-NL-FR-EN.pkl:    $(DATA_DIR)/language.pkl
+    select-by-lang $? DE-NL-FR-EN.pkl DE NL FR EN
+
+$(DATA_DIR)/DE.pkl:    $(DATA_DIR)/language.pkl
+    select-by-lang $? DE.pkl DE
+
 $(DATA_DIR)/selection_de.pkl:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 	select-by-lang-and-entropy $? $@ --min-lang-confidence=$(MIN_LANG_CONFIDENCE) --min-entropy-quantile=$(MIN_ENTROPY_QUANTILE) --max-entropy-quantile=$(MAX_ENTROPY_QUANTILE)
 
@@ -39,7 +45,7 @@ $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3:	$(DATA_DIR)/fulltext.sq
 corpus:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 
 alto:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
-	alto-annotator $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=20
+	alto-annotator $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=$(PROCESSES)
 
 sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 	

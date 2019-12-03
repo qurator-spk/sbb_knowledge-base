@@ -38,3 +38,21 @@ def by_lang_and_entropy(language_file, entropy_file, output_file, min_lang_confi
         True
 
     selector[['ppn', 'filename', 'selected']].reset_index(drop=True).to_pickle(output_file)
+
+
+@click.command()
+@click.argument('language-file', type=click.Path(), required=True, nargs=1)
+@click.argument('output-file', type=click.Path(), required=True, nargs=1)
+@click.argument('languages', type=str, required=True, nargs=-1)
+def by_lang(language_file, output_file, languages):
+    """
+    Filter fulltext pages according to language.
+    """
+
+    languages = [l.lower() for l in languages]
+
+    lang = pd.read_pickle(language_file).reset_index(drop=True)
+
+    lang['selected'] = lang.language.isin(languages)
+
+    lang.to_pickle(output_file)
