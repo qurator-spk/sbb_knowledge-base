@@ -7,6 +7,9 @@ MAX_ENTROPY_QUANTILE ?=0.8
 
 NER_ENDPOINT ?=http://localhost:8080/ner/1
 
+ALTOSOURCEPATH ?=/srv/digisam_ocr
+ALTOTARGETPATH ?=/qurator-share/tmp/alto-ner-annotated
+
 NER_ENDPOINTS ?=http://b-lx0053.sbb.spk-berlin.de:8080 http://b-lx0053.sbb.spk-berlin.de:8081 http://b-lx0053.sbb.spk-berlin.de:8082 http://b-lx0059.sbb.spk-berlin.de:8080 http://b-lx0059.sbb.spk-berlin.de:8081 http://b-lx0059.sbb.spk-berlin.de:8082
 
 $(DATA_DIR):
@@ -45,7 +48,7 @@ $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3:	$(DATA_DIR)/fulltext.sq
 corpus:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 
 alto:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
-	alto-annotator $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG /srv/digisam_ocr /qurator-share/tmp/alto-ner-annotated --processes=$(PROCESSES)
+	alto-annotator $? $(ALTOSOURCEPATH) $(ALTOTARGETPATH) --processes=$(PROCESSES)
 
 sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 	
