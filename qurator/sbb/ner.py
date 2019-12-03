@@ -96,13 +96,13 @@ class NERTask:
 @click.argument('fulltext-sqlite-file', type=click.Path(), required=True, nargs=1)
 @click.argument('selection-file', type=click.Path(), required=True, nargs=1)
 @click.argument('model-name', type=str, required=True, nargs=1)
-@click.argument('tagged-sqlite-file', type=click.Path(), required=True, nargs=1)
 @click.argument('ner-endpoint', type=str, required=True, nargs=-1)
 @click.option('--chunksize', type=int, default=10**4, help='size of chunks used for processing. default: 10**4')
 @click.option('--noproxy', is_flag=True, help='disable proxy. default: enabled.')
 @click.option('--processes', type=int, default=None)
-def on_db_file(fulltext_sqlite_file, selection_file, model_name, tagged_sqlite_file, ner_endpoint, chunksize, noproxy,
-               processes):
+@click.option('--outfile', type=click.Path(), default=None)
+def on_db_file(fulltext_sqlite_file, selection_file, model_name, ner_endpoint, chunksize, noproxy,
+               processes, outfile):
     """
     Reads the text content per page of digitalized collections from sqlite file <fulltext-sqlite-file>.
     Considers only a subset of documents that is defined by <selection-file>.
@@ -134,8 +134,11 @@ def on_db_file(fulltext_sqlite_file, selection_file, model_name, tagged_sqlite_f
 
     ner_endpoint = ner_endpoint_tmp
 
-    tagged_sqlite_file = os.path.splitext(
-        os.path.basename(tagged_sqlite_file))[0] + "-" + model_name + ".sqlite3"
+    if outfile is None:
+        tagged_sqlite_file = os.path.splitext(
+            os.path.basename(fulltext_sqlite_file))[0] + "-ner-" + model_name + ".sqlite3"
+    else:
+        tagged_sqlite_file = outfile
 
     start_row = 0
     if os.path.exists(tagged_sqlite_file):
