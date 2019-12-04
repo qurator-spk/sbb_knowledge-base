@@ -82,6 +82,22 @@ def alto_add_entity_map(root, entity_map):
         tags.append(named_entity_elem)
 
 
+def alto_read_entity_map(root):
+
+    entity_map = dict()
+
+    ner_tags = root.findall('.//{http://www.loc.gov/standards/alto/ns-v2#}NamedEntityTag')
+
+    for ner_tag in ner_tags:
+
+        ner_id = ner_tag.attrib['ID']
+        ner_label = ner_tag.attrib['LABEL']
+
+        entity_map[ner_id] = ner_label
+
+    return entity_map
+
+
 def alto_add_entity_references(entity_map, tagged_contents):
 
     for string_elem, entity_id in tagged_contents:
@@ -356,3 +372,49 @@ def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
     for _ in prun(AnnotateTask.get_all(source_dir, dest_dir), processes=processes,
                   initializer=AnnotateTask.initialize, initargs=(tagged_sqlite_file,)):
         pass
+
+
+def get_entity_coordinates(alto_file, image):
+
+    tree = ElementTree.parse(alto_file)
+    root = tree.getroot()
+
+    measurement_unit = root.find('.//{http://www.loc.gov/standards/alto/ns-v2#}MeasurementUnit').text.lower()
+
+    if measurement_unit == 'pixel':
+
+        x_factor = 1.0
+        y_factor = 1.0
+
+    elif measurement_unit == 'mm10':
+
+        page = root.find('.//{http://www.loc.gov/standards/alto/ns-v2#}Page')
+
+        page_width = float(page.attrib['WIDTH'])
+        page_height = float(page.attrib['HEIGHT'])
+
+        x_factor = float(image.width)/page_width
+        y_factor = float(image.height)/page_height
+    else:
+        RuntimeError('Unsupported unit of measurement.')
+
+    entity_map = alto_read_entity_map(root)
+
+    ner_coordinates = []
+
+    for content, wc, string_elem in alto_iterate_string_elements(root=root):
+
+        if 'TAGREFS' not in string_elem.attrib:
+            continue
+
+        x0 = int(x_factor*float(string_elem.attrib['HPOS']))
+        y0 = int(y_factor*float(string_elem.attrib['VPOS']))
+
+        x1 = int(x_factor*(float(string_elem.attrib['HPOS']) + float(string_elem.attrib['WIDTH'])))
+        y1 = int(y_factor*(float(string_elem.attrib['VPOS']) + float(string_elem.attrib['HEIGHT'])))
+
+        ner_coordinates.append((x0, y0, x1, y1, string_elem.attrib['TAGREFS']))
+
+    ner_coordinates = pd.DataFrame(ner_coordinates, columns=['x0', 'y0', 'x1', 'y1', 'ner_id'])
+
+    return ner_coordinates, entity_map
