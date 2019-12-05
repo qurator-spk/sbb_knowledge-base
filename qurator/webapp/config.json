@@ -1,5 +1,4 @@
 {
-  "NER_SERVICE": "http://b-lx0053.sbb.spk-berlin.de:5000",
   "FULLTEXT_PATH": "data/digisam/fulltext.sqlite3",
   "IMAGE_PATH": "/srv/digisam_images/sbb",
   "ALTO_PATH" : "/qurator-share/alto-ner-annotated/digisam-ner-tagged-DC-SBB-MULTILANG",
