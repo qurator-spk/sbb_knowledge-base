@@ -1,6 +1,6 @@
 
 ALTOSOURCEPATH ?=/srv/digisam_ocr
-ALTOTARGETPATH ?=/qurator-share/tmp/alto-ner-annotated
+ALTOTARGETPATH ?=/qurator-share/alto-ner-annotated
 
 DATA_DIR ?=data/digisam
 
