@@ -181,10 +181,10 @@ def to_sqlite(source_dir, output_file, processes):
 @click.command()
 @click.argument('source-dir', type=click.Path(), required=True, nargs=1)
 @click.argument('output-file', type=click.Path(), required=True, nargs=1)
-@click.option('--processes', default=6, help='number of parallel processes')
+@click.option('--processes', default=6, help='number of parallel processes. default: 6.')
 def altotool(source_dir, output_file, processes):
     """
-    Extract text from a bunch of alto XML files into one big CSV(.csv) or SQLITE3(.sqlite3) file.
+    Extract text from a bunch of ALTO XML files into one big CSV(.csv) or SQLITE3(.sqlite3) file.
 
     SOURCE_DIR: The directory that contains subfolders with the ALTO xml files.
     OUTPUT_FILE: Write the extracted fulltext to this file (either .csv or .sqlite3).
@@ -362,8 +362,14 @@ class AnnotateTask:
 @click.argument('tagged-sqlite-file', type=click.Path(), required=True, nargs=1)
 @click.argument('source-dir', type=click.Path(), required=True, nargs=1)
 @click.argument('dest-dir', type=click.Path(), required=True, nargs=1)
-@click.option('--processes', default=0, help='number of parallel processes')
+@click.option('--processes', default=0, help='number of parallel processes. default: 0.')
 def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
+    """
+    Read NER tagging results from TAGGED_SQLITE_FILE.
+    Read ALTO XML files in subfolders of directory SOURCE_DIR.
+    Annotate the XML content with NER information and write the annotated ALTO XML back to the same directory
+    structure in DEST_DIR.
+    """
 
     dest_dir = "{}/{}".format(dest_dir, os.path.splitext(os.path.basename(tagged_sqlite_file))[0])
 

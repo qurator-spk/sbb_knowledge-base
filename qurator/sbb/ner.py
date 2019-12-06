@@ -99,17 +99,20 @@ class NERTask:
 @click.argument('ner-endpoint', type=str, required=True, nargs=-1)
 @click.option('--chunksize', type=int, default=10**4, help='size of chunks used for processing. default: 10**4')
 @click.option('--noproxy', is_flag=True, help='disable proxy. default: enabled.')
-@click.option('--processes', type=int, default=None)
-@click.option('--outfile', type=click.Path(), default=None)
+@click.option('--processes', type=int, default=None,
+              help="number of parallel processes, default: number of NER endpoints.")
+@click.option('--outfile', type=click.Path(), default=None,
+              help="Write results to this file. default: derive name from fulltext sqlite file.")
 def on_db_file(fulltext_sqlite_file, selection_file, model_name, ner_endpoint, chunksize, noproxy,
                processes, outfile):
     """
-    Reads the text content per page of digitalized collections from sqlite file <fulltext-sqlite-file>.
-    Considers only a subset of documents that is defined by <selection-file>.
-    Performs NER on the text content using the REST endpoint[s] <ner-endpoint ...>.
-    Writes the NER results back to another sqlite file <tagged-sqlite-file>.
+    Reads the text content per page of digitalized collections from sqlite file FULLTEXT_SQLITE_FILE.
+    Considers only a subset of documents that is defined by SELECTION_FILE.
+    Performs NER on the text content using the REST endpoint[s] NER_ENDPOINT ....
+    Writes the NER results back to another sqlite file whose name is equal to FULLTEXT_SQLITE_FILE + '-ner-'
+    or to the file specified in the --outfile option.
     Writes results in chunks of size <chunksize>.
-    Suppress proxy with --noproxy=True
+    Suppress proxy with option --noproxy.
     """
 
     if noproxy:
@@ -191,6 +194,9 @@ def on_db_file(fulltext_sqlite_file, selection_file, model_name, ner_endpoint, c
 @click.argument('ner-endpoint', type=str, required=True, nargs=-1)
 @click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: enabled.')
 def show_models(ner_endpoint, noproxy):
+    """
+    Show models that are available from NER_ENDPOINT.
+    """
 
     if noproxy:
         os.environ['no_proxy'] = '*'

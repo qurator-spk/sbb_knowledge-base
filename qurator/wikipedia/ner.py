@@ -422,7 +422,7 @@ def get_entity_tasks(full_text_file, selected_pages):
 @click.argument('all-entities-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('wikipedia-sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('tagged-parquet', type=click.Path(exists=False), required=True, nargs=1)
-@click.option('--processes', default=6, help='number of parallel processes')
+@click.option('--processes', default=6, help='number of parallel processes. default: 6.')
 def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagged_parquet, processes,
                  chunksize=10000):
     """

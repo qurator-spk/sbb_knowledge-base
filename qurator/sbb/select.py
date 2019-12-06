@@ -47,6 +47,12 @@ def by_lang_and_entropy(language_file, entropy_file, output_file, min_lang_confi
 def by_lang(language_file, output_file, languages):
     """
     Filter fulltext pages according to language.
+
+    LANGUAGE_FILE: pickled DataFrame that contains the language of each fulltext page (see tool corpuslanguage).
+
+    OUTPUT_FILE: Write the filter result as a pickled DataFrame to this file.
+
+    LANGUAGES: Languages to select, for instance: DE NL FR EN ...
     """
 
     languages = [l.lower() for l in languages]
