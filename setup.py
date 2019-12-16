@@ -34,7 +34,8 @@ setup(
         "extract-wiki-full-text-parquet=qurator.wikipedia.xml:to_parquet",
         "extract-wiki-full-text-sqlite=qurator.wikipedia.xml:to_sqlite",
         "extract-wiki-ner-entities=qurator.wikipedia.entities:ner",
-        "tag-wiki-entities=qurator.wikipedia.ner:tag_entities",
+        "tag-wiki-entities2parquet=qurator.wikipedia.ner:tag_entities2parquet",
+        "tag-wiki-entities2sqlite=qurator.wikipedia.ner:tag_entities2sqlite",
         "print-wiki-article=qurator.wikipedia.ner:print_article_command_line",
         "train-test-split-wiki=qurator.wikipedia.ner:train_test_split",
 

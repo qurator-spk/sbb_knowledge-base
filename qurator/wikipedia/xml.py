@@ -97,6 +97,7 @@ def to_sqlite(wikipedia_xml_file, sqlite_file, chunk_size):
         parse_xml(chunk_size, context, write_pages)
 
         conn.execute('create index idx_page_id on text(page_id);')
+        conn.execute('create index idx_title on text(title);')
 
     return
 

@@ -19,6 +19,15 @@ with warnings.catch_warnings():
     import html
 
 
+def create_connection(db_file):
+
+    conn = sqlite3.connect(db_file)
+
+    conn.execute('pragma journal_mode=wal')
+
+    return conn
+
+
 def clean_text(raw_text):
     raw_text = re.sub(r'== Literatur ==.*$', r'', raw_text, flags=re.DOTALL)  # remove literature references
 
@@ -405,28 +414,44 @@ class EntityTask:
 
         return pd.DataFrame(tagged, index=['0']).reset_index(drop=True).set_index('page_id')
 
+    @staticmethod
+    def get_from_parquet(fulltext_parquet, selected_pages):
+        fulltext = dd.read_parquet(fulltext_parquet)
 
-def get_entity_tasks(full_text_file, selected_pages):
-    fulltext = dd.read_parquet(full_text_file)
+        for page_index, page in tqdm(fulltext.iterrows(), total=len(fulltext)):
 
-    for page_index, page in tqdm(fulltext.iterrows(), total=len(fulltext)):
+            if page.page_id not in selected_pages.index:
+                continue
 
-        if page.page_id not in selected_pages.index:
-            continue
+            yield EntityTask(page.page_id, page.text, page.title)
 
-        yield EntityTask(page.page_id, page.text, page.title)
+    @staticmethod
+    def get_from_sqlite(fulltext_sqlite, selected_pages):
+
+        with create_connection(fulltext_sqlite) as read_conn:
+
+            total = int(read_conn.execute('select count(*) from text;').fetchone()[0])
+
+            pos = read_conn.cursor().execute('SELECT page_id, text, title from text')
+
+            for page_id, text, title in tqdm(pos, total=total):
+
+                if page_id not in selected_pages.index:
+                    continue
+
+                yield EntityTask(page_id, text, title)
 
 
 @click.command()
-@click.argument('full-text-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('fulltext-parquet', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('all-entities-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('wikipedia-sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('tagged-parquet', type=click.Path(exists=False), required=True, nargs=1)
 @click.option('--processes', default=6, help='number of parallel processes. default: 6.')
-def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagged_parquet, processes,
-                 chunksize=10000):
+def tag_entities2parquet(fulltext_parquet, all_entities_file, wikipedia_sqlite_file, tagged_parquet, processes,
+                         chunksize=10000):
     """
-    FULL_TEXT_FILE: apache parquet file that contains the per article fulltext.
+    FULLTEXT_PARQUET: apache parquet file that contains the per article fulltext.
     (see extract-wiki-full-text-parquet)
 
     ALL_ENTITIES_FILE: pickle file that contains a pandas dataframe that describes the entities
@@ -466,7 +491,7 @@ def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagge
 
     tagged_list = []
 
-    for tg in prun(get_entity_tasks(full_text_file, pages_namespace0), processes=processes,
+    for tg in prun(EntityTask.get_from_parquet(fulltext_parquet, pages_namespace0), processes=processes,
                    initializer=EntityTask.initialize, initargs=(all_entities, redirects, disambiguation)):
 
         if tg is None:
@@ -477,6 +502,73 @@ def tag_entities(full_text_file, all_entities_file, wikipedia_sqlite_file, tagge
         if len(tagged_list) > chunksize:
             write_tagged(tagged_list)
             tagged_list = []
+
+    return
+
+
+@click.command()
+@click.argument('fulltext-sqlite', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('all-entities-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('wikipedia-sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('tagged-sqlite', type=click.Path(exists=False), required=True, nargs=1)
+@click.option('--processes', default=6, help='number of parallel processes. default: 6.')
+def tag_entities2sqlite(fulltext_sqlite, all_entities_file, wikipedia_sqlite_file, tagged_sqlite, processes,
+                        chunksize=10000):
+    """
+    FULLTEXT_SQLITE: SQLITE file that contains the per article fulltext.
+    (see extract-wiki-full-text-sqlite)
+
+    ALL_ENTITIES_FILE: pickle file that contains a pandas dataframe that describes the entities
+    (see extract-wiki-ner-entities).
+
+    WIKIPEDIA_SQLITE_FILE: sqlite3 dump of wikipedia that contains the redirect table.
+
+    TAGGED_SQLITE: result sqlite file.
+    """
+
+    all_entities = pd.read_pickle(all_entities_file)
+
+    redirects, pages_namespace0 = get_redirects(all_entities, wikipedia_sqlite_file)
+
+    print("Number of pages to tag: {}".format(len(pages_namespace0)))
+    print("Number of redirects: {}".format(len(redirects)))
+
+    disambiguation = get_disambiguation(wikipedia_sqlite_file)
+
+    with create_connection(tagged_sqlite) as write_conn:
+
+        def write_tagged(tagged):
+
+            if len(tagged) == 0:
+                return
+
+            df_tagged = pd.DataFrame.from_dict(tagged).reset_index(drop=True).set_index('page_id')
+
+            df_tagged.to_sql('tagged', con=write_conn, if_exists='append', index_label='page_id')
+
+            return
+
+        tagged_list = []
+
+        for tg in prun(EntityTask.get_from_sqlite(fulltext_sqlite, pages_namespace0), processes=processes,
+                       initializer=EntityTask.initialize, initargs=(all_entities, redirects, disambiguation)):
+
+            if tg is None:
+                continue
+
+            tagged_list.append(tg)
+
+            if len(tagged_list) > chunksize:
+                write_tagged(tagged_list)
+                tagged_list = []
+
+        write_tagged(tagged_list)
+
+        try:
+            write_conn.execute('create index idx_ppn on tagged(page_id);')
+            write_conn.execute('create index idx_page_title on tagged(page_title);')
+        except sqlite3.OperationalError:
+            pass
 
     return
 
