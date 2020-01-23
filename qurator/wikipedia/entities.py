@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 import click
 import numpy as np
+from tqdm import tqdm as tqdm
 
 
 def _get_cats(cat_links, category, found, cnx):
@@ -100,6 +101,34 @@ def get_redirects(all_entities, sqlite3_file):
         sort_index()
 
     return redirects, page
+
+
+def map_entities2redirects(all_entities, redirects):
+
+    redirects = redirects.sort_index()
+    all_entities = all_entities.sort_index()
+
+    tmp = []
+
+    for page_title, row in tqdm(all_entities.iterrows(), total=len(all_entities)):
+
+        entity_type = row.TYPE
+
+        if page_title not in redirects.index:  # It could be a redirect otherwise
+            tmp.append((page_title, entity_type))
+            continue
+
+        if len(redirects.loc[[page_title]]) > 1:
+            raise RuntimeError('Multiple redirects!')
+
+        page_title = redirects.loc[page_title, 'rd_title']
+
+        if page_title in all_entities.index:
+            continue
+
+        tmp.append((page_title, entity_type))
+
+    return pd.DataFrame(tmp, columns=['page_title', 'TYPE']).set_index('page_title')
 
 
 def get_pages(category, sqlite3_file):
