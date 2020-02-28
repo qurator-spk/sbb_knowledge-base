@@ -103,7 +103,38 @@ def get_redirects(all_entities, sqlite3_file):
     return redirects, page
 
 
-def map_entities2redirects(all_entities, redirects):
+def get_pages(category, sqlite3_file):
+
+    with sqlite3.connect(sqlite3_file) as cnx:
+
+        beg_cats = get_sub_cats(category, cnx)
+
+        beg_pages = get_category_pages(beg_cats, cnx).\
+                        reset_index().\
+                        set_index('page_title').\
+                        sort_index()
+
+    return beg_pages
+
+
+@click.command()
+@click.argument('sqlite3-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('entity-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('output-file', type=click.Path(), required=True, nargs=1)
+def redirects2entities(sqlite3_file, entity_file, output_file):
+    """
+    Resolves all redirects from entity_file into the target entity.
+
+    SQLITE3_FILE: Wikipedia database as sqlite3 file.
+
+    ENTITY_FILE: File that contains a pickled pandas DataFrame with all PER,LOC and ORG entities.
+
+    OUTPUT_FILE: Write pickled DataFrame with mapped redirects+entities into this file.
+    """
+
+    all_entities = pd.read_pickle(entity_file)
+
+    redirects, page = get_redirects(all_entities, sqlite3_file)
 
     redirects = redirects.sort_index()
     all_entities = all_entities.sort_index()
@@ -128,21 +159,9 @@ def map_entities2redirects(all_entities, redirects):
 
         tmp.append((page_title, entity_type))
 
-    return pd.DataFrame(tmp, columns=['page_title', 'TYPE']).set_index('page_title')
+    output = pd.DataFrame(tmp, columns=['page_title', 'TYPE']).set_index('page_title')
 
-
-def get_pages(category, sqlite3_file):
-
-    with sqlite3.connect(sqlite3_file) as cnx:
-
-        beg_cats = get_sub_cats(category, cnx)
-
-        beg_pages = get_category_pages(beg_cats, cnx).\
-                        reset_index().\
-                        set_index('page_title').\
-                        sort_index()
-
-    return beg_pages
+    output.to_pickle(output_file)
 
 
 def get_disambiguation(sqlite3_file):
@@ -151,12 +170,14 @@ def get_disambiguation(sqlite3_file):
 
 
 @click.command()
-@click.argument('sqlite3-file', type=click.Path(), required=True, nargs=1)
+@click.argument('sqlite3-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('entity-file', type=click.Path(), required=True, nargs=1)
-def ner(sqlite3_file, entity_file):
+def extract(sqlite3_file, entity_file):
     """
+    Runs recursively through the super categories "Organisation", "Geographisches Objekt", "Frau", "Mann"
+    in order to determine all ORG, LOC, PER entities from the german wikipedia.
 
-    SQLITE3_FILE: Wikipedia database as sqlite3 file.
+    SQLITE3_FILE: German Wikipedia database as sqlite3 file.
 
     ==>REQUIRED tables: page, categorylinks, redirects.
 
@@ -199,3 +220,72 @@ def ner(sqlite3_file, entity_file):
     all_entities = all_entities.set_index('page_title').sort_index()
 
     all_entities.to_pickle(entity_file)
+
+
+@click.command()
+@click.argument('output-dir', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('languages', type=str, required=True, nargs=1)
+@click.argument('entity-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('entity_wikipedia', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('other_wikipedias', nargs=-1, type=click.Path(exists=True))
+def wikidatamapping(output_dir, languages, entity_file, entity_wikipedia, other_wikipedias):
+    """
+
+    OUTPUT_DIR: directory to write result files
+
+    LANGUAGES: string that contains the language identifiers of all the wikipedia's in correct order,
+    separated by '|'. Example: 'DE|FR|EN'
+
+    ENTITY_FILE: Pickled DataFrame contains the considered entities (created by entities.extract).
+
+    ENTITY_WIKIPEDIA: The wikipedia sqlite database file from where the entity file has been obtained.
+
+    OTHER_WIKIPEDIAS: List of wikipedia sqlite database files of other languages that should be mapped onto the
+    ENTITY_FILE.
+
+    OUTPUT: wikidata-mapping.pkl: pickled DataFrame containing the mapping plus single per language entity
+    files, for instance:
+
+            de-wikipedia-ner-entities.pkl
+
+            fr-wikipedia-ner-entities.pkl
+
+            en-wikipedia-ner-entities.pkl
+    """
+
+    languages = languages.split('|')
+
+    all_entities = pd.read_pickle(entity_file)
+
+    qid_query = "select page.page_title, page_props.pp_value from page join page_props "\
+                "on page.page_id==page_props.pp_page "\
+                "where page.page_namespace==0 and page_props.pp_propname=='wikibase_item'"
+
+    with sqlite3.connect(entity_wikipedia) as db:
+
+        tmp = pd.read_sql(qid_query, db).\
+            rename(columns={'pp_value': 'QID', 'page_title': languages[0]})
+
+        mapping = all_entities.merge(tmp, left_index=True, right_on=languages[0])
+
+    for lang, other_wikipedia in zip(languages[1:], other_wikipedias):
+
+        with sqlite3.connect(other_wikipedia) as db:
+            tmp = pd.read_sql(qid_query, db).\
+                rename(columns={'pp_value': 'QID', 'page_title': lang})
+
+        mapping = mapping.merge(tmp, on='QID', how='left')
+
+    mapping = mapping.set_index('QID').reset_index().sort_values('QID')
+
+    mapping.to_pickle("{}/wikidata-mapping.pkl".format(output_dir))
+
+    for lang in languages:
+
+        tmp = mapping[[lang, 'TYPE']].\
+            dropna(how='any').\
+            rename(columns={lang: 'page_title'}).\
+            set_index('page_title').\
+            sort_index()
+
+        tmp.to_pickle("{}/{}-wikipedia-ner-entities.pkl".format(output_dir, lang.lower()))
