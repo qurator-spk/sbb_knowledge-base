@@ -17,6 +17,9 @@ with warnings.catch_warnings():
     from qurator.utils.parallel import run as prun
     import sqlite3
     import html
+    import logging
+
+logger = logging.getLogger(__name__)
 
 
 def create_connection(db_file):
@@ -29,38 +32,48 @@ def create_connection(db_file):
 
 
 def clean_text(raw_text):
-    raw_text = re.sub(r'== Literatur ==.*$', r'', raw_text, flags=re.DOTALL)  # remove literature references
 
-    raw_text = re.sub(r'== Filme ==.*$', r'', raw_text, flags=re.DOTALL)  # remove movie references
+    try:
 
-    raw_text = re.sub(r'<!--.*?-->', r' ', raw_text, flags=re.DOTALL)  # remove comments
+        # remove literature references
+        raw_text = re.sub(r'== (Literatur|Références|References|Bibliographie|Further reading) ==.*$', r'',
+                          raw_text, flags=re.DOTALL)
 
-    raw_text = re.sub(r'<[^<]*?/>', r' ', raw_text, flags=re.DOTALL)  # remove < ... />
+        # remove movie references
+        raw_text = re.sub(r'== (Filme|Film|Filmographie|Œuvres) ==.*$', r'', raw_text, flags=re.DOTALL)
 
-    raw_text = re.sub(r'<[^/]+?>.*?</.+?>', ' ', raw_text, flags=re.DOTALL)  # remove stuff like <ref> .... </ref>
+        raw_text = re.sub(r'<!--.*?-->', r' ', raw_text, flags=re.DOTALL)  # remove comments
 
-    while re.match(r'.*{\|.*?\|}.*', raw_text, flags=re.DOTALL):
-        raw_text = re.sub(r'{\|((?!{\|).)*?\|}', r'', raw_text, flags=re.DOTALL)  # remove tables {| ...|}
+        raw_text = re.sub(r'<[^<]*?/>', r' ', raw_text, flags=re.DOTALL)  # remove < ... />
 
-    while re.match(r'.*{{[^{]+?}}.*', raw_text, flags=re.DOTALL):
-        raw_text = re.sub(r'{{[^{]+?}}', r'', raw_text, flags=re.DOTALL)  # remove {{ ... }}
+        raw_text = re.sub(r'<[^/]+?>.*?</.+?>', ' ', raw_text, flags=re.DOTALL)  # remove stuff like <ref> .... </ref>
 
-    raw_text = re.sub(r'={2,10}.*?={2,10}', r' ', raw_text, flags=re.DOTALL)  # remove == ... ==
+        while re.match(r'.*{\|.*?\|}.*', raw_text, flags=re.DOTALL):
+            raw_text = re.sub(r'{\|((?!{\|).)*?\|}', r'', raw_text, flags=re.DOTALL)  # remove tables {| ...|}
 
-    raw_text = re.sub(r'&nbsp;', r' ', raw_text)  # remove  "&nbsp;"
+        while re.match(r'.*{{[^{]+?}}.*', raw_text, flags=re.DOTALL):
+            raw_text = re.sub(r'{{[^{]+?}}', r'', raw_text, flags=re.DOTALL)  # remove {{ ... }}
 
-    # re-write wikipedia links to prepare for removal of file and http links ...
-    raw_text = re.sub(r'\[\[([^|\[]*?)([|]?)([^|]+?)\]\]', r'{|\1\2\3|}', raw_text)
+        raw_text = re.sub(r'={2,10}.*?={2,10}', r' ', raw_text, flags=re.DOTALL)  # remove == ... ==
 
-    # remove file and http links
-    raw_text = re.sub(r'\[\[Datei:.+?\]\]', r'', raw_text)  # remove file links [[Datei: ....]]
+        raw_text = re.sub(r'&nbsp;', r' ', raw_text)  # remove  "&nbsp;"
 
-    raw_text = re.sub(r'\[https?://.+?\]', r'', raw_text)  # remove http/https links [http: ....]
+        # re-write wikipedia links to prepare for removal of file and http links ...
+        raw_text = re.sub(r'\[\[([^|\[]*?)([|]?)([^|]+?)\]\]', r'{|\1\2\3|}', raw_text)
 
-    # re-write wikipedia links back to standard wikipedia format
-    raw_text = re.sub(r'{\|([^|\[]*?)([|]?)([^|]+?)\|}', r'[[\1\2\3]]', raw_text)
+        # remove file and http links
+        raw_text = re.sub(r'\[\[(Datei|Fichier|File):.+?\]\]', r'', raw_text)  # remove file links [[Datei: ....]]
 
-    return raw_text
+        raw_text = re.sub(r'\[https?://.+?\]', r'', raw_text)  # remove http/https links [http: ....]
+
+        # re-write wikipedia links back to standard wikipedia format
+        raw_text = re.sub(r'{\|([^|\[]*?)([|]?)([^|]+?)\|}', r'[[\1\2\3]]', raw_text)
+
+        return raw_text
+    except:
+        logger.error('clean_text: Problem!!!!: {}'.format(raw_text))
+
+        return ''
 
 
 # def iterate_page_links(all_entities, redirects, raw_text):
@@ -535,9 +548,13 @@ def tag_entities2sqlite(fulltext_sqlite, all_entities_file, wikipedia_sqlite_fil
 
     disambiguation = get_disambiguation(wikipedia_sqlite_file)
 
+    first_write = True
+
     with create_connection(tagged_sqlite) as write_conn:
 
         def write_tagged(tagged):
+
+            nonlocal first_write
 
             if len(tagged) == 0:
                 return
@@ -545,6 +562,16 @@ def tag_entities2sqlite(fulltext_sqlite, all_entities_file, wikipedia_sqlite_fil
             df_tagged = pd.DataFrame.from_dict(tagged).reset_index(drop=True).set_index('page_id')
 
             df_tagged.to_sql('tagged', con=write_conn, if_exists='append', index_label='page_id')
+
+            if first_write:
+
+                try:
+                    write_conn.execute('create index idx_ppn on tagged(page_id);')
+                    write_conn.execute('create index idx_page_title on tagged(page_title);')
+                except sqlite3.OperationalError:
+                    logger.error('Could not create database index!!!')
+
+                first_write = False
 
             return
 
@@ -563,12 +590,6 @@ def tag_entities2sqlite(fulltext_sqlite, all_entities_file, wikipedia_sqlite_fil
                 tagged_list = []
 
         write_tagged(tagged_list)
-
-        try:
-            write_conn.execute('create index idx_ppn on tagged(page_id);')
-            write_conn.execute('create index idx_page_title on tagged(page_title);')
-        except sqlite3.OperationalError:
-            pass
 
     return
 

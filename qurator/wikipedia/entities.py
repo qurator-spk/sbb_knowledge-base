@@ -285,6 +285,7 @@ def wikidatamapping(output_dir, languages, entity_file, entity_wikipedia, other_
         tmp = mapping[[lang, 'TYPE']].\
             dropna(how='any').\
             rename(columns={lang: 'page_title'}).\
+            drop_duplicates(subset='page_title').\
             set_index('page_title').\
             sort_index()
 
