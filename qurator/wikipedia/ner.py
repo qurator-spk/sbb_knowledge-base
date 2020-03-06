@@ -536,7 +536,8 @@ def tag_entities2sqlite(fulltext_sqlite, all_entities_file, wikipedia_sqlite_fil
 
     WIKIPEDIA_SQLITE_FILE: sqlite3 dump of wikipedia that contains the redirect table.
 
-    TAGGED_SQLITE: result sqlite file.
+    TAGGED_SQLITE: result sqlite file. The file provides per article access to the fulltext where all relevant
+    entities according to ALL_ENTITIES_FILE have been tagged.
     """
 
     all_entities = pd.read_pickle(all_entities_file)

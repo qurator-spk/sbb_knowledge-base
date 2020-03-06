@@ -182,6 +182,7 @@ def extract(sqlite3_file, entity_file):
     ==>REQUIRED tables: page, categorylinks, redirects.
 
     ENTITY_FILE: Result file. Contains a pickled pandas DataFrame with all PER,LOC and ORG entities.
+    For other non-german languages, ENTITY_FILE can be mapped via wikidata-QIDs (see wikidatamapping).
     """
 
     with sqlite3.connect(sqlite3_file) as cnx:
@@ -236,9 +237,9 @@ def wikidatamapping(output_dir, languages, entity_file, entity_wikipedia, other_
     LANGUAGES: string that contains the language identifiers of all the wikipedia's in correct order,
     separated by '|'. Example: 'DE|FR|EN'
 
-    ENTITY_FILE: Pickled DataFrame contains the considered entities (created by entities.extract).
+    ENTITY_FILE: Pickled DataFrame contains the considered entities (created by extract-wiki-ner-entities).
 
-    ENTITY_WIKIPEDIA: The wikipedia sqlite database file from where the entity file has been obtained.
+    ENTITY_WIKIPEDIA: The wikipedia sqlite database file from where the ENTITY_FILE has been obtained.
 
     OTHER_WIKIPEDIAS: List of wikipedia sqlite database files of other languages that should be mapped onto the
     ENTITY_FILE.
