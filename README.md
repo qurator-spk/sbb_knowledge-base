@@ -243,7 +243,7 @@ Usage: collectcorpus [OPTIONS] FULLTEXT_FILE SELECTION_FILE CORPUS_FILE
   SELECTION_FILE: Consider only a subset of all pages that is defined by the
   DataFrame that is stored in <selection_file>.
 
-  CORPUS_FILE: The output file.
+  CORPUS_FILE: The output file that can be used by bert-pregenerate-trainingdata.
 
 Options:
   --chunksize INTEGER     Process the corpus in chunks of <chunksize>.
