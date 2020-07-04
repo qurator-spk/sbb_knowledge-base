@@ -122,8 +122,6 @@ See [Makefile](Makefile) for entire pre-processing chain.
 
 ### Altotool
 
-#### Usage
-
 ```
 altotool --help
 
@@ -161,15 +159,7 @@ Options:
   --help               Show this message and exit.
 ```
 
-#### Usage
-
-```
-corpusentropy --help
-```
-
 ### corpuslanguage
-
-#### Usage
 
 ```
 corpuslanguage --help
@@ -209,8 +199,6 @@ Options:
 ## BERT-NER-Pre-training:
 
 ### collectcorpus
-
-#### Usage
 
 ```
 collectcorpus --help
@@ -259,3 +247,5 @@ Perform BERT pre-training on pre-generated data.
 ```
 bert-finetune --help
 ```
+
+***
