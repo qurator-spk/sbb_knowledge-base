@@ -120,7 +120,7 @@ These tools can be used only internally within the SBB in order to extract BERT 
 data from the ALTO-XML files of the digital collections of the SBB.
 See [Makefile](Makefile) for entire pre-processing chain.
 
-### Altotool
+### altotool
 
 ```
 altotool --help
@@ -226,7 +226,7 @@ Options:
 ```
 
 ***
-## BERT-NER-Pre-training:
+## BERT-Pre-training:
 
 ### collectcorpus
 
