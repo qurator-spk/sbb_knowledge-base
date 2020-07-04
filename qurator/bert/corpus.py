@@ -134,7 +134,7 @@ def collect(fulltext_file, selection_file, corpus_file, chunksize, processes, mi
     SELECTION_FILE: Consider only a subset of all pages that is defined by the DataFrame
     that is stored in <selection_file>.
 
-    CORPUS_FILE: The output file.
+    CORPUS_FILE: The output file that can be used by bert-pregenerate-trainingdata.
     """
     os.makedirs(os.path.dirname(corpus_file), exist_ok=True)
 
