@@ -46,7 +46,9 @@ setup(
         "batchner=qurator.sbb.ner:on_db_file",
         "show-ner-models=qurator.sbb.ner:show_models",
 
-        "example=qurator.examples.multiprocessing:example"
+        "example=qurator.examples.multiprocessing:example",
+
+        "run-sparql=qurator.wikidata.cli:cli_run_sparql"
       ]
     },
     python_requires='>=3.6.0',
