@@ -20,11 +20,11 @@ def cli_run_sparql(out_file, endpoint=None, query=None):
 
 def run_sparql(endpoint=None, query=None):
 
-    if endpoint is None:
+    if endpoint is None:  # use wikidata.org endpoint as default
 
         endpoint = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
 
-    if query is None:
+    if query is None:  # test query as default
         query = 'SELECT ?pres ?presLabel ?spouse ?spouseLabel WHERE {\
                 ?pres wdt:P31 wd:Q5 .\
                 ?pres wdt:P39 wd:Q11696 .\
@@ -35,6 +35,8 @@ def run_sparql(endpoint=None, query=None):
               }'
 
     resp = requests.get(url=endpoint, params={'query': query}, headers={'Accept': 'application/json'})
+
+    resp.raise_for_status()
 
     result = json.loads(resp.content)
 
