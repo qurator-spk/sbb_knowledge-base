@@ -6,12 +6,23 @@ import click
 
 @click.command()
 @click.argument('out-file', type=click.Path(exists=False), required=True, nargs=1)
-@click.argument('endpoint', type=str, default=None, required=False)
-@click.argument('query', type=str, default=None, required=False)
-def cli_run_sparql(out_file, endpoint=None, query=None):
+@click.option('--endpoint', type=str, default=None,
+              help="SPARQL endpoint. Default https://query.wikidata.org/bigdata/namespace/wdq/sparql.")
+@click.option('--query', type=str, default=None, help="SPARQL query.")
+@click.option('--query-file', type=click.Path(exists=True), default=None, help="Read query from file")
+def cli_run_sparql(out_file, endpoint=None, query=None, query_file=None):
     """
     Runs a SPARQL query QUERY on ENDPOINT and saves the results as pickled pandas DataFrame in OUT_FILE.
     """
+
+    if query is None and query_file is None:
+        raise RuntimeError("Either query or query file required.")
+
+    if query is None:
+
+        with open(query_file, "r") as file:
+
+            query = file.read()
 
     ret = run_sparql(endpoint, query)
 
