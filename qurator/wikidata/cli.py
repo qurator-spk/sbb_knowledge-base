@@ -2,6 +2,8 @@ import pandas as pd
 import requests
 import json
 import click
+from pprint import pprint
+import re
 
 
 @click.command()
@@ -10,26 +12,38 @@ import click
               help="SPARQL endpoint. Default https://query.wikidata.org/bigdata/namespace/wdq/sparql.")
 @click.option('--query', type=str, default=None, help="SPARQL query.")
 @click.option('--query-file', type=click.Path(exists=True), default=None, help="Read query from file")
-def cli_run_sparql(out_file, endpoint=None, query=None, query_file=None):
+@click.option('--analytic', type=bool, default=False, is_flag=True, help="Run query in analytic mode (Blazegraph specific).")
+@click.option('--demo', type=bool, default=False, is_flag=True, help="Run demo query.")
+@click.option('--lang', type=str, default=None, help="Replace __LANG__ in query by this value. Default: empty.")
+@click.option('--site', type=str, default=None, help="Replace __SITE__ in query by this value. Default: empty.")
+def cli_run_sparql(out_file, endpoint=None, query=None, query_file=None, analytic=False, demo=False, lang=None, site=None):
     """
     Runs a SPARQL query QUERY on ENDPOINT and saves the results as pickled pandas DataFrame in OUT_FILE.
     """
-
-    if query is None and query_file is None:
+    if demo:
+        pass
+    elif query is None and query_file is None:
         raise RuntimeError("Either query or query file required.")
-
-    if query is None:
+    elif query is not None and query_file is not None:
+        raise RuntimeError("Either command line query or query file supported.")
+    elif query is None:
 
         with open(query_file, "r") as file:
 
             query = file.read()
 
-    ret = run_sparql(endpoint, query)
+    if lang is not None:
+        query = re.sub("__LANG__", lang, query)
+
+    if site is not None:
+        query = re.sub("__SITE__", site, query)
+
+    ret = run_sparql(endpoint, query, analytic)
 
     ret.to_pickle(out_file)
 
 
-def run_sparql(endpoint=None, query=None):
+def run_sparql(endpoint=None, query=None, analytic=False):
 
     if endpoint is None:  # use wikidata.org endpoint as default
 
@@ -45,7 +59,12 @@ def run_sparql(endpoint=None, query=None):
                 }\
               }'
 
-    resp = requests.get(url=endpoint, params={'query': query}, headers={'Accept': 'application/json'})
+        print('Running demo query:')
+
+    if analytic:
+        endpoint += "&analytic=true"
+        
+    resp = requests.get(url=endpoint, params={'query': query, 'analytic': str.lower(str(analytic))}, headers={'Accept': 'application/json'})
 
     resp.raise_for_status()
 

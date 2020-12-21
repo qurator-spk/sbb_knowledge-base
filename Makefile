@@ -3,6 +3,7 @@ ALTOSOURCEPATH ?=/srv/digisam_ocr
 ALTOTARGETPATH ?=/qurator-share/alto-ner-annotated
 
 DATA_DIR ?=data/digisam
+WIKI_DATA_DIR ?=data/wikidata
 
 PROCESSES ?=20
 
@@ -11,6 +12,8 @@ MIN_ENTROPY_QUANTILE ?=0.2
 MAX_ENTROPY_QUANTILE ?=0.8
 
 NER_ENDPOINTS ?=http://b-lx0053.sbb.spk-berlin.de:8080 http://b-lx0053.sbb.spk-berlin.de:8081 http://b-lx0053.sbb.spk-berlin.de:8082 http://b-lx0059.sbb.spk-berlin.de:8080 http://b-lx0059.sbb.spk-berlin.de:8081 http://b-lx0059.sbb.spk-berlin.de:8082
+
+SPARQL_ENDPOINT ?=http://b-lx0053.sbb.spk-berlin.de/wikidata2/namespace/wdq/sparql
 
 $(DATA_DIR):
 	mkdir -p $@
@@ -40,6 +43,23 @@ corpus:	$(DATA_DIR)/language.pkl $(DATA_DIR)/entropy.pkl
 
 alto-ner:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 	alto-annotator $? $(ALTOSOURCEPATH) $(ALTOTARGETPATH) --processes=$(PROCESSES)
+
+QUERIES:=$(wildcard sparql/*.query)
+DE_QUERY_RESULTS:=$(patsubst sparql/%.query, $(WIKI_DATA_DIR)/de-%.pkl, $(QUERIES))
+FR_QUERY_RESULTS:=$(patsubst sparql/%.query, $(WIKI_DATA_DIR)/fr-%.pkl, $(QUERIES))
+EN_QUERY_RESULTS:=$(patsubst sparql/%.query, $(WIKI_DATA_DIR)/en-%.pkl, $(QUERIES))
+
+$(WIKI_DATA_DIR)/de-%.pkl : sparql/%.query
+	run-sparql --query-file $< $@  --endpoint $(SPARQL_ENDPOINT) --lang de --site de.wikipedia.org
+
+$(WIKI_DATA_DIR)/fr-%.pkl : sparql/%.query
+	run-sparql --query-file $< $@  --endpoint $(SPARQL_ENDPOINT) --lang fr --site fr.wikipedia.org
+
+$(WIKI_DATA_DIR)/en-%.pkl : sparql/%.query
+	run-sparql --query-file $< $@  --endpoint $(SPARQL_ENDPOINT) --lang en --site en.wikipedia.org
+
+
+sparql:	$(DE_QUERY_RESULTS) $(FR_QUERY_RESULTS) $(EN_QUERY_RESULTS)  
 
 sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 	

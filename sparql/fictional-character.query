@@ -1,0 +1,8 @@
+SELECT ?person ?label ?sitelink
+WHERE
+{
+  ?person wdt:P31/wdt:P279* wd:Q95074;rdfs:label ?label. # instance of any subclass of fictional character
+  FILTER(LANG(?label) = "__LANG__").
+  ?sitelink schema:about ?person .
+  FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
+}
