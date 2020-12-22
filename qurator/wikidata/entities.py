@@ -22,7 +22,7 @@ def load_entities(path, lang):
 
         tmp = tmp.loc[~tmp[entity_type].isin(woa.woa)].\
             reset_index(drop=True).\
-            rename(column={entity_type: 'wikidata'})
+            rename(columns={entity_type: 'wikidata'})
 
         return tmp
 
@@ -32,10 +32,14 @@ def load_entities(path, lang):
 
     org = load_classes(org_classes, 'organisation')
 
-    per['TYPE'] = 'PER'
-    loc['TYPE'] = 'LOC'
-    org['TYPE'] = 'ORG'
+    ent = pd.concat([per, loc, org], sort=True).drop_duplicates(subset=['wikidata']).reset_index(drop=True).set_index('wikidata')
 
-    ent = pd.concat([per, loc, org]).drop_duplicates(subset=['wikidata'], keep=False)
+    ent['PER'] = False
+    ent['LOC'] = False
+    ent['ORG'] = False
+
+    ent.loc[per.wikidata, 'PER'] = True
+    ent.loc[loc.wikidata, 'LOC'] = True
+    ent.loc[org.wikidata, 'ORG'] = True
 
     return ent
