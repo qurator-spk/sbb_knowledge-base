@@ -12,11 +12,13 @@ import re
               help="SPARQL endpoint. Default https://query.wikidata.org/bigdata/namespace/wdq/sparql.")
 @click.option('--query', type=str, default=None, help="SPARQL query.")
 @click.option('--query-file', type=click.Path(exists=True), default=None, help="Read query from file")
-@click.option('--analytic', type=bool, default=False, is_flag=True, help="Run query in analytic mode (Blazegraph specific).")
+@click.option('--analytic', type=bool, default=False, is_flag=True,
+              help="Run query in analytic mode (Blazegraph specific).")
 @click.option('--demo', type=bool, default=False, is_flag=True, help="Run demo query.")
 @click.option('--lang', type=str, default=None, help="Replace __LANG__ in query by this value. Default: empty.")
 @click.option('--site', type=str, default=None, help="Replace __SITE__ in query by this value. Default: empty.")
-def cli_run_sparql(out_file, endpoint=None, query=None, query_file=None, analytic=False, demo=False, lang=None, site=None):
+def cli_run_sparql(out_file, endpoint=None, query=None, query_file=None, analytic=False, demo=False, lang=None,
+                   site=None):
     """
     Runs a SPARQL query QUERY on ENDPOINT and saves the results as pickled pandas DataFrame in OUT_FILE.
     """
@@ -64,7 +66,8 @@ def run_sparql(endpoint=None, query=None, analytic=False):
     if analytic:
         endpoint += "&analytic=true"
         
-    resp = requests.get(url=endpoint, params={'query': query, 'analytic': str.lower(str(analytic))}, headers={'Accept': 'application/json'})
+    resp = requests.get(url=endpoint, params={'query': query, 'analytic': str.lower(str(analytic))},
+                        headers={'Accept': 'application/json'})
 
     resp.raise_for_status()
 
