@@ -1,4 +1,5 @@
 import pandas as pd
+import urllib
 
 
 def load_entities(path, lang):
@@ -41,5 +42,11 @@ def load_entities(path, lang):
     ent.loc[per.wikidata, 'PER'] = True
     ent.loc[loc.wikidata, 'LOC'] = True
     ent.loc[org.wikidata, 'ORG'] = True
+
+    ent['page_title'] = [urllib.parse.unquote(s) for s in ent.sitelink.str.split('/').str[-1].to_list()]
+
+    ent = ent.reset_index().set_index('page_title')
+
+    ent.loc[ent.PER & ent.ORG, 'PER'] = False
 
     return ent
