@@ -3,8 +3,6 @@ WHERE
 {
   ?organisation wdt:P31/wdt:P279* wd:Q17149090;rdfs:label ?label. # instance of any subclass of armed organization
   FILTER(LANG(?label) = "__LANG__").
-  # SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
   ?sitelink schema:about ?organisation.
-  #?sitelink schema:inLanguage "en" .     
   FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
 }

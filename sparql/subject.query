@@ -4,5 +4,5 @@ WHERE
   ?person wdt:P31/wdt:P279* wd:Q830077;rdfs:label ?label. # instance of any subclass of subject
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?person .
-  FILTER (CONTAINS(str(?sitelink), "__LANG__")) .
+  FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
 }
