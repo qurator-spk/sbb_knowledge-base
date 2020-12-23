@@ -1,5 +1,3 @@
-###############################################################################
-#wikipedia
 WIKIPEDIA_DIR?=data/wikipedia
 WIKIDATA_DIR?=data/wikidata
 PROCESSES?=6
@@ -39,8 +37,8 @@ $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3:	%-wikipedia-files
 #$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl
 #	wikidatamapping $(WIKIPEDIA_DIR) "DE|FR|EN" $(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
 
-$(WIKIPEDIA_DIR)/%-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/%-wikipedia-ner-entities.pkl
-	redirects2entities $^ $@
+#$(WIKIPEDIA_DIR)/%-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/%-wikipedia-ner-entities.pkl
+#	redirects2entities $^ $@
 
 $(WIKIPEDIA_DIR)/%-fulltext.sqlite:	$(WIKIPEDIA_DIR)/%wiki-latest-pages-articles-multistream.xml
 	extract-wiki-full-text-sqlite $< $@
