@@ -19,3 +19,8 @@ $(WIKI_DATA_DIR)/en-%.pkl : sparql/%.query
 
 
 sparql:	$(DE_QUERY_RESULTS) $(FR_QUERY_RESULTS) $(EN_QUERY_RESULTS)
+
+$(WIKI_DATA_DIR)/%-wikipedia-ner-entities.pkl:	sparql
+	join-entities $(WIKI_DATA_DIR) $* $@
+
+ner-entities:	$(WIKI_DATA_DIR)/de-wikipedia-ner-entities.pkl $(WIKI_DATA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKI_DATA_DIR)/en-wikipedia-ner-entities.pkl

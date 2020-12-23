@@ -48,7 +48,8 @@ setup(
 
         "example=qurator.examples.multiprocessing:example",
 
-        "run-sparql=qurator.wikidata.cli:cli_run_sparql"
+        "run-sparql=qurator.wikidata.cli:cli_run_sparql",
+        "join-entities=qurator.wikidata.cli:join_entities"
       ]
     },
     python_requires='>=3.6.0',
