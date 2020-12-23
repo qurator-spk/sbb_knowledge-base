@@ -1,0 +1,21 @@
+
+WIKI_DATA_DIR ?=data/wikidata
+
+SPARQL_ENDPOINT ?=http://b-lx0053.sbb.spk-berlin.de/wikidata2/namespace/wdq/sparql
+
+QUERIES:=$(wildcard sparql/*.query)
+DE_QUERY_RESULTS:=$(patsubst sparql/%.query, $(WIKI_DATA_DIR)/de-%.pkl, $(QUERIES))
+FR_QUERY_RESULTS:=$(patsubst sparql/%.query, $(WIKI_DATA_DIR)/fr-%.pkl, $(QUERIES))
+EN_QUERY_RESULTS:=$(patsubst sparql/%.query, $(WIKI_DATA_DIR)/en-%.pkl, $(QUERIES))
+
+$(WIKI_DATA_DIR)/de-%.pkl : sparql/%.query
+	run-sparql --query-file $< $@  --endpoint $(SPARQL_ENDPOINT) --lang de --site de.wikipedia.org
+
+$(WIKI_DATA_DIR)/fr-%.pkl : sparql/%.query
+	run-sparql --query-file $< $@  --endpoint $(SPARQL_ENDPOINT) --lang fr --site fr.wikipedia.org
+
+$(WIKI_DATA_DIR)/en-%.pkl : sparql/%.query
+	run-sparql --query-file $< $@  --endpoint $(SPARQL_ENDPOINT) --lang en --site en.wikipedia.org
+
+
+sparql:	$(DE_QUERY_RESULTS) $(FR_QUERY_RESULTS) $(EN_QUERY_RESULTS)
