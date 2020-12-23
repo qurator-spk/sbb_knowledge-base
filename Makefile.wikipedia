@@ -1,114 +1,56 @@
 ###############################################################################
 #wikipedia
-WIKIPEDIA_DIR=data/wikipedia
+WIKIPEDIA_DIR?=data/wikipedia
+WIKIDATA_DIR?=data/wikidata
 PROCESSES?=6
 
 clean:
 	rm -f $(WIKIPEDIA_DIR)/*.sql
 	rm -f $(WIKIPEDIA_DIR)/*.xml
 
-$(WIKIPEDIA_DIR)/dewiki-latest-pages-articles-multistream.xml:
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles-multistream.xml.bz2
-	bunzip2 $(WIKIPEDIA_DIR)/dewiki*bz2
+$(WIKIPEDIA_DIR)/%wiki-latest-pages-articles-multistream.xml:
+	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/$*wiki/latest/$*wiki-latest-pages-articles-multistream.xml.bz2
+	bunzip2 $(WIKIPEDIA_DIR)/$*wiki*bz2
 
-$(WIKIPEDIA_DIR)/frwiki-latest-pages-articles-multistream.xml:
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/frwiki/latest/frwiki-latest-pages-articles-multistream.xml.bz2
-	bunzip2 $(WIKIPEDIA_DIR)/frwiki*bz2
-
-$(WIKIPEDIA_DIR)/enwiki-latest-pages-articles-multistream.xml:
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles-multistream.xml.bz2
-	bunzip2 $(WIKIPEDIA_DIR)/enwiki*bz2
-
-de-wikipedia-files:
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-categorylinks.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-category.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-page.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-redirect.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-page_props.sql.gz
-	gunzip $(WIKIPEDIA_DIR)/dewiki*.gz
-fr-wikipedia-files:
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/frwiki/latest/frwiki-latest-categorylinks.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/frwiki/latest/frwiki-latest-category.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/frwiki/latest/frwiki-latest-page.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/frwiki/latest/frwiki-latest-redirect.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/frwiki/latest/frwiki-latest-page_props.sql.gz
-	gunzip $(WIKIPEDIA_DIR)/frwiki*.gz
-en-wikipedia-files:
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-categorylinks.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-category.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-page.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-redirect.sql.gz
-	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-page_props.sql.gz
-	gunzip $(WIKIPEDIA_DIR)/enwiki*.gz
+%-wikipedia-files:
+	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/$*wiki/latest/$*wiki-latest-categorylinks.sql.gz
+	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/$*wiki/latest/$*wiki-latest-category.sql.gz
+	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/$*wiki/latest/$*wiki-latest-page.sql.gz
+	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/$*wiki/latest/$*wiki-latest-redirect.sql.gz
+	wget -nc --directory-prefix=$(WIKIPEDIA_DIR) https://dumps.wikimedia.org/$*wiki/latest/$*wiki-latest-page_props.sql.gz
+	gunzip $(WIKIPEDIA_DIR)/$*wiki*.gz
 
 mysql2sqlite:
 	git clone https://github.com/dumblob/mysql2sqlite.git
 
-$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3:	de-wikipedia-files
+$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3:	%-wikipedia-files
 	rm -f $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/dewiki-latest-category.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/dewiki-latest-categorylinks.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/dewiki-latest-page.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/dewiki-latest-redirect.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/dewiki-latest-page_props.sql | sqlite3 $@
-	rm $(WIKIPEDIA_DIR)/dewiki*.sql
-
-$(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3:	fr-wikipedia-files
-	rm -f $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/frwiki-latest-category.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/frwiki-latest-categorylinks.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/frwiki-latest-page.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/frwiki-latest-redirect.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/frwiki-latest-page_props.sql | sqlite3 $@
-	rm $(WIKIPEDIA_DIR)/frwiki*.sql
-
-$(WIKIPEDIA_DIR)/en-wikipedia.sqlite3:	en-wikipedia-files
-	rm -f $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/enwiki-latest-category.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/enwiki-latest-categorylinks.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/enwiki-latest-page.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/enwiki-latest-redirect.sql | sqlite3 $@
-	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/enwiki-latest-page_props.sql | sqlite3 $@
-	rm $(WIKIPEDIA_DIR)/enwiki*.sql
+	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-category.sql | sqlite3 $@
+	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-categorylinks.sql | sqlite3 $@
+	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-page.sql | sqlite3 $@
+	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-redirect.sql | sqlite3 $@
+	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-page_props.sql | sqlite3 $@
+	rm $(WIKIPEDIA_DIR)/$*wiki*.sql
 
 $(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3
 	extract-wiki-ner-entities $^ $@
 
 
-$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl 
-	wikidatamapping $(WIKIPEDIA_DIR) "DE|FR|EN" $(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
+#$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl
+#	wikidatamapping $(WIKIPEDIA_DIR) "DE|FR|EN" $(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
 
-$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl
-	redirects2entities $^ $@
-$(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl
-	redirects2entities $^ $@
-$(WIKIPEDIA_DIR)/en-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/en-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl
+$(WIKIPEDIA_DIR)/%-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/%-wikipedia-ner-entities.pkl
 	redirects2entities $^ $@
 
-
-$(WIKIPEDIA_DIR)/de-fulltext.sqlite:	$(WIKIPEDIA_DIR)/dewiki-latest-pages-articles-multistream.xml
-	extract-wiki-full-text-sqlite $< $@
-	rm $<
-$(WIKIPEDIA_DIR)/fr-fulltext.sqlite:	$(WIKIPEDIA_DIR)/frwiki-latest-pages-articles-multistream.xml
-	extract-wiki-full-text-sqlite $< $@
-	rm $<
-$(WIKIPEDIA_DIR)/en-fulltext.sqlite:	$(WIKIPEDIA_DIR)/enwiki-latest-pages-articles-multistream.xml
+$(WIKIPEDIA_DIR)/%-fulltext.sqlite:	$(WIKIPEDIA_DIR)/%wiki-latest-pages-articles-multistream.xml
 	extract-wiki-full-text-sqlite $< $@
 	rm $<
 
-
-$(WIKIPEDIA_DIR)/de-wikipedia-tagged.sqlite:	$(WIKIPEDIA_DIR)/de-fulltext.sqlite $(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/de-wikipedia.sqlite3
+$(WIKIPEDIA_DIR)/%-wikipedia-tagged.sqlite:	$(WIKIPEDIA_DIR)/%-fulltext.sqlite $(WIKIDATA_DIR)/%-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3
 	tag-wiki-entities2sqlite --processes=$(PROCESSES) $^ $@
 
-$(WIKIPEDIA_DIR)/fr-wikipedia-tagged.sqlite:	$(WIKIPEDIA_DIR)/fr-fulltext.sqlite $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3
-	tag-wiki-entities2sqlite --processes=$(PROCESSES) $^ $@
-
-$(WIKIPEDIA_DIR)/en-wikipedia-tagged.sqlite:	$(WIKIPEDIA_DIR)/en-fulltext.sqlite $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
-	tag-wiki-entities2sqlite --processes=$(PROCESSES) $^ $@
-
-
-wikipedia-ner-train-test-split:
-	train-test-split-wiki $(WIKIPEDIA_DIR)/wikipedia.sqlite3 0.8 0.1 0.1 $(WIKIPEDIA_DIR)/ner-train-index.pkl $(WIKIPEDIA_DIR)/ner-dev-index.pkl $(WIKIPEDIA_DIR)/ner-test-index.pkl
+#wikipedia-ner-train-test-split:
+#	train-test-split-wiki $(WIKIPEDIA_DIR)/wikipedia.sqlite3 0.8 0.1 0.1 $(WIKIPEDIA_DIR)/ner-train-index.pkl $(WIKIPEDIA_DIR)/ner-dev-index.pkl $(WIKIPEDIA_DIR)/ner-test-index.pkl
 
 sqlite-databases:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
 
