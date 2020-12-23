@@ -2,7 +2,7 @@ import pandas as pd
 import urllib
 
 
-def load_entities(path, lang):
+def load_entities(path, lang, site):
 
     per_classes = ['subject', 'fictional-character', 'fictional-person']
 
@@ -43,10 +43,12 @@ def load_entities(path, lang):
     ent.loc[loc.wikidata, 'LOC'] = True
     ent.loc[org.wikidata, 'ORG'] = True
 
-    ent['page_title'] = [urllib.parse.unquote(s) for s in ent.sitelink.str.split('/').str[-1].to_list()]
+    ent['page_title'] = [urllib.parse.unquote(s) for s in ent.sitelink.str.replace(site,'').to_list()] 
 
     ent = ent.reset_index().set_index('page_title')
 
     ent.loc[ent.PER & ent.ORG, 'PER'] = False
+
+    ent['TYPE'] = [ (('PER|' if p else "|") + ('LOC|' if l else "|") + ('ORG' if o else "")).strip('|') for p,l,o in zip(ent.PER.to_list(), ent.LOC.to_list(), ent.ORG.to_list())]
 
     return ent

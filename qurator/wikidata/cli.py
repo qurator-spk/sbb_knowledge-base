@@ -84,12 +84,13 @@ def run_sparql(endpoint=None, query=None, analytic=False):
 @click.command()
 @click.argument('path', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('lang', type=str, required=True, nargs=1)
+@click.argument('site', type=str, required=True, nargs=1)
 @click.argument('out-file', type=click.Path(exists=False), required=True, nargs=1)
-def join_entities(path, lang, out_file):
+def join_entities(path, lang, site, out_file):
     """
     Load entities of language LANG from files in PATH, join them and write them as joined pandas DataFrame to OUT_FILE.
     """
 
-    ent = load_entities(path, lang)
+    ent = load_entities(path, lang, site)
 
     ent.to_pickle(out_file)

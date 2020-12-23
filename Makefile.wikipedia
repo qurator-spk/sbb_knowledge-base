@@ -32,8 +32,8 @@ $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3:	%-wikipedia-files
 	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-page_props.sql | sqlite3 $@
 	rm $(WIKIPEDIA_DIR)/$*wiki*.sql
 
-$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3
-	extract-wiki-ner-entities $^ $@
+#$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3
+#	extract-wiki-ner-entities $^ $@
 
 
 #$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl

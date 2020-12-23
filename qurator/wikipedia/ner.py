@@ -10,7 +10,8 @@ with warnings.catch_warnings():
     import dask.dataframe as dd
     # import os
     from tqdm import tqdm as tqdm
-    from somajo import Tokenizer, SentenceSplitter
+    from somajo import SentenceSplitter
+    from somajo import SoMaJo as Tokenizer
     import click
     import json
     from qurator.wikipedia.entities import get_redirects, get_disambiguation
@@ -328,13 +329,14 @@ def tokenize_parts(tokenizer, text_parts):
         # part[1] : page title of linked entity if available otherwise ''
         # part[2] : type of entity or 'O'
 
-        tmp = tokenizer.tokenize_paragraph(part[0])
+        tmp = tokenizer.tokenize_text([part[0]])
 
-        for tok_count, tok in enumerate(tmp):
-            # some xml-tags cannot be removed correctly, for instance: '<ref name="20/7"> </ref>'
-            tokens.append(tok.replace(' ', '_'))
+        for sen in tmp:
+            for tok_count, tok in enumerate(sen):
+                # some xml-tags cannot be removed correctly, for instance: '<ref name="20/7"> </ref>'
+                tokens.append(tok.text.replace(' ', '_'))
 
-            meta.append((part[1], part[2] if part[2] == 'O' else 'B-' + part[2] if tok_count == 0 else 'I-' + part[2]))
+                meta.append((part[1], part[2] if part[2] == 'O' else 'B-' + part[2] if tok_count == 0 else 'I-' + part[2]))
 
     return tokens, meta
 
@@ -414,7 +416,8 @@ class EntityTask:
     @staticmethod
     def initialize(all_entities, redirects, disambiguation):
 
-        EntityTask.tokenizer = Tokenizer(split_camel_case=True, token_classes=False, extra_info=False)
+        #EntityTask.tokenizer = Tokenizer(split_camel_case=True, token_classes=False, extra_info=False)
+        EntityTask.tokenizer =  Tokenizer('de_CMC', split_camel_case=True) 
         EntityTask.spl = SentenceSplitter()
         EntityTask.all_entities = all_entities
         EntityTask.redirects = redirects
