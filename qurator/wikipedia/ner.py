@@ -342,7 +342,12 @@ def tokenize_parts(tokenizer, text_parts):
 
 
 def annotated_tokenization(raw_text, tokenizer, sentence_splitter, all_entities, redirects):
+    result_columns = ['sentence', 'token', 'word', 'page_title', 'type']
+
     text_parts = tokenize_links(clean_text(raw_text), all_entities, redirects)
+
+    if len(text_parts) == 0:
+        return pd.DataFrame([], columns=result_columns)
 
     tokens, meta = tokenize_parts(tokenizer, text_parts)
 
@@ -359,7 +364,7 @@ def annotated_tokenization(raw_text, tokenizer, sentence_splitter, all_entities,
 
             pos += 1
 
-    return pd.DataFrame(gt_sen, columns=['sentence', 'token', 'word', 'page_title', 'type'])
+    return pd.DataFrame(gt_sen, columns=result_columns)
 
 
 class EntityTask:
