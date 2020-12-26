@@ -51,4 +51,6 @@ def load_entities(path, lang, site):
 
     ent['TYPE'] = [ (('PER|' if p else "|") + ('LOC|' if l else "|") + ('ORG' if o else "")).strip('|') for p,l,o in zip(ent.PER.to_list(), ent.LOC.to_list(), ent.ORG.to_list())]
 
+    ent = ent.loc[~ent.index.duplicated()].sort_index()
+
     return ent
