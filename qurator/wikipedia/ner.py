@@ -49,11 +49,15 @@ def clean_text(raw_text):
 
         raw_text = re.sub(r'<[^/]+?>.*?</.+?>', ' ', raw_text, flags=re.DOTALL)  # remove stuff like <ref> .... </ref>
 
-        while re.match(r'.*{\|.*?\|}.*', raw_text, flags=re.DOTALL):
+        iterations=0
+        while re.match(r'.*{\|.*?\|}.*', raw_text, flags=re.DOTALL) and iterations < 1000:
             raw_text = re.sub(r'{\|((?!{\|).)*?\|}', r'', raw_text, flags=re.DOTALL)  # remove tables {| ...|}
+            iterations += 1
 
-        while re.match(r'.*{{[^{]+?}}.*', raw_text, flags=re.DOTALL):
+        iterations=0
+        while re.match(r'.*{{[^{]+?}}.*', raw_text, flags=re.DOTALL) and iterations < 1000:
             raw_text = re.sub(r'{{[^{]+?}}', r'', raw_text, flags=re.DOTALL)  # remove {{ ... }}
+            iterations += 1
 
         raw_text = re.sub(r'={2,10}.*?={2,10}', r' ', raw_text, flags=re.DOTALL)  # remove == ... ==
 

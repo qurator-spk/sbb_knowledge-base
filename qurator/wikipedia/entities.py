@@ -100,6 +100,10 @@ def get_redirects(all_entities, sqlite3_file):
         set_index('rd_from_title').\
         sort_index()
 
+    print('Number of duplicated redirects (should be zero): {}'.format(redirects.index.duplicated().sum()))
+    
+    redirects = redirects.loc[~redirects.index.duplicated()]
+    
     return redirects, page
 
 
