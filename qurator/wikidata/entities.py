@@ -53,4 +53,6 @@ def load_entities(path, lang, site):
 
     ent = ent.loc[~ent.index.duplicated()].sort_index()
 
+    ent['QID'] = ent.wikidata.str.extract(r'.*?(Q[0-9]+).*?')
+
     return ent
