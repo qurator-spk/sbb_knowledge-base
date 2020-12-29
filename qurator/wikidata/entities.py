@@ -33,7 +33,10 @@ def load_entities(path, lang, site):
 
     org = load_classes(org_classes, 'organisation')
 
-    ent = pd.concat([per, loc, org], sort=True).drop_duplicates(subset=['wikidata']).reset_index(drop=True).set_index('wikidata')
+    ent = pd.concat([per, loc, org], sort=True).\
+        drop_duplicates(subset=['wikidata']).\
+        reset_index(drop=True).\
+        set_index('wikidata')
 
     ent['PER'] = False
     ent['LOC'] = False
@@ -43,13 +46,18 @@ def load_entities(path, lang, site):
     ent.loc[loc.wikidata, 'LOC'] = True
     ent.loc[org.wikidata, 'ORG'] = True
 
-    ent['page_title'] = [urllib.parse.unquote(s) for s in ent.sitelink.str.replace(site,'').to_list()] 
+    ent['page_title'] = [urllib.parse.unquote(s) for s in ent.sitelink.str.replace(site, '').to_list()]
 
     ent = ent.reset_index().set_index('page_title')
 
     ent.loc[ent.PER & ent.ORG, 'PER'] = False
 
-    ent['TYPE'] = [ (('PER|' if p else "|") + ('LOC|' if l else "|") + ('ORG' if o else "")).strip('|') for p,l,o in zip(ent.PER.to_list(), ent.LOC.to_list(), ent.ORG.to_list())]
+    ent['TYPE'] = [(('PER|' if p else "|") + ('LOC|' if l else "|") + ('ORG' if o else "")).strip('|')
+                   for p, l, o in zip(ent.PER.to_list(), ent.LOC.to_list(), ent.ORG.to_list())]
+
+    ent = ent.loc[~ent.index.duplicated()].sort_index()
+
+    ent['QID'] = ent.wikidata.str.extract(r'.*?(Q[0-9]+).*?')
 
     ent = ent.loc[~ent.index.duplicated()].sort_index()
 
