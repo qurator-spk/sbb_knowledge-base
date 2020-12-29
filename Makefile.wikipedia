@@ -47,6 +47,9 @@ $(WIKIPEDIA_DIR)/%-fulltext.sqlite:	$(WIKIPEDIA_DIR)/%wiki-latest-pages-articles
 $(WIKIPEDIA_DIR)/%-wikipedia-tagged.sqlite:	$(WIKIPEDIA_DIR)/%-fulltext.sqlite $(WIKIDATA_DIR)/%-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3
 	tag-wiki-entities2sqlite --processes=$(PROCESSES) $^ $@
 
+$(WIKIPEDIA_DIR)/%-redirects.pkl:	$(WIKIDATA_DIR)/%-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3 
+	redirects2pkl $^ $@
+
 #wikipedia-ner-train-test-split:
 #	train-test-split-wiki $(WIKIPEDIA_DIR)/wikipedia.sqlite3 0.8 0.1 0.1 $(WIKIPEDIA_DIR)/ner-train-index.pkl $(WIKIPEDIA_DIR)/ner-dev-index.pkl $(WIKIPEDIA_DIR)/ner-test-index.pkl
 
@@ -57,4 +60,7 @@ fulltext:	$(WIKIPEDIA_DIR)/de-fulltext.sqlite $(WIKIPEDIA_DIR)/fr-fulltext.sqlit
 tagged:		$(WIKIPEDIA_DIR)/de-wikipedia-tagged.sqlite $(WIKIPEDIA_DIR)/fr-wikipedia-tagged.sqlite $(WIKIPEDIA_DIR)/en-wikipedia-tagged.sqlite
 
 entities:	$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities-no-redirects.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities-no-redirects.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities-no-redirects.pkl
+
+redirects:	$(WIKIPEDIA_DIR)/de-redirects.pkl $(WIKIPEDIA_DIR)/fr-redirects.pkl $(WIKIPEDIA_DIR)/en-redirects.pkl
+
 
