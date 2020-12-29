@@ -66,6 +66,25 @@ def get_category_pages(cats, cnx):
     return cat_pages
 
 
+@click.command()
+@click.argument('entities-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('sqlite3-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('output-file', type=click.Path(), required=True, nargs=1)
+def redirects2pkl(entities_file, sqlite3_file, output_file):
+    """
+    Extracts relevant information of entities in ENTITIES_FILE from redirects table in SQLITE3_FILE and writes the
+    results as pickled pandas DataFrame to OUTPUT_FILE.
+    """
+
+    all_entities = pd.read_pickle(entities_file)
+
+    redirects, page = get_redirects(all_entities, sqlite3_file)
+
+    redirects.to_pickle(output_file)
+
+    return
+
+
 def get_redirects(all_entities, sqlite3_file):
     """
     From https://www.mediawiki.org/wiki/Manual:Redirect_table:
