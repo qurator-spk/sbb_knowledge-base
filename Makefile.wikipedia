@@ -21,7 +21,7 @@ $(WIKIPEDIA_DIR)/%wiki-latest-pages-articles-multistream.xml:
 mysql2sqlite:
 	git clone https://github.com/dumblob/mysql2sqlite.git
 
-$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3:	%-wikipedia-files
+$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3:	%-wikipedia-files mysql2sqlite
 	rm -f $@
 	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-category.sql | sqlite3 $@
 	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-categorylinks.sql | sqlite3 $@
@@ -29,16 +29,6 @@ $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3:	%-wikipedia-files
 	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-redirect.sql | sqlite3 $@
 	-mysql2sqlite/mysql2sqlite $(WIKIPEDIA_DIR)/$*wiki-latest-page_props.sql | sqlite3 $@
 	rm $(WIKIPEDIA_DIR)/$*wiki*.sql
-
-#$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3
-#	extract-wiki-ner-entities $^ $@
-
-
-#$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities.pkl:	$(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl
-#	wikidatamapping $(WIKIPEDIA_DIR) "DE|FR|EN" $(WIKIPEDIA_DIR)/wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
-
-#$(WIKIPEDIA_DIR)/%-wikipedia-ner-entities-no-redirects.pkl:	$(WIKIPEDIA_DIR)/%-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/%-wikipedia-ner-entities.pkl
-#	redirects2entities $^ $@
 
 $(WIKIPEDIA_DIR)/%-fulltext.sqlite:	$(WIKIPEDIA_DIR)/%wiki-latest-pages-articles-multistream.xml
 	extract-wiki-full-text-sqlite $< $@
@@ -50,17 +40,10 @@ $(WIKIPEDIA_DIR)/%-wikipedia-tagged.sqlite:	$(WIKIPEDIA_DIR)/%-fulltext.sqlite $
 $(WIKIPEDIA_DIR)/%-redirects.pkl:	$(WIKIDATA_DIR)/%-wikipedia-ner-entities.pkl $(WIKIPEDIA_DIR)/%-wikipedia.sqlite3 
 	redirects2pkl $^ $@
 
-#wikipedia-ner-train-test-split:
-#	train-test-split-wiki $(WIKIPEDIA_DIR)/wikipedia.sqlite3 0.8 0.1 0.1 $(WIKIPEDIA_DIR)/ner-train-index.pkl $(WIKIPEDIA_DIR)/ner-dev-index.pkl $(WIKIPEDIA_DIR)/ner-test-index.pkl
-
 sqlite-databases:	$(WIKIPEDIA_DIR)/de-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/fr-wikipedia.sqlite3 $(WIKIPEDIA_DIR)/en-wikipedia.sqlite3
 
 fulltext:	$(WIKIPEDIA_DIR)/de-fulltext.sqlite $(WIKIPEDIA_DIR)/fr-fulltext.sqlite $(WIKIPEDIA_DIR)/en-fulltext.sqlite
 
 tagged:		$(WIKIPEDIA_DIR)/de-wikipedia-tagged.sqlite $(WIKIPEDIA_DIR)/fr-wikipedia-tagged.sqlite $(WIKIPEDIA_DIR)/en-wikipedia-tagged.sqlite
 
-entities:	$(WIKIPEDIA_DIR)/de-wikipedia-ner-entities-no-redirects.pkl $(WIKIPEDIA_DIR)/fr-wikipedia-ner-entities-no-redirects.pkl $(WIKIPEDIA_DIR)/en-wikipedia-ner-entities-no-redirects.pkl
-
-redirects:	$(WIKIPEDIA_DIR)/de-redirects.pkl $(WIKIPEDIA_DIR)/fr-redirects.pkl $(WIKIPEDIA_DIR)/en-redirects.pkl
-
-
+edirects:	$(WIKIPEDIA_DIR)/de-redirects.pkl $(WIKIPEDIA_DIR)/fr-redirects.pkl $(WIKIPEDIA_DIR)/en-redirects.pkl
