@@ -3,6 +3,7 @@ import pandas as pd
 import click
 import numpy as np
 from tqdm import tqdm as tqdm
+from qurator.utils.parallel import run as prun
 
 
 def _get_cats(cat_links, category, found, cnx):
@@ -316,11 +317,32 @@ def wikidatamapping(output_dir, languages, entity_file, entity_wikipedia, other_
         tmp.to_pickle("{}/{}-wikipedia-ner-entities.pkl".format(output_dir, lang.lower()))
 
 
+class ProbTask:
+
+    con = None
+
+    def __init__(self, page_title):
+
+        self._page_title = page_title
+
+    def __call__(self, *args, **kwargs):
+
+        count = float(ProbTask.con.execute('select count(*) from links where links.target==?',
+                                           (self._page_title,)).fetchone()[0])
+
+        return self._page_title, count
+
+    @staticmethod
+    def initialize(sqlite_file):
+        ProbTask.con = sqlite3.connect(sqlite_file)
+
+
 @click.command()
 @click.argument('sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
-def compute_apriori_probs(sqlite_file):
+@click.option('--processes', default=8, help='number of parallel processes. default: 8.')
+def compute_apriori_probs(sqlite_file, processes):
     """
-    Compute the a-priori probabilities for all entities based on the number of links that relate to each entity verus
+    Compute the a-priori probabilities for all entities based on the number of links that relate to each entity versus
     the total number of links in the sentence database.
 
     SQLITE_FILE: sqlite3 sentence database that contains an "entities" as well as an related "links" table.
@@ -328,19 +350,26 @@ def compute_apriori_probs(sqlite_file):
     Adds a new "proba" column to the entities table that contains the a-priori probabilities.
     """
 
+    def iterate_entities(_ent):
+
+        for _page_title, _row in ent.iterrows():
+
+            yield ProbTask(_page_title)
+
     with sqlite3.connect(sqlite_file) as con:
 
-        ent = pd.read_sql('select * from entities', con=con)
+        ent = pd.read_sql('select * from entities', con=con).set_index('page_title').sort_index()
 
         total = float(con.execute('select count(*) from links').fetchone()[0])
 
-        ent['proba'] = 0.0
+        proba = []
 
-        for pos, row in tqdm(ent.iterrows(), total=len(ent)):
+        for page_title, count in tqdm(prun(iterate_entities(ent), initializer=ProbTask.initialize,
+                                           initargs=(sqlite_file,), processes=processes), total=len(ent)):
 
-            count = float(con.execute('select count(*) from links where links.target==?',
-                                      (row.page_title,)).fetchone()[0])
+            proba.append(count / total)
 
-            ent.loc[pos, 'proba'] = count / total
+        ent['proba'] = proba
 
+        print("Write to database ...")
         ent.to_sql(name='entities', con=con, if_exists='replace')
