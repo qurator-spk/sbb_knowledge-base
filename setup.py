@@ -37,6 +37,7 @@ setup(
         "wikidatamapping=qurator.wikipedia.entities:wikidatamapping",
         "redirects2entities=qurator.wikipedia.entities:redirects2entities",
         "redirects2pkl=qurator.wikipedia.entities:redirects2pkl",
+        "compute-apriori-probs=qurator.wikipedia.entities:compute_apriori_probs",
         "tag-wiki-entities2parquet=qurator.wikipedia.ner:tag_entities2parquet",
         "tag-wiki-entities2sqlite=qurator.wikipedia.ner:tag_entities2sqlite",
         "print-wiki-article=qurator.wikipedia.ner:print_article_command_line",
@@ -46,6 +47,7 @@ setup(
         "csv2sqlite=qurator.utils.csv:to_sqlite",
         "df2sqlite=qurator.utils.pickle:to_sqlite",
         "batchner=qurator.sbb.ner:on_db_file",
+        "ned-statistics=qurator.sbb.ned:ned_statistics",
         "show-ner-models=qurator.sbb.ner:show_models",
 
         "example=qurator.examples.multiprocessing:example",
