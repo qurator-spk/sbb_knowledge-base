@@ -314,3 +314,33 @@ def wikidatamapping(output_dir, languages, entity_file, entity_wikipedia, other_
             sort_index()
 
         tmp.to_pickle("{}/{}-wikipedia-ner-entities.pkl".format(output_dir, lang.lower()))
+
+
+@click.command()
+@click.argument('sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
+def compute_apriori_probs(sqlite_file):
+    """
+    Compute the a-priori probabilities for all entities based on the number of links that relate to each entity verus
+    the total number of links in the sentence database.
+
+    SQLITE_FILE: sqlite3 sentence database that contains an "entities" as well as an related "links" table.
+
+    Adds a new "proba" column to the entities table that contains the a-priori probabilities.
+    """
+
+    with sqlite3.connect(sqlite_file) as con:
+
+        ent = pd.read_sql('select * from entities', con=con)
+
+        total = float(con.execute('select count(*) from links').fetchone()[0])
+
+        ent['proba'] = 0.0
+
+        for pos, row in tqdm(ent.iterrows(), total=len(ent)):
+
+            count = float(con.execute('select count(*) from links where links.target==?',
+                                      (row.page_title,)).fetchone()[0])
+
+            ent.loc[pos, 'proba'] = count / total
+
+        ent.to_sql(name='entities', con=con, if_exists='replace')
