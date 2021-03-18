@@ -74,6 +74,9 @@ def run_unordered(tasks, **kwargs):
 
 def _run(t):
 
+    if t is None:
+        return None
+
     ret = t()
 
     del t
