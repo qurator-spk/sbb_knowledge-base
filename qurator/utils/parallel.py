@@ -2,7 +2,7 @@ from multiprocessing import Pool, get_context
 import gc
 
 
-def run(tasks, **kwargs):
+def run(tasks, method='fork', **kwargs):
 
     if 'processes' in kwargs:
 
@@ -35,7 +35,7 @@ def run(tasks, **kwargs):
             if it % 1000 == 0:
                 gc.collect()
 
-    if 'method' in kwargs and kwargs['method'] == 'spawn':
+    if method == 'spawn':
         with get_context('spawn').Pool(**kwargs) as _pool:
             run_in_pool(_pool)
     else:
