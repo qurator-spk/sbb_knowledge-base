@@ -2,7 +2,7 @@ from multiprocessing import Pool, get_context
 import gc
 
 
-def run(tasks, method='fork', **kwargs):
+def run(tasks, **kwargs):
 
     if 'processes' in kwargs:
 
@@ -25,7 +25,7 @@ def run(tasks, method='fork', **kwargs):
 
             return
 
-    def run_in_pool(pool):
+    with Pool(**kwargs) as pool:
         for it, result in enumerate(pool.imap(_run, tasks)):
 
             yield result
@@ -34,13 +34,6 @@ def run(tasks, method='fork', **kwargs):
 
             if it % 1000 == 0:
                 gc.collect()
-
-    if method == 'spawn':
-        with get_context('spawn').Pool(**kwargs) as _pool:
-            run_in_pool(_pool)
-    else:
-        with Pool(**kwargs) as _pool:
-            run_in_pool(_pool)
 
 
 def run_unordered(tasks, **kwargs):
@@ -79,9 +72,6 @@ def run_unordered(tasks, **kwargs):
 
 
 def _run(t):
-
-    if t is None:
-        return None
 
     ret = t()
 
