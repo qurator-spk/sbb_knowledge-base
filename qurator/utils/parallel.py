@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 import gc
 
 
@@ -25,8 +25,7 @@ def run(tasks, **kwargs):
 
             return
 
-    with Pool(**kwargs) as pool:
-
+    def run_in_pool(pool):
         for it, result in enumerate(pool.imap(_run, tasks)):
 
             yield result
@@ -35,6 +34,13 @@ def run(tasks, **kwargs):
 
             if it % 1000 == 0:
                 gc.collect()
+
+    if 'method' in kwargs and kwargs['method'] == 'spawn':
+        with get_context('spawn').Pool(**kwargs) as _pool:
+            run_in_pool(_pool)
+    else:
+        with Pool(**kwargs) as _pool:
+            run_in_pool(_pool)
 
 
 def run_unordered(tasks, **kwargs):
@@ -73,6 +79,9 @@ def run_unordered(tasks, **kwargs):
 
 
 def _run(t):
+
+    if t is None:
+        return None
 
     ret = t()
 
