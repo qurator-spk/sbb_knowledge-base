@@ -176,12 +176,26 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size=100):
 
                 num_entities += len(ner_parsed)
 
+                start_page = lang_docs.page.min()
+                stop_page = lang_docs.page.max()
+
                 print_msg('Processing PPN {} start page {} stop page {} '
-                          '#entities: {}'.format(row.ppn, lang_docs.page.min(), lang_docs.page.max(), len(ner_parsed)))
+                          '#entities: {}'.format(row.ppn, start_page, stop_page, len(ner_parsed)))
 
                 el_rest_endpoint = el_endpoints[doc_lang] + '/ned?threshold=0.01'
 
-                keys = [k for k in ner_parsed.keys()]
+                keys = []
+
+                for k in ner_parsed.keys():
+
+                    tmp = pd.read_sql('select * from entity_linking where ppn=? and entity_id=? '
+                                      'and start_page=? and stop_page=?',
+                                      params=(row.ppn,k, str(start_page), str(stop_page)), con=con)
+
+                    if len(tmp) > 0:
+                        print_msg('Processing PPN {} found {}'.format(row.ppn, k))
+                    else:
+                        keys.append(k)
 
                 for pos in range(0, len(keys), chunk_size):
 
@@ -204,8 +218,8 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size=100):
                                      columns=['entity_id', 'page_title', 'wikidata', 'proba'])
 
                     ned_result['ppn'] = row.ppn
-                    ned_result['start_page'] = lang_docs.page.min()
-                    ned_result['stop_page'] = lang_docs.page.max()
+                    ned_result['start_page'] = start_page
+                    ned_result['stop_page'] = stop_page
 
                     ned_result.to_sql('entity_linking', con=con, if_exists='append', index=False)
 
