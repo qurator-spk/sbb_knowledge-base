@@ -4,13 +4,7 @@ from tqdm import tqdm as tqdm
 import click
 import requests
 import os
-import re
 from flask import json
-from qurator.utils.parallel import run as prun
-import unicodedata
-import logging
-import itertools
-
 
 
 def parse_sentence(sent, normalization_map=None):
@@ -110,7 +104,12 @@ def ned_statistics(sqlite_file, pkl_file):
 @click.argument('sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('lang-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('el-endpoints', type=str, required=True, nargs=1)
-def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size=100):
+@click.option('--chunk-size', default=100, help='size of chunks sent to EL-Linking system. Default: 100.')
+@click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: proxy is enabled.')
+def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
+
+    if noproxy:
+        os.environ['no_proxy'] = '*'
 
     el_endpoints = json.loads(el_endpoints)
 
@@ -190,7 +189,7 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size=100):
 
                     tmp = pd.read_sql('select * from entity_linking where ppn=? and entity_id=? '
                                       'and start_page=? and stop_page=?',
-                                      params=(row.ppn,k, str(start_page), str(stop_page)), con=con)
+                                      params=(row.ppn, k, str(start_page), str(stop_page)), con=con)
 
                     if len(tmp) > 0:
                         print_msg('Processing PPN {} found {}'.format(row.ppn, k))
@@ -222,7 +221,3 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size=100):
                     ned_result['stop_page'] = stop_page
 
                     ned_result.to_sql('entity_linking', con=con, if_exists='append', index=False)
-
-
-
-
