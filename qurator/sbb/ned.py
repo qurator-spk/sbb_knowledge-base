@@ -229,7 +229,11 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
 @click.option('--entity-types', type=str, default=None, help='Process only these particular types of entities.')
 @click.option('--min-count-per-doc', type=int, default=None, help='Process only if number of entities per wiki-page is'
                                                                   'above this threshold.')
-def run_on_wikipedia(sqlite_file, el_endpoint, entity_types, min_count_per_doc):
+@click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: proxy is enabled.')
+def run_on_wikipedia(sqlite_file, el_endpoint, entity_types, min_count_per_doc, noproxy):
+
+    if noproxy:
+        os.environ['no_proxy'] = '*'
 
     if entity_types is not None:
         entity_types = set(entity_types.split('|'))
