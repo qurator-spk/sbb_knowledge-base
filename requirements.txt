@@ -22,3 +22,5 @@ pytest
 pytest-cov
 flask
 somajo
+scipy
+gensim
