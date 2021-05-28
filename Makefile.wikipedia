@@ -46,4 +46,4 @@ fulltext:	$(WIKIPEDIA_DIR)/de-fulltext.sqlite $(WIKIPEDIA_DIR)/fr-fulltext.sqlit
 
 tagged:		$(WIKIPEDIA_DIR)/de-wikipedia-tagged.sqlite $(WIKIPEDIA_DIR)/fr-wikipedia-tagged.sqlite $(WIKIPEDIA_DIR)/en-wikipedia-tagged.sqlite
 
-edirects:	$(WIKIPEDIA_DIR)/de-redirects.pkl $(WIKIPEDIA_DIR)/fr-redirects.pkl $(WIKIPEDIA_DIR)/en-redirects.pkl
+redirects:	$(WIKIPEDIA_DIR)/de-redirects.pkl $(WIKIPEDIA_DIR)/fr-redirects.pkl $(WIKIPEDIA_DIR)/en-redirects.pkl

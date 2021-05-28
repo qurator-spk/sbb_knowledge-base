@@ -202,9 +202,14 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
 
                     chunk = {k: ner_parsed[k] for k in chunk}
 
-                    resp = requests.post(url=el_rest_endpoint, json=chunk, timeout=3600000)
+                    try:
+                        resp = requests.post(url=el_rest_endpoint, json=chunk, timeout=3600)
 
-                    resp.raise_for_status()
+                        resp.raise_for_status()
+
+                    except requests.HTTPError as e:
+                        print(e)
+                        continue
 
                     ned_result = json.loads(resp.content)
 

@@ -64,9 +64,13 @@ def run_on_tagged(sqlite_file, el_endpoint, entity_types, min_count_per_doc, nop
             if min_count_per_doc is not None and len(ner_parsed) < min_count_per_doc:
                 continue
 
-            resp = requests.post(url=el_endpoint + '/ned?threshold=0.01', json=ner_parsed, timeout=3600000)
+            try:
+                resp = requests.post(url=el_endpoint + '/ned?threshold=0.01', json=ner_parsed, timeout=1800)
 
-            resp.raise_for_status()
+                resp.raise_for_status()
+            except requests.HTTPError as e:
+                print(e)
+                continue
 
             ned_result = json.loads(resp.content)
 
