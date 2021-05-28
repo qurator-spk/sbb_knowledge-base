@@ -8,7 +8,7 @@ from tqdm import tqdm
 from qurator.utils.parallel import run as prun
 import json
 from ..sbb.ned import count_entities as _count_entities
-
+import os
 
 def count_entities(ner):
     counter = {}
@@ -63,8 +63,9 @@ class CountJob:
         weighted_cnt = pd.DataFrame(weighted_cnt, columns=['wikidata', 'page_title', 'wcount']).\
             sort_values('wcount', ascending=False).reset_index(drop=True)
 
-        tmp = [(qid, CountJob.voc[qid], count)
-               for qid, count in zip(weighted_cnt.wikidata.tolist(), weighted_cnt.wcount.tolist())]
+        tmp = pd.DataFrame([(qid, CountJob.voc[qid], wcount)
+                            for qid, wcount in zip(weighted_cnt.wikidata.tolist(), weighted_cnt.wcount.tolist())],
+                           columns=['wikidata', 'voc_index', 'wcount'])
 
         return tmp
 
@@ -103,7 +104,7 @@ def read_corpus(sqlite_file, processes):
 
         data = pd.concat(data)
 
-    m = csr_matrix((data.proba.values, data.voc_index.values, position), dtype=float)
+    m = csr_matrix((data.wcount.values, data.voc_index.values, position), dtype=float)
 
     corpus = gensim.matutils.Sparse2Corpus(m, documents_columns=False)
 
@@ -123,7 +124,10 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
     Computes LDA-topic model and stores it in MODEL_FILE.
     """
 
-    corpus, voc = read_corpus(sqlite_file, processes=processes)
+    if corpus_file is None or not os.path.exists(corpus_file):
+        corpus, voc = read_corpus(sqlite_file, processes=processes)
+    else:
+        corpus = gensim.corpora.MmCorpus(corpus_file)
 
     # print("Number of documents: {}. Number of terms: {}.", corpus.num_docs, corpus.num_terms)
 
