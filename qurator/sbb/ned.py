@@ -69,10 +69,18 @@ def count_entities(ner, counter):
             already_processed.add(entity_id)
 
             try:
-                if entity in counter[ent_type]:
-                    counter[ent_type][entity] += 1
+                if len(counter) == 3:
+
+                    if entity in counter[ent_type]:
+                        counter[ent_type][entity] += 1
+                    else:
+                        counter[ent_type][entity] = 1
                 else:
-                    counter[ent_type][entity] = 1
+                    if entity_id in counter:
+                        counter[entity_id] += 1
+                    else:
+                        counter[entity_id] = 1
+
             except KeyError:
                 pass
 

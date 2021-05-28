@@ -6,27 +6,73 @@ import gensim
 from gensim.models.ldamulticore import LdaMulticore
 from tqdm import tqdm
 from qurator.utils.parallel import run as prun
+import json
+from ..sbb.ned import count_entities as _count_entities
+
+
+def count_entities(ner):
+    counter = {}
+
+    _count_entities(ner, counter)
+
+    df = pd.DataFrame.from_dict(counter, orient='index', columns=['count'])
+
+    return df
 
 
 class CountJob:
 
     voc = None
+    con = None
 
     def __init__(self, ppn, part):
         self._ppn = ppn
         self._part = part
 
     def __call__(self, *args, **kwargs):
-        tmp = [(qid, CountJob.voc[qid], qpart.proba.sum())
-               for qid, qpart in self._part.groupby('wikidata') if qid.startswith('Q')]
-        tmp = pd.DataFrame(tmp, columns=['qid', 'voc_index', 'proba'])
+
+        df = pd.read_sql('SELECT * from tagged where ppn=?', con=CountJob.con, params=(self._ppn,))
+
+        df['page'] = df.file_name.str.extract('([1-9][0-9]*)').astype(int)
+
+        df = df.loc[(df.page >= self._part.start_page.min()) & (df.page <= self._part.stop_page.max())]
+
+        cnt = []
+        for _, row in df.iterrows():
+            ner = \
+                [[{'word': word, 'prediction': tag} for word, tag in zip(sen_text, sen_tags)]
+                 for sen_text, sen_tags in zip(json.loads(row.text), json.loads(row.tags))]
+
+            counter = count_entities(ner)
+
+            counter = counter.merge(self._part, left_index=True, right_on='entity_id')
+
+            counter['on_page'] = row.page
+
+            cnt.append(counter)
+
+        cnt = pd.concat(cnt)
+
+        weighted_cnt = []
+        for (qid, page_title), qpart in cnt.groupby(['wikidata', 'page_title']):
+
+            weighted_count = qpart[['count']].T.dot(qpart[['proba']]).iloc[0].iloc[0]
+
+            weighted_cnt.append((qid, page_title, weighted_count))
+
+        weighted_cnt = pd.DataFrame(weighted_cnt, columns=['wikidata', 'page_title', 'wcount']).\
+            sort_values('wcount', ascending=False).reset_index(drop=True)
+
+        tmp = [(qid, CountJob.voc[qid], count)
+               for qid, count in zip(weighted_cnt.wikidata.tolist(), weighted_cnt.wcount.tolist())]
 
         return tmp
 
     @staticmethod
-    def initialize(voc):
+    def initialize(voc, sqlite_file):
 
         CountJob.voc = voc
+        CountJob.con = sqlite3.connect(sqlite_file)
 
 
 def read_corpus(sqlite_file, processes):
@@ -49,7 +95,7 @@ def read_corpus(sqlite_file, processes):
             for ppn, part in tqdm(df.groupby('ppn')):
                 yield CountJob(ppn, part)
 
-        for tmp in prun(get_jobs(), initializer=CountJob.initialize, initargs=(voc,), processes=processes):
+        for tmp in prun(get_jobs(), initializer=CountJob.initialize, initargs=(voc, sqlite_file), processes=processes):
 
             data.append(tmp)
             counter += len(tmp)
