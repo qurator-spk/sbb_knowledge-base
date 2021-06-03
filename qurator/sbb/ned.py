@@ -50,7 +50,9 @@ def parse_sentence(sent, normalization_map=None):
         return entity_ids, entities, entity_types
 
 
-def count_entities(ner, counter):
+def count_entities(ner, counter, min_len=4):
+
+    type_agnostic = False if len(counter) == 3 and type(counter[counter.keys()[0]]) == dict else True
 
     for sent in ner:
 
@@ -60,7 +62,7 @@ def count_entities(ner, counter):
 
         for entity_id, entity, ent_type in zip(entity_ids, entities, entity_types):
 
-            if len(entity) < 4:
+            if len(entity) < min_len:
                 continue
 
             if entity_id in already_processed:
@@ -68,21 +70,16 @@ def count_entities(ner, counter):
 
             already_processed.add(entity_id)
 
-            try:
-                if len(counter) == 3:
-
-                    if entity in counter[ent_type]:
-                        counter[ent_type][entity] += 1
-                    else:
-                        counter[ent_type][entity] = 1
+            if type_agnostic:
+                if entity_id in counter:
+                    counter[entity_id] += 1
                 else:
-                    if entity_id in counter:
-                        counter[entity_id] += 1
-                    else:
-                        counter[entity_id] = 1
-
-            except KeyError:
-                pass
+                    counter[entity_id] = 1
+            else:
+                if entity in counter[ent_type]:
+                    counter[ent_type][entity] += 1
+                else:
+                    counter[ent_type][entity] = 1
 
 
 @click.command()

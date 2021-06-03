@@ -57,6 +57,7 @@ setup(
         "batchel=qurator.sbb.ned:run_on_corpus",
         "batchel-wp=qurator.wikipedia.ned:run_on_tagged",
 
+        "extract-corpus=qurator.topic_modeling.cli:extract_corpus",
         "run-lda=qurator.topic_modeling.cli:run_lda"
       ]
     },
