@@ -50,7 +50,9 @@ def parse_sentence(sent, normalization_map=None):
         return entity_ids, entities, entity_types
 
 
-def count_entities(ner, counter):
+def count_entities(ner, counter, min_len=4):
+
+    type_agnostic = False if len(counter) == 3 and type(counter[counter.keys()[0]]) == dict else True
 
     for sent in ner:
 
@@ -60,7 +62,7 @@ def count_entities(ner, counter):
 
         for entity_id, entity, ent_type in zip(entity_ids, entities, entity_types):
 
-            if len(entity) < 4:
+            if len(entity) < min_len:
                 continue
 
             if entity_id in already_processed:
@@ -68,13 +70,16 @@ def count_entities(ner, counter):
 
             already_processed.add(entity_id)
 
-            try:
+            if type_agnostic:
+                if entity_id in counter:
+                    counter[entity_id] += 1
+                else:
+                    counter[entity_id] = 1
+            else:
                 if entity in counter[ent_type]:
                     counter[ent_type][entity] += 1
                 else:
                     counter[ent_type][entity] = 1
-            except KeyError:
-                pass
 
 
 @click.command()
@@ -106,7 +111,8 @@ def ned_statistics(sqlite_file, pkl_file):
 @click.argument('el-endpoints', type=str, required=True, nargs=1)
 @click.option('--chunk-size', default=100, help='size of chunks sent to EL-Linking system. Default: 100.')
 @click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: proxy is enabled.')
-def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
+@click.option('--start-from-ppn', type=str, default=None)
+def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy, start_from_ppn):
 
     if noproxy:
         os.environ['no_proxy'] = '*'
@@ -130,6 +136,12 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
         ppns = pd.read_sql('select ppn from tagged', con=con).drop_duplicates().reset_index(drop=True)
 
         ppns['ppn'] = ppns.ppn.astype(str)
+
+        if start_from_ppn is not None:
+
+            print('Skipping everything before PPN: {}'.format(start_from_ppn))
+
+            ppns = ppns.iloc[ppns.index[ppns.ppn == start_from_ppn]:]
 
         seq = tqdm(ppns.iterrows(), total=len(ppns))
 
@@ -202,9 +214,14 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
 
                     chunk = {k: ner_parsed[k] for k in chunk}
 
-                    resp = requests.post(url=el_rest_endpoint, json=chunk, timeout=3600000)
+                    try:
+                        resp = requests.post(url=el_rest_endpoint, json=chunk, timeout=3600)
 
-                    resp.raise_for_status()
+                        resp.raise_for_status()
+
+                    except requests.HTTPError as e:
+                        print(e)
+                        continue
 
                     ned_result = json.loads(resp.content)
 
@@ -221,3 +238,4 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
                     ned_result['stop_page'] = stop_page
 
                     ned_result.to_sql('entity_linking', con=con, if_exists='append', index=False)
+

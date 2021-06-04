@@ -54,7 +54,11 @@ setup(
 
         "run-sparql=qurator.wikidata.cli:cli_run_sparql",
         "join-entities=qurator.wikidata.cli:join_entities",
-        "batchel=qurator.sbb.ned:run_on_corpus"
+        "batchel=qurator.sbb.ned:run_on_corpus",
+        "batchel-wp=qurator.wikipedia.ned:run_on_tagged",
+
+        "extract-corpus=qurator.topic_modeling.cli:extract_corpus",
+        "run-lda=qurator.topic_modeling.cli:run_lda"
       ]
     },
     python_requires='>=3.6.0',
