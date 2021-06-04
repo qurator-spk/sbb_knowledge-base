@@ -140,8 +140,7 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy, sta
         if start_from_ppn is not None:
 
             print('Skipping everything before PPN: {}'.format(start_from_ppn))
-
-            ppns = ppns.iloc[ppns.index[ppns.ppn == start_from_ppn]:]
+            ppns = ppns.iloc[ppns.loc[ppns.ppn == start_from_ppn].index[0]:]
 
         seq = tqdm(ppns.iterrows(), total=len(ppns))
 
