@@ -111,7 +111,8 @@ def ned_statistics(sqlite_file, pkl_file):
 @click.argument('el-endpoints', type=str, required=True, nargs=1)
 @click.option('--chunk-size', default=100, help='size of chunks sent to EL-Linking system. Default: 100.')
 @click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: proxy is enabled.')
-def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
+@click.option('--start-from-ppn', type=str, default=None)
+def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy, start_from_ppn):
 
     if noproxy:
         os.environ['no_proxy'] = '*'
@@ -135,6 +136,12 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy):
         ppns = pd.read_sql('select ppn from tagged', con=con).drop_duplicates().reset_index(drop=True)
 
         ppns['ppn'] = ppns.ppn.astype(str)
+
+        if start_from_ppn is not None:
+
+            print('Skipping everything before PPN: {}'.format(start_from_ppn))
+
+            ppns = ppns.iloc[ppns.index[ppns.ppn == start_from_ppn]:]
 
         seq = tqdm(ppns.iterrows(), total=len(ppns))
 
