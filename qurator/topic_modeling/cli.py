@@ -8,6 +8,7 @@ from tqdm import tqdm
 from qurator.utils.parallel import run as prun
 import json
 from ..sbb.ned import count_entities as _count_entities
+from ..sbb.ned import parse_sentence
 import os
 # from gensim.corpora.dictionary import Dictionary
 # from pyLDAvis.gensim import prepare
@@ -32,6 +33,108 @@ def make_bow(data):
         ppns.append(ppn)
 
     return docs, ppns
+
+
+class ParseJob:
+
+    voc = None
+    con = None
+
+    def __init__(self, ppn, part):
+        self._ppn = ppn
+        self._part = part
+
+    def __call__(self, *args, **kwargs):
+
+        df = pd.read_sql('SELECT * from tagged where ppn=?', con=ParseJob.con, params=(self._ppn,))
+
+        df['page'] = df.file_name.str.extract('([1-9][0-9]*)').astype(int)
+
+        df = df.loc[(df.page >= self._part.start_page.min()) & (df.page <= self._part.stop_page.max())]
+
+        def iterate_entities():
+            for _, row in df.iterrows():
+                ner = \
+                    [[{'word': word, 'prediction': tag} for word, tag in zip(sen_text, sen_tags)]
+                     for sen_text, sen_tags in zip(json.loads(row.text), json.loads(row.tags))]
+
+                for sent in ner:
+                    entity_ids, entities, entity_types = parse_sentence(sent)
+
+                    for entity_id, entity, ent_type in zip(entity_ids, entities, entity_types):
+
+                        if entity_id == "-":
+                            continue
+
+                        yield entity_id, entity, ent_type
+
+        doc = pd.DataFrame([(pos, eid) for pos, (eid, entity, ent_type) in enumerate(iterate_entities())],
+                           columns=['pos', 'entity_id'])
+
+        doc = doc.merge(self._part, on='entity_id', how='left').reset_index(drop=True)
+
+        doc['ppn'] = self._ppn
+
+        return doc
+
+    @staticmethod
+    def initialize(voc, sqlite_file):
+
+        ParseJob.voc = voc
+        ParseJob.con = sqlite3.connect(sqlite_file)
+
+
+def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None):
+
+    entities = None
+    if entities_file is not None:
+
+        print("Reading id2work information from entities table ...")
+        with sqlite3.connect(entities_file) as con:
+            entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
+
+    with sqlite3.connect(sqlite_file) as con:
+
+        print('Reading entity linking table ...')
+        df = pd.read_sql('SELECT * from entity_linking', con=con).drop(columns=["index"]).reset_index(drop=True)
+        print('done.')
+
+        df = df.loc[(df.proba > min_proba) & (df.page_title.str.len() > min_surface_len)
+                    & (df.entity_id.str.len() > min_surface_len + 4)]
+
+        df = df.loc[df.wikidata.str.startswith('Q')]
+
+        voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
+
+        data = []
+
+        def get_jobs():
+            for ppn, part in tqdm(df.groupby('ppn')):
+                yield ParseJob(ppn, part)
+
+        for i, tmp in enumerate(prun(get_jobs(), initializer=ParseJob.initialize, initargs=(voc, sqlite_file),
+                                     processes=processes)):
+            data.append(tmp)
+
+        data = pd.concat(data)
+
+        if entities is not None:
+            data = data.merge(entities[['label']], left_on='wikidata', right_index=True, how='left')
+
+    return data, voc
+
+
+@click.command()
+@click.argument('sqlite-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('docs-file', type=click.Path(exists=False), required=True, nargs=1)
+@click.option('--processes', default=4, help='Number of workers.')
+@click.option('--min-proba', type=float, default=0.25, help='Minimum probability of counted entities.')
+@click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
+def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file):
+
+    data, voc = read_docs(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file)
+
+    data.to_pickle(docs_file)
 
 
 class CountJob:
