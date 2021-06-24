@@ -1,0 +1,15 @@
+
+ENTITIES_FILE ?=/home/labusch/qurator/sbb_ned/data/wikipedia/de-ned.sqlite
+MIN_PROBA ?=0.5
+PROCESSES ?=4
+ENTITY_LINKING_FILE ?=./backup.sqlite3
+
+ned-corpus-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
+	extract-corpus --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --filter-type="$*" $(word 2,$^) $@
+
+ned-docs-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
+	extract-docs --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --filter-type="$*" $(word 2,$^) $@
+
+corpus:	ned-corpus-$(MIN_PROBA)-PER.pkl ned-corpus-$(MIN_PROBA)-LOC.pkl ned-corpus-$(MIN_PROBA)-ORG.pkl
+
+docs:	ned-docs-$(MIN_PROBA)-PER.pkl ned-docs-$(MIN_PROBA)-LOC.pkl ned-docs-$(MIN_PROBA)-ORG.pkl

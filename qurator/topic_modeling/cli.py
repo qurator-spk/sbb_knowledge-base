@@ -84,7 +84,8 @@ class ParseJob:
         ParseJob.con = sqlite3.connect(sqlite_file)
 
 
-def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None):
+def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None,
+              filter_type=None):
 
     entities = None
     if entities_file is not None:
@@ -103,6 +104,9 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
                     & (df.entity_id.str.len() > min_surface_len + 4)]
 
         df = df.loc[df.wikidata.str.startswith('Q')]
+
+        if filter_type is not None:
+            df = df.loc[df.entity_id.str[-3:].isin(filter_type)]
 
         voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
 
@@ -130,9 +134,13 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
 @click.option('--processes', default=4, help='Number of workers.')
 @click.option('--min-proba', type=float, default=0.25, help='Minimum probability of counted entities.')
 @click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
-def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file):
+@click.option('--filter-type', type=str, default=None, help="")
+def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, filter_type):
 
-    data, voc = read_docs(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file)
+    filter_type = set(filter_type.split(','))
+
+    data, voc = read_docs(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
+                          filter_type=filter_type)
 
     data.to_pickle(docs_file)
 
@@ -199,7 +207,7 @@ class CountJob:
         CountJob.con = sqlite3.connect(sqlite_file)
 
 
-def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None):
+def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None, filter_type=None):
 
     entities = None
     if entities_file is not None:
@@ -219,6 +227,9 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 
         df = df.loc[df.wikidata.str.startswith('Q')]
 
+        if filter_type is not None:
+            df = df.loc[df.entity_id.str[-3:].isin(filter_type)]
+
         voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
 
         data = []
@@ -227,7 +238,8 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
             for ppn, part in tqdm(df.groupby('ppn')):
                 yield CountJob(ppn, part)
 
-        for i, tmp in enumerate(prun(get_jobs(), initializer=CountJob.initialize, initargs=(voc, sqlite_file), processes=processes)):
+        for i, tmp in enumerate(prun(get_jobs(), initializer=CountJob.initialize, initargs=(voc, sqlite_file),
+                                     processes=processes)):
 
             data.append(tmp)
 
@@ -245,9 +257,13 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 @click.option('--processes', default=4, help='Number of workers.')
 @click.option('--min-proba', type=float, default=0.25, help='Minimum probability of counted entities.')
 @click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
-def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file):
+@click.option('--filter-type', type=str, default=None, help="")
+def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file, filter_type):
 
-    data, voc = read_corpus(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file)
+    filter_type = set(filter_type.split(','))
+
+    data, voc = read_corpus(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
+                            filter_type=filter_type)
 
     data.to_pickle(corpus_file)
 
