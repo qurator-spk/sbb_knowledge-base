@@ -10,6 +10,6 @@ ned-corpus-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
 ned-docs-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
 	extract-docs --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --filter-type="$*" $(word 2,$^) $@
 
-corpus:	ned-corpus-$(MIN_PROBA)-PER.pkl ned-corpus-$(MIN_PROBA)-LOC.pkl ned-corpus-$(MIN_PROBA)-ORG.pkl
+corpus:	ned-corpus-$(MIN_PROBA)-PER.pkl ned-corpus-$(MIN_PROBA)-LOC.pkl ned-corpus-$(MIN_PROBA)-ORG.pkl ned-corpus-$(MIN_PROBA)-PER,LOC,ORG.pkl
 
-docs:	ned-docs-$(MIN_PROBA)-PER.pkl ned-docs-$(MIN_PROBA)-LOC.pkl ned-docs-$(MIN_PROBA)-ORG.pkl
+docs:	ned-docs-$(MIN_PROBA)-PER.pkl ned-docs-$(MIN_PROBA)-LOC.pkl ned-docs-$(MIN_PROBA)-ORG.pkl ned-docs-$(MIN_PROBA)-PER,LOC,ORG.pkl
