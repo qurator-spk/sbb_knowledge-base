@@ -349,7 +349,7 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
 @click.option('--passes-step', type=int, default=5, help='Increase number of passes by this step size. Default 5.')
 @click.option('--max-topics', type=int, default=100, help='Max number of topics in LDA topic model. Default 100.')
 @click.option('--topic-step', type=int, default=10, help='Increase number of topics by this step size. Default 10.')
-@click.option('--coherence-model', type=click.Choice(['c_v', 'u_mass'], case_sensitive=False), default="u_mass",
+@click.option('--coherence-model', type=click.Choice(['c_v', 'u_mass'], case_sensitive=False), default="c_v",
               help="Which coherence model to use. Default: c_v.")
 @click.option('--processes', default=4, help='Number of workers.')
 def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, passes_step, max_topics, topic_step,
