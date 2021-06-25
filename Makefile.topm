@@ -13,3 +13,10 @@ ned-docs-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
 corpus:	ned-corpus-$(MIN_PROBA)-PER.pkl ned-corpus-$(MIN_PROBA)-LOC.pkl ned-corpus-$(MIN_PROBA)-ORG.pkl ned-corpus-$(MIN_PROBA)-PER,LOC,ORG.pkl
 
 docs:	ned-docs-$(MIN_PROBA)-PER.pkl ned-docs-$(MIN_PROBA)-LOC.pkl ned-docs-$(MIN_PROBA)-ORG.pkl ned-docs-$(MIN_PROBA)-PER,LOC,ORG.pkl
+
+ned-lda-grid-search-%.pkl:	ned-corpus-$(MIN_PROBA)-%.pkl ned-docs-$(MIN_PROBA)-%.pkl
+	lda-grid-search --num-runs=10 --max-passes=50 --max-topics=500 $@ $^
+
+.PRECIOUS: ned-lda-grid-search-%.pkl
+
+grid-search-%:	ned-lda-grid-search-%.pkl ;

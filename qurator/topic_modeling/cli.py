@@ -14,14 +14,30 @@ import os
 # from pyLDAvis.gensim import prepare
 
 
-def count_entities(ner):
-    counter = {}
+import gensim
+from gensim.models import CoherenceModel
 
-    _count_entities(ner, counter, min_len=0)
 
-    df = pd.DataFrame.from_dict(counter, orient='index', columns=['count'])
+def make_docs(data):
+    docs = []
+    ppns = []
+    for ppn, doc in tqdm(data.groupby('ppn')):
+        docs.append(
+            [label for label, voc_index, wcount in zip(doc.label.tolist(), doc.voc_index.tolist(), doc.wcount.tolist())
+             for _ in range(0, int(wcount) + 1)])
+        ppns.append(ppn)
 
-    return df
+    return docs, ppns
+
+
+def make_text(docs):
+    text = []
+    for ppn, doc in tqdm(docs.groupby('ppn')):
+        doc = doc.dropna(how='any').sort_values('pos')
+
+        text.append(doc['label'].tolist())
+
+    return text
 
 
 def make_bow(data):
@@ -33,6 +49,16 @@ def make_bow(data):
         ppns.append(ppn)
 
     return docs, ppns
+
+
+def count_entities(ner):
+    counter = {}
+
+    _count_entities(ner, counter, min_len=0)
+
+    df = pd.DataFrame.from_dict(counter, orient='index', columns=['count'])
+
+    return df
 
 
 class ParseJob:
@@ -313,3 +339,77 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
 
     lda.save(model_file)
 
+
+@click.command()
+@click.argument('out-file', type=click.Path(exists=False), required=True, nargs=1)
+@click.argument('corpus-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('docs-file', type=click.Path(exists=False), required=True, nargs=1)
+@click.option('--num-runs', type=int, default=10, help='Repeat each experiment num-runs times. Default 10')
+@click.option('--max-passes', type=int, default=50, help='Max number of passes through the data. Default 50')
+@click.option('--passes-step', type=int, default=5, help='Increase number of passes by this step size. Default 5.')
+@click.option('--max-topics', type=int, default=100, help='Max number of topics in LDA topic model. Default 100.')
+@click.option('--topic-step', type=int, default=10, help='Increase number of topics by this step size. Default 10.')
+@click.option('--coherence-model', type=click.Choice(['c_v', 'u_mass'], case_sensitive=False), default="u_mass",
+              help="Which coherence model to use. Default: c_v.")
+@click.option('--processes', default=4, help='Number of workers.')
+def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, passes_step, max_topics, topic_step,
+                    coherence_model, processes):
+    """
+    Perform LDA-evaluation in a grid-search over different parameters.
+
+    OUT_FILE: Store results of the grid search as pickled pandas DataFrame in this file.
+
+    CORPUS_FILE: Read the text corpus from this file.
+
+    DOCS_FILE: Read the documents (required to evalute coherence model c_v) from this file.
+
+    """
+
+    data = pd.read_pickle(corpus_file)
+
+    data['label'] = data['wikidata'] + "(" + data['label'] + ")"
+
+    docs = pd.read_pickle(docs_file)
+
+    docs['label'] = docs['wikidata'] + "(" + docs['label'] + ")"
+
+    bow, ppns = make_bow(data)
+
+    texts = make_text(docs)
+
+    voc = data[['voc_index', 'label']].drop_duplicates().sort_values('voc_index').reset_index(drop=True)
+
+    id2word = {int(voc_index): label for voc_index, label in zip(voc.voc_index.tolist(), voc.label.tolist())}
+
+    dictionary = gensim.corpora.Dictionary.from_corpus(bow, id2word=id2word)
+
+    lda_eval = []
+
+    seq = tqdm(range(passes_step, max_passes, passes_step))
+
+    for num_passes in seq:
+        for num_topics in range(0, max_topics, topic_step):
+
+            num_topics = max(num_topics, 2)
+
+            for run in range(num_runs):
+                lda = LdaMulticore(corpus=bow, num_topics=num_topics, passes=num_passes, chunksize=200,
+                                   workers=processes)
+
+                if coherence_model == 'u_mass':
+                    cm = CoherenceModel(model=lda, corpus=bow, dictionary=dictionary, coherence='u_mass')
+                elif coherence_model == 'c_v':
+                    cm = CoherenceModel(model=lda, texts=texts, dictionary=dictionary, coherence='c_v')
+                else:
+                    RuntimeError("Coherence model not supported.")
+
+                coherence = cm.get_coherence()
+
+                seq.set_description("num_passes: {}, num_topic: {} run: {} coherence: {}".
+                                    format(num_passes, num_topics, run, coherence))
+
+                lda_eval.append((num_passes, num_topics, run, coherence))
+
+                pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)
+
+    pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)

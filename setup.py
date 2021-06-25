@@ -59,6 +59,7 @@ setup(
 
         "extract-corpus=qurator.topic_modeling.cli:extract_corpus",
         "extract-docs=qurator.topic_modeling.cli:extract_docs",
+        "lda-grid-search=qurator.topic_modeling.cli:lda_grid_search",
         "run-lda=qurator.topic_modeling.cli:run_lda"
       ]
     },
