@@ -190,12 +190,20 @@ Usage: batchner [OPTIONS] FULLTEXT_SQLITE_FILE SELECTION_FILE MODEL_NAME
                 NER_ENDPOINT...
 
   Reads the text content per page of digitalized collections from sqlite
-  file FULLTEXT_SQLITE_FILE. Considers only a subset of documents that is
-  defined by SELECTION_FILE. Performs NER on the text content using the REST
-  endpoint[s] NER_ENDPOINT .... Writes the NER results back to another
-  sqlite file whose name is equal to FULLTEXT_SQLITE_FILE + '-ner-' or to
-  the file specified in the --outfile option. Writes results in chunks of
-  size <chunksize>. Suppress proxy with option --noproxy.
+  file FULLTEXT_SQLITE_FILE.
+
+  Considers only a subset of documents that is defined by SELECTION_FILE.
+
+  Performs NER on the text content using the REST endpoint[s] NER_ENDPOINT
+  ....
+
+  Writes the NER results back to another sqlite file whose name is equal to
+  FULLTEXT_SQLITE_FILE + '-ner-' or to the file specified in the --outfile
+  option.
+
+  Writes results in chunks of size <chunksize>.
+
+  Suppress proxy with option --noproxy.
 
 Options:
   --chunksize INTEGER  size of chunks used for processing. default: 10**4
@@ -207,7 +215,6 @@ Options:
                        fulltext sqlite file.
 
   --help               Show this message and exit.
-
 ```
 
 ### batch-el
