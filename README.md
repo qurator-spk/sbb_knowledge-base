@@ -114,7 +114,7 @@ Options:
 ***
 
 
-## Preprocessing of digital collections:
+## Preprocessing of digitalized collections:
 
 These tools can be used only internally within the SBB in order to extract BERT pre-training 
 data from the ALTO-XML files of the digital collections of the SBB.
@@ -178,6 +178,8 @@ Options:
   --help               Show this message and exit.
 
 ```
+
+## NER + EL of digitalized collections:
 
 ### batchner
 
