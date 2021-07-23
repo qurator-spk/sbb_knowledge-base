@@ -1,10 +1,48 @@
 ***
-## Wikipedia knowledge-base extraction:
+## Wikidata + Wikipedia knowledge-base extraction:
 
-See [Makefile](Makefile.wikipedia) for entire processing chain. It also contains build rules for the 
-wikipedia sqlite database files to start with. 
+Currently, the [SBB entity linking system](https://github.com/qurator-spk/sbb_ned) uses a
+knowledge-base that is derived from Wikidata and Wikipedia.
+
+First identification of relevant entities is performed by running SPARQL queries on wikidata 
+(Beware! In order to do this you need to set up your own wikidata instance since the query time limit 
+of wikidata.org prevents us from running these queries directly on their instance.)
+See [Makefile.wikidata](Makefile.wikidata) for details.
+
+Once all the relevant entities have been identified, related text material with ground-truth, 
+i.e., human annotated entity links, is extracted from wikipedia and processed such that it can be used 
+during training and application of the entity linking system.
+See [Makefile.wikipedia](Makefile.wikipedia) for that part of the processing chain. 
+This part also contains build rules for the wikipedia sqlite database files to start with.
+
+### run-sparql
+```
+run-sparql --help
+
+run-sparql [OPTIONS] OUT_FILE
+
+  Runs a SPARQL query QUERY on ENDPOINT and saves the results as pickled
+  pandas DataFrame in OUT_FILE.
+
+Options:
+  --endpoint TEXT    SPARQL endpoint. Default
+                     https://query.wikidata.org/bigdata/namespace/wdq/sparql.
+
+  --query TEXT       SPARQL query.
+  --query-file PATH  Read query from file
+  --analytic         Run query in analytic mode (Blazegraph specific).
+  --demo             Run demo query.
+  --lang TEXT        Replace __LANG__ in query by this value. Default: empty.
+  --site TEXT        Replace __SITE__ in query by this value. Default: empty.
+  --help             Show this message and exit.
+
+``` 
 
 ### extract-wiki-ner-entities
+
+**Note: We now perform entity identification by running SPARQL queries on wikidata. 
+Therefore this tool is not used any more in the knowledge base extraction.** 
+
 ```
 extract-wiki-ner-entities --help
 
@@ -28,6 +66,9 @@ Options:
 ```
 
 ### wikidatamapping
+
+**Note: We now perform entity identification by running SPARQL queries on wikidata. 
+Therefore this tool is not used any more in the knowledge base extraction.** 
 
 ```
 wikidatamapping --help
@@ -114,11 +155,12 @@ Options:
 ***
 
 
-## Preprocessing of digitalized collections:
+## Processing of digitalized collections:
 
 These tools can be used only internally within the SBB in order to extract BERT pre-training 
 data from the ALTO-XML files of the digital collections of the SBB.
-See [Makefile](Makefile) for entire pre-processing chain.
+
+See [Makefile](Makefile) for entire processing chain.
 
 ### altotool
 
