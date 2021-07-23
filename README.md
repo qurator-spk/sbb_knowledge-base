@@ -208,6 +208,44 @@ Options:
 
 ```
 
+### batch-el
+```
+batchel --help
+
+Usage: batchel [OPTIONS] SQLITE_FILE LANG_FILE EL_ENDPOINTS
+
+  Performs entity linking on all the PPNs resp. files whose NER-tagging is
+  contained in the input SQLITE_FILE. Stores the linking results in the same
+  file in a table 'entity_linking'.
+
+  SQLITE_FILE: File that has been produced by batchner, i.e., a file that
+  contains all the NER results per PPN and page in table named 'tagged'.
+
+  LANG_FILE: Pickled pandas DataFrame that specifies the language of all
+  files per PPN:
+
+              ppn      filename language
+  0  PPN646426230  00000045.xml       fr
+  1  PPN646426230  00000218.xml       fr
+  2  PPN646426230  00000394.xml       fr
+  3  PPN646426230  00000071.xml       fr
+  4  PPN646426230  00000317.xml       fr
+  see also ->corpuslanguage --help
+
+  EL_ENDPOINTS: JSON structure that defines EL-endpoints per language:
+
+  { "de": "http://b-lx0053.sbb.spk-berlin.de/sbb-tools/de-ned" }
+
+  Suppress proxy by option --noproxy.
+
+Options:
+  --chunk-size INTEGER   size of chunks sent to EL-Linking system. Default:
+                         100.
+
+  --noproxy              disable proxy. default: proxy is enabled.
+  --start-from-ppn TEXT
+  --help                 Show this message and exit.
+```
 
 ### alto-annotator:
 ```

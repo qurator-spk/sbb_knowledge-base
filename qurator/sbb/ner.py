@@ -107,11 +107,16 @@ def on_db_file(fulltext_sqlite_file, selection_file, model_name, ner_endpoint, c
                processes, outfile):
     """
     Reads the text content per page of digitalized collections from sqlite file FULLTEXT_SQLITE_FILE.
+
     Considers only a subset of documents that is defined by SELECTION_FILE.
+
     Performs NER on the text content using the REST endpoint[s] NER_ENDPOINT ....
+
     Writes the NER results back to another sqlite file whose name is equal to FULLTEXT_SQLITE_FILE + '-ner-'
     or to the file specified in the --outfile option.
+
     Writes results in chunks of size <chunksize>.
+
     Suppress proxy with option --noproxy.
     """
 
