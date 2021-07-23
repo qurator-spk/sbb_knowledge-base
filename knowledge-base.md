@@ -4,7 +4,7 @@ Currently, the [SBB entity linking system](https://github.com/qurator-spk/sbb_ne
 knowledge-base that is derived from Wikidata and Wikipedia.
 
 First identification of relevant entities is performed by running SPARQL queries on wikidata 
-(Beware! In order to do this you need to set up your own wikidata instance since the query time limit 
+(**Beware!** In order to do this you need to set up your own wikidata instance since the query time limit 
 of wikidata.org prevents us from running these queries directly on their instance.)
 See [Makefile.wikidata](Makefile.wikidata) for details.
 
@@ -13,6 +13,17 @@ i.e., human annotated entity links, is extracted from wikipedia and processed su
 during training and application of the entity linking system.
 See [Makefile.wikipedia](Makefile.wikipedia) for that part of the processing chain. 
 This part also contains build rules for the wikipedia sqlite database files to start with.
+
+If you want to avoid setup of your own Wikidata instance and re-extraction of the knowledge-bases,
+you might want to look at the ready-to-use knowledge-bases for german, french and english that can be downloaded at
+https://qurator-data.de/sbb_ned/models.tar.gz 
+ 
+**Beware:** The archive file contains the required models as well as the knowledge bases
+for german, french and english, altogether roughly 30GB!!!
+
+ 
+
+ 
 
 ### run-sparql
 ```
