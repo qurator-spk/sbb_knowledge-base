@@ -12,6 +12,8 @@ MAX_ENTROPY_QUANTILE ?=0.8
 
 NER_ENDPOINTS ?=http://b-lx0053.sbb.spk-berlin.de:8080 http://b-lx0053.sbb.spk-berlin.de:8081 http://b-lx0053.sbb.spk-berlin.de:8082 http://b-lx0059.sbb.spk-berlin.de:8080 http://b-lx0059.sbb.spk-berlin.de:8081 http://b-lx0059.sbb.spk-berlin.de:8082
 
+EL_ENDPOINTS="{ \"de\": \"http://b-lx0053.sbb-spk-berlin.de:5015\"}"
+
 $(DATA_DIR):
 	mkdir -p $@
 
@@ -42,4 +44,6 @@ alto-ner:	$(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 	alto-annotator $? $(ALTOSOURCEPATH) $(ALTOTARGETPATH) --processes=$(PROCESSES)
 
 sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
-	
+
+sbb-el: sbb-ner
+	batch-el --noproxy $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3 $(DATA_DIR)/language.pkl $(EL_ENDPOINTS)
