@@ -1,7 +1,7 @@
 {
   "FULLTEXT_PATH": "data/digisam/fulltext.sqlite3",
   "IMAGE_PATH": "/srv/digisam_images/sbb",
-  "ALTO_PATH" : "/qurator-share/alto-ner-annotated/digisam-ner-tagged-DC-SBB-MULTILANG",
+  "ALTO_PATH": "/qurator-share/alto-ner-annotated/digisam-ner-tagged-DC-SBB-MULTILANG",
   "PPN_EXAMPLES": [
     {
       "ppn": "633609536",
@@ -46,6 +46,24 @@
     {
       "ppn": "818985976",
       "name": "\nDie älteste Berliner Zeitung\nOCR\n\nDie älteste Berliner Zeitung : Fragmente der Berliner Wochenzeitung von 1626 aus dem Besitz der Preußischen Staatsbibliothek"
+    }
+  ],
+  "TOPIC_MODELS": [
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/lda_test.json"
+    },
+    {
+      "name": "Persons",
+      "data": "data/lda_test-PER.json"
+    },
+    {
+      "name": "Locations",
+      "data": "data/lda_test-LOC.json"
+    },
+    {
+      "name": "Organisations",
+      "data": "data/lda_test-ORG.json"
     }
   ]
 }

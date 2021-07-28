@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>LDAvis</title>
+    <script src="js/d3.v3.js"></script>
+    <script src="js/ldavis.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/lda.css">
+
+    <script src="js/jquery-3.4.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css" crossorigin="anonymous">
+</head>
+
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6 col-md-12 text-center mt-3 mb-3">
+            <select class="custom-select mb-3" id="map-select"></select>
+            <div id="mds">
+                <h6 id="mds-heading" class="mt-2 mb-0"></h6>
+            </div>
+            <div id="mds-input" class="mt-0 text-center">
+                <label for="mds-topic" style="font-size: 14px">
+                    Selected Topic: <span id="mds-topic-value" class="ml-2"></span>
+                </label>
+                <input style="width: 50px" type="text" min="0" max="80" step="1" id="mds-topic">
+                <button class="btn" id="mds-topic-down">Previous Topic</button>
+                <button class="btn" id="mds-topic-up">Next Topic</button>
+                <button class="btn" id="mds-topic-clear">Clear Topic</button>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12 text-center">
+
+            <div id="accordion">
+                <div class="card">
+                    <div class="card-header" id="headingOne">
+                        <h5 class="mb-0">
+                            <button id="chart-heading" class="btn btn-link" data-toggle="collapse" data-target="#collapseOne"
+                                    aria-expanded="true" aria-controls="collapseOne"> </button>
+                        </h5>
+                    </div>
+
+                    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+                        <div id="lambdaInput" class="card-body mt-0 text-center d-none">
+                            <div id="lambdaZero">
+                                <text x="0" y="0" style="font-size: 14px;">Slide to adjust relevance
+                                    metric<sup>(2)</sup>:
+                                </text>
+                                <br>
+                                <label id="lamlabel" for="mds-lambda"> λ = <span
+                                        id="mds-lambda-value">0.5</span></label>
+                            </div>
+                            <div id="sliderdiv" class="text-center">
+                                <input style="width: 250px; margin-left: 0px; margin-right: 0px" type="range" min="0"
+                                       max="1" step="0.01" id="mds-lambda" list="ticks"><br>
+                            </div>
+                        </div>
+                        <div class="mt-0 text-center">
+                            <div id="chart"></div>
+                            <text>
+                                1. saliency(term w) = frequency(w) * [sum_t p(t | w) * log(p(t | w)/p(t))] for topics t;
+                                see
+                                <a href="http://vis.stanford.edu/files/2012-Termite-AVI.pdf">Chuang et. al (2012)</a>
+                            </text>
+                            <br>
+                            <text>2. relevance(term w | topic t) = λ * p(w | t) + (1 - λ) * p(w | t)/p(w);
+                                see <a href="http://nlp.stanford.edu/events/illvi2014/papers/sievert-illvi2014.pdf">
+                                    Sievert &amp; Shirley (2014)</a>
+                            </text>
+                        </div>
+                    </div>
+                </div>
+                <div class="card d-none" id="doc-card">
+                    <div class="card-header" id="headingTwo">
+                        <h5 class="mb-0">
+                            <button id="doc-list-heading" class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo"
+                                    aria-expanded="false" aria-controls="collapseTwo">
+                                Relevant Documents for Topic
+                            </button>
+                        </h5>
+                    </div>
+                    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                            <ul class="card-body list-group" id="doc-list" style="height: 70vh;overflow-y: scroll;">
+                                No content yet.
+                            </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            function map_setup(maps) {
+                var mapping = {};
+
+                maps.forEach(
+                    function (map, index) {
+                        mapping[index] = map;
+
+                        var html = `<option selected value=${index}>${map["name"]}</option>`;
+
+                        $("#map-select").append($(html));
+                    }
+                );
+
+                var vis = null;
+
+                $("#map-select" )
+                  .change(
+                    function () {
+
+                    history.pushState(null, "Query", location.origin + location.pathname);
+
+                    var selected_map = $( "select option:selected" ).val();
+
+                    $("#chart").html("");
+                    $("#doc-list").html("");
+                    $("#mds").html("<h6 id=\"mds-heading\" class=\"mt-2 mb-0\"></h6>");
+                    $("svg").remove();
+
+                    vis = new LDAvis(mapping[selected_map]["data"]);
+                  })
+                  .change();
+            };
+
+            $.get("topic_models").done(map_setup);
+        </script>
+    </div>
+</div>
+</body>
+</html>
+
+
+
+
+

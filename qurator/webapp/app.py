@@ -64,6 +64,11 @@ def get_ppnexamples():
     return jsonify(app.config['PPN_EXAMPLES'])
 
 
+@app.route('/topic_models')
+def get_topic_models():
+    return jsonify(app.config['TOPIC_MODELS'])
+
+
 @app.route('/digisam-fulltext/<ppn>')
 def fulltext(ppn):
 
