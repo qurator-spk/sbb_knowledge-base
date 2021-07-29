@@ -34,7 +34,7 @@ def make_docs(data):
 
 def make_text(docs):
     text = []
-    for ppn, doc in tqdm(docs.groupby('ppn')):
+    for ppn, doc in tqdm(docs.groupby('ppn'), desc="make_text"):
         doc = doc.dropna(how='any').sort_values('pos')
 
         text.append(doc['label'].tolist())
@@ -45,7 +45,7 @@ def make_text(docs):
 def make_bow(data):
     docs = []
     ppns = []
-    for ppn, doc in tqdm(data.groupby('ppn')):
+    for ppn, doc in tqdm(data.groupby('ppn'), desc="make_bow"):
         docs.append([(int(voc_index), float(wcount)) for doc_len, voc_index, wcount in
                      zip(doc.doc_len, doc.voc_index.tolist(), doc.wcount.tolist())])
         ppns.append(ppn)
