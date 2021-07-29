@@ -12,6 +12,10 @@ Run sbb-tools webservice like:
 env CONFIG=config.json env FLASK_APP=qurator/webapp/app.py env FLASK_ENV=development env flask run --host=0.0.0.0 --port=8000
 ```
 
+Topic modeling interface can be found at: http://localhost:8000/ldavis.html .
+
+Configuration of displayed topic models is done via [config.json](qurator/webapp/config.json).
+
 ### Screenshots:
 
 ![sbb-ner-demo example](.screenshots/topicm0.png?raw=true)
