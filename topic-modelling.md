@@ -5,6 +5,53 @@ This sbb-tools package contains an adapted version of the html/js visualisation 
 it can switch between different topic models and provides links into wikidata and the digitalized collections of the SBB.
 
 ***
+### Computation of LDA models and visualisation data (JSON):
+
+Complete processing chain can be found in the  [Makefile](Makefile.topm).
+
+```
+lda-grid-search --help
+Usage: lda-grid-search [OPTIONS] OUT_FILE CORPUS_FILE DOCS_FILE                                                                                                                                        
+                                                                                                                                                                                                       
+  Perform LDA-evaluation in a grid-search over different parameters.                                                                                                                                   
+                                                                                                                                                                                                       
+  OUT_FILE: Store results of the grid search as pickled pandas DataFrame in                                                                                                                            
+  this file.                                                                                                                                                                                           
+                                                                                                                                                                                                       
+  CORPUS_FILE: Read the text corpus from this file.                                                                                                                                                    
+                                                                                                                                                                                                       
+  DOCS_FILE: Read the documents (required to evalute coherence model c_v)                                                                                                                              
+  from this file.                                                                                                                                                                                      
+                                                                                                                                                                                                       
+Options:                                                                                                                                                                                               
+  --num-runs INTEGER              Repeat each experiment num-runs times.                                                                                                                               
+                                  Default 10
+
+  --max-passes INTEGER            Max number of passes through the data.
+                                  Default 50
+
+  --passes-step INTEGER           Increase number of passes by this step size.
+                                  Default 5.
+
+  --max-topics INTEGER            Max number of topics in LDA topic model.
+                                  Default 100.
+
+  --topic-step INTEGER            Increase number of topics by this step size.
+                                  Default 10.
+
+  --coherence-model [c_v|u_mass]  Which coherence model to use. Default: c_v.
+  --processes INTEGER             Number of workers. Default 4.
+  --mods-info-file PATH           Read MODS info from this file.
+  --gen-vis-data                  Generate visualisation JSON data (LDAvis)
+                                  for each tested grid configuration.
+
+  --mini-batch-size INTEGER       Mini-batch size. Default 256
+  --help                          Show this message and exit.
+
+
+```
+
+### Setup visualization:
 
 Run sbb-tools webservice like:
 
