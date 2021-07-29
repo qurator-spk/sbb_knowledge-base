@@ -64,7 +64,6 @@ def count_entities(ner):
 
 
 class ParseJob:
-
     voc = None
     con = None
 
@@ -114,10 +113,8 @@ class ParseJob:
 
 def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None,
               filter_type=None):
-
     entities = None
     if entities_file is not None:
-
         print("Reading id2work information from entities table ...")
         with sqlite3.connect(entities_file) as con:
             entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
@@ -164,7 +161,6 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
 @click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
 @click.option('--filter-type', type=str, default=None, help="")
 def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, filter_type):
-
     filter_type = set(filter_type.split(','))
 
     data, voc = read_docs(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
@@ -174,7 +170,6 @@ def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, fi
 
 
 class CountJob:
-
     voc = None
     con = None
 
@@ -211,12 +206,11 @@ class CountJob:
 
         weighted_cnt = []
         for (qid, page_title), qpart in cnt.groupby(['wikidata', 'page_title']):
-
             weighted_count = qpart[['count']].T.dot(qpart[['proba']]).iloc[0].iloc[0]
 
             weighted_cnt.append((qid, page_title, weighted_count))
 
-        weighted_cnt = pd.DataFrame(weighted_cnt, columns=['wikidata', 'page_title', 'wcount']).\
+        weighted_cnt = pd.DataFrame(weighted_cnt, columns=['wikidata', 'page_title', 'wcount']). \
             sort_values('wcount', ascending=False).reset_index(drop=True)
 
         tmp = pd.DataFrame([(qid, CountJob.voc[qid], wcount)
@@ -236,10 +230,8 @@ class CountJob:
 
 
 def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None, filter_type=None):
-
     entities = None
     if entities_file is not None:
-
         print("Reading id2work information from entities table ...")
         with sqlite3.connect(entities_file) as con:
             entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
@@ -268,7 +260,6 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 
         for i, tmp in enumerate(prun(get_jobs(), initializer=CountJob.initialize, initargs=(voc, sqlite_file),
                                      processes=processes)):
-
             data.append(tmp)
 
         data = pd.concat(data)
@@ -287,7 +278,6 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 @click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
 @click.option('--filter-type', type=str, default=None, help="")
 def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file, filter_type):
-
     filter_type = set(filter_type.split(','))
 
     data, voc = read_corpus(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
@@ -343,7 +333,6 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
 
 
 def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info):
-
     vis_data = gensimvis.prepare(lda, bow, dictionary)
 
     topic_of_docs = []
@@ -393,7 +382,7 @@ def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info):
 @click.option('--topic-step', type=int, default=10, help='Increase number of topics by this step size. Default 10.')
 @click.option('--coherence-model', type=click.Choice(['c_v', 'u_mass'], case_sensitive=False), default="c_v",
               help="Which coherence model to use. Default: c_v.")
-@click.option('--processes', default=4, help='Number of workers.')
+@click.option('--processes', default=4, help='Number of workers. Default 4.')
 @click.option('--mods-info-file', type=click.Path(exists=True), default=None, help='Read MODS info from this file.')
 @click.option('--gen-vis-data', is_flag=True, default=False, help='Generate visualisation JSON data (LDAvis) '
                                                                   'for each tested grid configuration.')
@@ -414,7 +403,6 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
     mods_info = None
 
     if mods_info_file is not None:
-
         print("Reading MODS info from {}".format(mods_info_file))
         mods_info = pd.read_pickle(mods_info_file).reset_index().rename(columns={'index': 'ppn'})
 
@@ -440,42 +428,42 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
     lda_eval = []
 
-    seq = tqdm(range(passes_step, max_passes, passes_step))
+    configs = [(num_passes, max(num_topics, 2), run)
+               for num_passes in range(passes_step, max_passes + 1, passes_step)
+               for num_topics in range(topic_step, max_topics + 1, topic_step)
+               for run in range(num_runs)]
 
-    for num_passes in seq:
-        for num_topics in range(0, max_topics, topic_step):
+    seq = tqdm(configs)
 
-            num_topics = max(num_topics, 2)
+    for num_passes, num_topics, run in seq:
 
-            for run in range(num_runs):
-                lda = LdaMulticore(corpus=bow, num_topics=num_topics, passes=num_passes, chunksize=mini_batch_size,
-                                   workers=processes)
-                cm = None
-                if coherence_model == 'u_mass':
-                    cm = CoherenceModel(model=lda, corpus=bow, dictionary=dictionary, coherence='u_mass')
-                elif coherence_model == 'c_v':
-                    cm = CoherenceModel(model=lda, texts=texts, dictionary=dictionary, coherence='c_v')
-                else:
-                    RuntimeError("Coherence model not supported.")
+        seq.set_description("LDAMulticore=> num_passes: {}, num_topic: {} run: {}".
+                            format(num_passes, num_topics, run))
 
-                coherence = cm.get_coherence()
+        lda = LdaMulticore(corpus=bow, num_topics=num_topics, passes=num_passes, chunksize=mini_batch_size,
+                           workers=processes)
+        cm = None
+        if coherence_model == 'u_mass':
+            cm = CoherenceModel(model=lda, corpus=bow, dictionary=dictionary, coherence='u_mass')
+        elif coherence_model == 'c_v':
+            cm = CoherenceModel(model=lda, texts=texts, dictionary=dictionary, coherence='c_v')
+        else:
+            RuntimeError("Coherence model not supported.")
 
-                seq.set_description("num_passes: {}, num_topic: {} run: {} coherence: {}".
-                                    format(num_passes, num_topics, run, coherence))
+        coherence = cm.get_coherence()
 
-                lda_eval.append((num_passes, num_topics, run, coherence, mini_batch_size))
+        lda_eval.append((num_passes, num_topics, run, coherence, mini_batch_size))
 
-                pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence', 'mb_size']).\
-                    to_pickle(out_file)
+        pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence', 'mb_size']). \
+            to_pickle(out_file)
 
-                if gen_vis_data:
+        if gen_vis_data:
+            result_file = "{}-{}.json".format(Path(out_file).stem, len(lda_eval))
 
-                    result_file = "{}-{}.json".format(Path(out_file).stem, len(lda_eval))
+            seq.set_description("Generating visualisation=> "
+                                "num_passes: {}, num_topic: {} run: {} coherence: {}".
+                                format(num_passes, num_topics, run, coherence))
 
-                    seq.set_description("Generating visualisation=> "
-                                        "num_passes: {}, num_topic: {} run: {} coherence: {}".
-                                        format(num_passes, num_topics, run, coherence))
-
-                    generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info)
+            generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info)
 
     pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)

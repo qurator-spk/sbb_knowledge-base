@@ -3,6 +3,7 @@ ENTITIES_FILE ?=/home/labusch/qurator/sbb_ned/data/wikipedia/de-ned.sqlite
 MIN_PROBA ?=0.5
 PROCESSES ?=4
 ENTITY_LINKING_FILE ?=./backup.sqlite3
+MODS_INFO ?=data/digisam/mods_info/mods_info_df_all.2019-07-16.pkl
 
 ned-corpus-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
 	extract-corpus --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --filter-type="$*" $(word 2,$^) $@
@@ -14,11 +15,11 @@ corpus:	ned-corpus-$(MIN_PROBA)-PER.pkl ned-corpus-$(MIN_PROBA)-LOC.pkl ned-corp
 
 docs:	ned-docs-$(MIN_PROBA)-PER.pkl ned-docs-$(MIN_PROBA)-LOC.pkl ned-docs-$(MIN_PROBA)-ORG.pkl ned-docs-$(MIN_PROBA)-PER,LOC,ORG.pkl
 
-ned-lda-grid-search-%.pkl:	ned-corpus-$(MIN_PROBA)-%.pkl ned-docs-$(MIN_PROBA)-%.pkl
-	lda-grid-search --num-runs=1 --max-passes=50 --max-topics=500 $@ $^
+ned-lda-grid-search-num_topics-%.pkl:	ned-corpus-$(MIN_PROBA)-%.pkl ned-docs-$(MIN_PROBA)-%.pkl
+	lda-grid-search --processes=$(PROCESSES) --gen-vis-data --num-runs=1 --max-passes=1000 --passes-step=1000 --max-topics=500 --topic-step=20 --mods-info-file=$(MODS_INFO) $@ $^
 
-.PRECIOUS: ned-lda-grid-search-%.pkl
+.PRECIOUS: ned-lda-grid-search-num_topics-%.pkl
 
-grid-search-%:	ned-lda-grid-search-%.pkl ;
+grid-search-%:	ned-lda-grid-search-num_topics-%.pkl ;
 
 
