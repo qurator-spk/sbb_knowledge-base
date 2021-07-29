@@ -12,7 +12,9 @@ from ..sbb.ned import parse_sentence
 import os
 # from gensim.corpora.dictionary import Dictionary
 # from pyLDAvis.gensim import prepare
-
+import pyLDAvis
+import pyLDAvis.gensim as gensimvis
+from pathlib import Path
 
 import gensim
 from gensim.models import CoherenceModel
@@ -340,6 +342,46 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
     lda.save(model_file)
 
 
+def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info):
+
+    vis_data = gensimvis.prepare(lda, bow, dictionary)
+
+    topic_of_docs = []
+    for i in tqdm(range(0, len(bow))):
+        tmp = pd.DataFrame(lda[bow[i]], columns=['topic_num', 'amount'])
+        tmp['ppn'] = ppns[i]
+        tmp['topic_num'] += 1
+
+        topic_of_docs.append(tmp)
+
+    topic_of_docs = pd.concat(topic_of_docs)
+
+    order = {t: i + 1 for i, t in enumerate(vis_data.topic_order)}
+
+    topic_of_docs['topic_num'] = topic_of_docs.topic_num.apply(lambda t: order[t])
+
+    pyLDAvis.save_json(vis_data, result_file)
+
+    with open(result_file, 'r') as f:
+        json_data = json.load(f)
+
+    topic_of_docs['ppn'] = topic_of_docs.ppn.astype('str')
+
+    if mods_info is not None:
+        topic_of_docs = topic_of_docs.merge(mods_info, on='ppn')
+
+    docs = {}
+    for topic_num, part in tqdm(topic_of_docs.groupby('topic_num')):
+        part = part.sort_values('amount', ascending=False)
+
+        docs[topic_num] = [{'title': row.titleInfo_title if mods_info is not None else row.ppn, 'ppn': row.ppn}
+                           for _, row in part.iterrows()]
+
+    json_data['docs'] = docs
+    with open(result_file, 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
 @click.command()
 @click.argument('out-file', type=click.Path(exists=False), required=True, nargs=1)
 @click.argument('corpus-file', type=click.Path(exists=True), required=True, nargs=1)
@@ -352,8 +394,12 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
 @click.option('--coherence-model', type=click.Choice(['c_v', 'u_mass'], case_sensitive=False), default="c_v",
               help="Which coherence model to use. Default: c_v.")
 @click.option('--processes', default=4, help='Number of workers.')
+@click.option('--mods-info-file', type=click.Path(exists=True), default=None, help='Read MODS info from this file.')
+@click.option('--gen-vis-data', is_flag=True, default=False, help='Generate visualisation JSON data (LDAvis) '
+                                                                  'for each tested grid configuration.')
+@click.option('--mini-batch-size', type=int, default=256, help='Mini-batch size. Default 256')
 def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, passes_step, max_topics, topic_step,
-                    coherence_model, processes):
+                    coherence_model, processes, mods_info_file, gen_vis_data, mini_batch_size):
     """
     Perform LDA-evaluation in a grid-search over different parameters.
 
@@ -364,6 +410,15 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
     DOCS_FILE: Read the documents (required to evalute coherence model c_v) from this file.
 
     """
+
+    mods_info = None
+
+    if mods_info_file is not None:
+
+        print("Reading MODS info from {}".format(mods_info_file))
+        mods_info = pd.read_pickle(mods_info_file).reset_index().rename(columns={'index': 'ppn'})
+
+        mods_info['ppn'] = mods_info.ppn.astype(str).str.extract('PPN(.*)')
 
     data = pd.read_pickle(corpus_file)
 
@@ -393,9 +448,9 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
             num_topics = max(num_topics, 2)
 
             for run in range(num_runs):
-                lda = LdaMulticore(corpus=bow, num_topics=num_topics, passes=num_passes, chunksize=200,
+                lda = LdaMulticore(corpus=bow, num_topics=num_topics, passes=num_passes, chunksize=mini_batch_size,
                                    workers=processes)
-
+                cm = None
                 if coherence_model == 'u_mass':
                     cm = CoherenceModel(model=lda, corpus=bow, dictionary=dictionary, coherence='u_mass')
                 elif coherence_model == 'c_v':
@@ -408,8 +463,19 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
                 seq.set_description("num_passes: {}, num_topic: {} run: {} coherence: {}".
                                     format(num_passes, num_topics, run, coherence))
 
-                lda_eval.append((num_passes, num_topics, run, coherence))
+                lda_eval.append((num_passes, num_topics, run, coherence, mini_batch_size))
 
-                pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)
+                pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence', 'mb_size']).\
+                    to_pickle(out_file)
+
+                if gen_vis_data:
+
+                    result_file = "{}-{}.json".format(Path(out_file).stem, len(lda_eval))
+
+                    seq.set_description("Generating visualisation=> "
+                                        "num_passes: {}, num_topic: {} run: {} coherence: {}".
+                                        format(num_passes, num_topics, run, coherence))
+
+                    generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info)
 
     pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)
