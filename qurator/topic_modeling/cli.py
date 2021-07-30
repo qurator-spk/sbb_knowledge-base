@@ -19,6 +19,9 @@ from pathlib import Path
 import gensim
 from gensim.models import CoherenceModel
 
+import logging
+logging.basicConfig(filename='gensim.log', format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
+
 
 def make_docs(data):
     docs = []
@@ -63,13 +66,47 @@ def count_entities(ner):
     return df
 
 
+def read_linking_table(con, min_proba, min_surface_len, filter_type, min_occurences):
+
+    print('Reading entity linking table ...')
+    df = pd.read_sql('SELECT * from entity_linking', con=con).drop(columns=["index"]).reset_index(drop=True)
+    print('done.')
+
+    df = df.loc[df.wikidata.str.startswith('Q')]
+
+    print('Removing entities with probability less than {} and surface length less than {}...'.
+          format(min_proba, min_surface_len+1))
+
+    df = df.loc[(df.proba >= min_proba) & (df.page_title.str.len() > min_surface_len)
+                & (df.entity_id.str.len() > min_surface_len + 4)]
+    print('done.')
+
+    if filter_type is not None:
+        print('Consider only entities of type: {}'.format(filter_type))
+        df = df.loc[df.entity_id.str[-3:].isin(filter_type)]
+
+    if min_occurences is not None:
+
+        tmp = df.drop_duplicates(subset=['ppn', 'wikidata'])
+        vc = tmp.wikidata.value_counts()
+        min_count = int(len(tmp.ppn.unique()) / 100.0 * min_occurences)
+
+        print('Removing entities that occur less than {} times...'.format(min_count))
+        df = df.loc[df.wikidata.isin(vc.loc[vc >= min_count].index)]
+        print('done.')
+
+    voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
+
+    return df, voc
+
+
 class ParseJob:
     voc = None
     con = None
 
     def __init__(self, ppn, part):
         self._ppn = ppn
-        self._part = part
+        self._entity_linking = part
 
     def __call__(self, *args, **kwargs):
 
@@ -77,7 +114,7 @@ class ParseJob:
 
         df['page'] = df.file_name.str.extract('([1-9][0-9]*)').astype(int)
 
-        df = df.loc[(df.page >= self._part.start_page.min()) & (df.page <= self._part.stop_page.max())]
+        df = df.loc[(df.page >= self._entity_linking.start_page.min()) & (df.page <= self._entity_linking.stop_page.max())]
 
         def iterate_entities():
             for _, row in df.iterrows():
@@ -98,7 +135,7 @@ class ParseJob:
         doc = pd.DataFrame([(pos, eid) for pos, (eid, entity, ent_type) in enumerate(iterate_entities())],
                            columns=['pos', 'entity_id'])
 
-        doc = doc.merge(self._part, on='entity_id', how='left').reset_index(drop=True)
+        doc = doc.merge(self._entity_linking, on='entity_id', how='left').reset_index(drop=True)
 
         doc['ppn'] = self._ppn
 
@@ -112,7 +149,7 @@ class ParseJob:
 
 
 def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None,
-              filter_type=None):
+              filter_type=None, min_occurences=None):
     entities = None
     if entities_file is not None:
         print("Reading id2work information from entities table ...")
@@ -121,24 +158,12 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
 
     with sqlite3.connect(sqlite_file) as con:
 
-        print('Reading entity linking table ...')
-        df = pd.read_sql('SELECT * from entity_linking', con=con).drop(columns=["index"]).reset_index(drop=True)
-        print('done.')
-
-        df = df.loc[(df.proba > min_proba) & (df.page_title.str.len() > min_surface_len)
-                    & (df.entity_id.str.len() > min_surface_len + 4)]
-
-        df = df.loc[df.wikidata.str.startswith('Q')]
-
-        if filter_type is not None:
-            df = df.loc[df.entity_id.str[-3:].isin(filter_type)]
-
-        voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
+        df, voc = read_linking_table(con, min_proba, min_surface_len, filter_type, min_occurences)
 
         data = []
 
         def get_jobs():
-            for ppn, part in tqdm(df.groupby('ppn')):
+            for ppn, part in tqdm(df.groupby('ppn'), desc='Translating NER results into sequence of QIDs'):
                 yield ParseJob(ppn, part)
 
         for i, tmp in enumerate(prun(get_jobs(), initializer=ParseJob.initialize, initargs=(voc, sqlite_file),
@@ -160,11 +185,13 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
 @click.option('--min-proba', type=float, default=0.25, help='Minimum probability of counted entities.')
 @click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
 @click.option('--filter-type', type=str, default=None, help="")
-def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, filter_type):
+@click.option('--min-occurences', type=float, default=1.0, help="Only consider entities that occur in at least this"
+                                                                "value percent of the documents. Default 1.0 percent")
+def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, filter_type, min_occurences):
     filter_type = set(filter_type.split(','))
 
     data, voc = read_docs(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
-                          filter_type=filter_type)
+                          filter_type=filter_type, min_occurences=min_occurences)
 
     data.to_pickle(docs_file)
 
@@ -175,7 +202,7 @@ class CountJob:
 
     def __init__(self, ppn, part):
         self._ppn = ppn
-        self._part = part
+        self._entity_linking = part
 
     def __call__(self, *args, **kwargs):
 
@@ -183,7 +210,8 @@ class CountJob:
 
         df['page'] = df.file_name.str.extract('([1-9][0-9]*)').astype(int)
 
-        df = df.loc[(df.page >= self._part.start_page.min()) & (df.page <= self._part.stop_page.max())]
+        df = df.loc[(df.page >= self._entity_linking.start_page.min())
+                    & (df.page <= self._entity_linking.stop_page.max())]
 
         cnt = []
         doc_len = 0
@@ -196,7 +224,7 @@ class CountJob:
 
             counter = count_entities(ner)
 
-            counter = counter.merge(self._part, left_index=True, right_on='entity_id')
+            counter = counter.merge(self._entity_linking, left_index=True, right_on='entity_id')
 
             counter['on_page'] = row.page
 
@@ -229,7 +257,8 @@ class CountJob:
         CountJob.con = sqlite3.connect(sqlite_file)
 
 
-def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None, filter_type=None):
+def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entities_file=None, filter_type=None,
+                min_occurences=None):
     entities = None
     if entities_file is not None:
         print("Reading id2work information from entities table ...")
@@ -238,24 +267,12 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 
     with sqlite3.connect(sqlite_file) as con:
 
-        print('Reading entity linking table ...')
-        df = pd.read_sql('SELECT * from entity_linking', con=con).drop(columns=["index"]).reset_index(drop=True)
-        print('done.')
-
-        df = df.loc[(df.proba > min_proba) & (df.page_title.str.len() > min_surface_len)
-                    & (df.entity_id.str.len() > min_surface_len + 4)]
-
-        df = df.loc[df.wikidata.str.startswith('Q')]
-
-        if filter_type is not None:
-            df = df.loc[df.entity_id.str[-3:].isin(filter_type)]
-
-        voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
+        df, voc = read_linking_table(con, min_proba, min_surface_len, filter_type, min_occurences)
 
         data = []
 
         def get_jobs():
-            for ppn, part in tqdm(df.groupby('ppn')):
+            for ppn, part in tqdm(df.groupby('ppn'), desc="Computation of weighted QID-occurence counts per PPN ..."):
                 yield CountJob(ppn, part)
 
         for i, tmp in enumerate(prun(get_jobs(), initializer=CountJob.initialize, initargs=(voc, sqlite_file),
@@ -275,13 +292,16 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 @click.argument('corpus-file', type=click.Path(exists=False), required=True, nargs=1)
 @click.option('--processes', default=4, help='Number of workers.')
 @click.option('--min-proba', type=float, default=0.25, help='Minimum probability of counted entities.')
-@click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
+@click.option('--entities-file', type=click.Path(exists=True), default=None,
+              help="Knowledge-base of entity linking step.")
 @click.option('--filter-type', type=str, default=None, help="")
-def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file, filter_type):
+@click.option('--min-occurences', type=float, default=1.0, help="Only consider entities that occur in at least this"
+                                                                "value percent of the documents. Default 1.0 percent.")
+def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file, filter_type, min_occurences):
     filter_type = set(filter_type.split(','))
 
     data, voc = read_corpus(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
-                            filter_type=filter_type)
+                            filter_type=filter_type, min_occurences=min_occurences)
 
     data.to_pickle(corpus_file)
 
@@ -382,11 +402,11 @@ def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info):
 @click.option('--topic-step', type=int, default=10, help='Increase number of topics by this step size. Default 10.')
 @click.option('--coherence-model', type=click.Choice(['c_v', 'u_mass'], case_sensitive=False), default="c_v",
               help="Which coherence model to use. Default: c_v.")
-@click.option('--processes', default=4, help='Number of workers. Default 4.')
+@click.option('--processes', type=int, default=4, help='Number of workers. Default 4.')
 @click.option('--mods-info-file', type=click.Path(exists=True), default=None, help='Read MODS info from this file.')
 @click.option('--gen-vis-data', is_flag=True, default=False, help='Generate visualisation JSON data (LDAvis) '
                                                                   'for each tested grid configuration.')
-@click.option('--mini-batch-size', type=int, default=256, help='Mini-batch size. Default 256')
+@click.option('--mini-batch-size', type=int, default=2048, help='Mini-batch size. Default 256')
 def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, passes_step, max_topics, topic_step,
                     coherence_model, processes, mods_info_file, gen_vis_data, mini_batch_size):
     """
