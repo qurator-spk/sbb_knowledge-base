@@ -64,6 +64,34 @@
     {
       "name": "Organisations",
       "data": "data/lda_test-ORG.json"
+    },
+    {
+      "name": "ORG-1",
+      "data": "data/ned-lda-grid-search-num_topics-ORG-1.json"
+    },
+    {
+      "name": "ORG-2",
+      "data": "data/ned-lda-grid-search-num_topics-ORG-2.json"
+    },
+    {
+      "name": "ORG-3",
+      "data": "data/ned-lda-grid-search-num_topics-ORG-3.json"
+    },
+    {
+      "name": "ORG-4",
+      "data": "data/ned-lda-grid-search-num_topics-ORG-4.json"
+    },
+    {
+      "name": "PER-1",
+      "data": "data/ned-lda-grid-search-num_topics-PER-1.json"
+    },
+    {
+      "name": "PER-2",
+      "data": "data/ned-lda-grid-search-num_topics-PER-2.json"
+    },
+    {
+      "name": "PER-3",
+      "data": "data/ned-lda-grid-search-num_topics-PER-3.json"
     }
   ]
 }

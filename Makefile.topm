@@ -1,25 +1,32 @@
 
+# b-lx0053:
+#make -f ~/qurator/mono-repo/sbb_tools/Makefile.topm corpus docs ENTITY_LINKING_FILE=digisam/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3 ENTITIES_FILE=wikipedia/de-ned.sqlite PROCESSES=10
+
 ENTITIES_FILE ?=/home/labusch/qurator/sbb_ned/data/wikipedia/de-ned.sqlite
 MIN_PROBA ?=0.5
 PROCESSES ?=4
 ENTITY_LINKING_FILE ?=./backup.sqlite3
 MODS_INFO ?=data/digisam/mods_info/mods_info_df_all.2019-07-16.pkl
+MAX_PASSES ?=200
+MIN_FREQ ?=0.1
+MAX_TOPICS ?=500
+TOPIC_STEP ?=20
 
-ned-corpus-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
-	extract-corpus --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --filter-type="$*" $(word 2,$^) $@
+ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
+	extract-corpus --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --min-freq=$(MIN_FREQ) --filter-type="$*" $(word 2,$^) $@
 
-ned-docs-$(MIN_PROBA)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
-	extract-docs --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --filter-type="$*" $(word 2,$^) $@
+ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl:	$(ENTITIES_FILE) $(ENTITY_LINKING_FILE)
+	extract-docs --entities-file=$< --processes=$(PROCESSES) --min-proba=$(MIN_PROBA) --min-freq=$(MIN_FREQ) --filter-type="$*" $(word 2,$^) $@
 
-corpus:	ned-corpus-$(MIN_PROBA)-PER.pkl ned-corpus-$(MIN_PROBA)-LOC.pkl ned-corpus-$(MIN_PROBA)-ORG.pkl ned-corpus-$(MIN_PROBA)-PER,LOC,ORG.pkl
+corpus:	ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER.pkl ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-LOC.pkl ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-ORG.pkl ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER,LOC,ORG.pkl
 
-docs:	ned-docs-$(MIN_PROBA)-PER.pkl ned-docs-$(MIN_PROBA)-LOC.pkl ned-docs-$(MIN_PROBA)-ORG.pkl ned-docs-$(MIN_PROBA)-PER,LOC,ORG.pkl
+docs:	ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-LOC.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-ORG.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER,LOC,ORG.pkl
 
-ned-lda-grid-search-num_topics-%.pkl:	ned-corpus-$(MIN_PROBA)-%.pkl ned-docs-$(MIN_PROBA)-%.pkl
-	lda-grid-search --processes=$(PROCESSES) --gen-vis-data --num-runs=1 --max-passes=1000 --passes-step=1000 --max-topics=500 --topic-step=20 --mods-info-file=$(MODS_INFO) $@ $^
+ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl:	ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl
+	lda-grid-search --processes=$(PROCESSES) --gen-vis-data --num-runs=1 --max-passes=$(MAX_PASSES) --passes-step=$(MAX_PASSES) --max-topics=$(MAX_TOPICS) --topic-step=$(TOPIC_STEP) --mods-info-file=$(MODS_INFO) $@ $^
 
-.PRECIOUS: ned-lda-grid-search-num_topics-%.pkl
+.PRECIOUS: ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl
 
-grid-search-%:	ned-lda-grid-search-num_topics-%.pkl ;
+grid-search-%:	ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ;
 
 

@@ -97,6 +97,8 @@ def read_linking_table(con, min_proba, min_surface_len, filter_type, min_occuren
 
     voc = {qid: i for i, qid in enumerate(df.wikidata.unique())}
 
+    print("Size of vocabulary is: {}".format(len(voc)))
+
     return df, voc
 
 
@@ -185,13 +187,13 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
 @click.option('--min-proba', type=float, default=0.25, help='Minimum probability of counted entities.')
 @click.option('--entities-file', default=None, help="Knowledge-base of entity linking step.")
 @click.option('--filter-type', type=str, default=None, help="")
-@click.option('--min-occurences', type=float, default=1.0, help="Only consider entities that occur in at least this"
-                                                                "value percent of the documents. Default 1.0 percent")
-def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, filter_type, min_occurences):
+@click.option('--min-freq', type=float, default=1.0, help="Only consider entities that occur in at least this "
+                                                          "value percent of the documents. Default 1.0 percent")
+def extract_docs(sqlite_file, docs_file, processes, min_proba, entities_file, filter_type, min_freq):
     filter_type = set(filter_type.split(','))
 
     data, voc = read_docs(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
-                          filter_type=filter_type, min_occurences=min_occurences)
+                          filter_type=filter_type, min_occurences=min_freq)
 
     data.to_pickle(docs_file)
 
@@ -295,13 +297,13 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
 @click.option('--entities-file', type=click.Path(exists=True), default=None,
               help="Knowledge-base of entity linking step.")
 @click.option('--filter-type', type=str, default=None, help="")
-@click.option('--min-occurences', type=float, default=1.0, help="Only consider entities that occur in at least this"
-                                                                "value percent of the documents. Default 1.0 percent.")
-def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file, filter_type, min_occurences):
+@click.option('--min-freq', type=float, default=1.0, help="Only consider entities that occur in at least this "
+                                                          "value percent of the documents. Default 1.0 percent.")
+def extract_corpus(sqlite_file, corpus_file, processes, min_proba, entities_file, filter_type, min_freq):
     filter_type = set(filter_type.split(','))
 
     data, voc = read_corpus(sqlite_file, processes=processes, min_proba=min_proba, entities_file=entities_file,
-                            filter_type=filter_type, min_occurences=min_occurences)
+                            filter_type=filter_type, min_occurences=min_freq)
 
     data.to_pickle(corpus_file)
 
@@ -406,7 +408,7 @@ def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info):
 @click.option('--mods-info-file', type=click.Path(exists=True), default=None, help='Read MODS info from this file.')
 @click.option('--gen-vis-data', is_flag=True, default=False, help='Generate visualisation JSON data (LDAvis) '
                                                                   'for each tested grid configuration.')
-@click.option('--mini-batch-size', type=int, default=2048, help='Mini-batch size. Default 256')
+@click.option('--mini-batch-size', type=int, default=2048, help='Mini-batch size. Default 2048')
 def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, passes_step, max_topics, topic_step,
                     coherence_model, processes, mods_info_file, gen_vis_data, mini_batch_size):
     """
