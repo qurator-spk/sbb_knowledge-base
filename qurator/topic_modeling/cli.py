@@ -354,8 +354,8 @@ def run_lda(sqlite_file, model_file, num_topics, entities_file, processes, corpu
     lda.save(model_file)
 
 
-def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info):
-    vis_data = gensimvis.prepare(lda, bow, dictionary)
+def generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info, n_jobs):
+    vis_data = gensimvis.prepare(lda, bow, dictionary, n_jobs=n_jobs)
 
     topic_of_docs = []
     for i in tqdm(range(0, len(bow))):
@@ -488,6 +488,6 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
                                 "num_passes: {}, num_topic: {} run: {} coherence: {}".
                                 format(num_passes, num_topics, run, coherence))
 
-            generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info)
+            generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info, n_jobs=processes+1)
 
     pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)
