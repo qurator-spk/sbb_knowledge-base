@@ -422,6 +422,8 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
     voc = data[['voc_index', 'label']].drop_duplicates().sort_values('voc_index').reset_index(drop=True)
 
+    print("Size of vocabulary: {}.".format(len(voc)))
+
     id2word = {int(voc_index): label for voc_index, label in zip(voc.voc_index.tolist(), voc.label.tolist())}
 
     dictionary = gensim.corpora.Dictionary.from_corpus(bow, id2word=id2word)
