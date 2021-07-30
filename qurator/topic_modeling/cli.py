@@ -468,9 +468,9 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
                            workers=processes)
         cm = None
         if coherence_model == 'u_mass':
-            cm = CoherenceModel(model=lda, corpus=bow, dictionary=dictionary, coherence='u_mass')
+            cm = CoherenceModel(model=lda, corpus=bow, dictionary=dictionary, coherence='u_mass', processes=processes)
         elif coherence_model == 'c_v':
-            cm = CoherenceModel(model=lda, texts=texts, dictionary=dictionary, coherence='c_v')
+            cm = CoherenceModel(model=lda, texts=texts, dictionary=dictionary, coherence='c_v', processes=processes)
         else:
             RuntimeError("Coherence model not supported.")
 
