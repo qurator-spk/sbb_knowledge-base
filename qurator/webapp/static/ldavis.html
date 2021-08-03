@@ -18,7 +18,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-lg-6 col-md-12 text-center mt-3 mb-3">
-            <select class="custom-select mb-3" id="map-select"></select>
+            <div class="form-group form-inline mb-3 mt-3">
+                <label for="ntopic-select" class="ml-3 mr-2"> Type of Map: </label>
+                <select class="custom-select" id="map-select"></select><span></span>
+                <label for="ntopic-select" class="ml-3 mr-2"> #Topics: </label>
+                <select class="custom-select" id="ntopic-select"></select>
+            </div>
             <div id="mds">
                 <h6 id="mds-heading" class="mt-2 mb-0"></h6>
             </div>
@@ -38,8 +43,9 @@
                 <div class="card">
                     <div class="card-header" id="headingOne">
                         <h5 class="mb-0">
-                            <button id="chart-heading" class="btn btn-link" data-toggle="collapse" data-target="#collapseOne"
-                                    aria-expanded="true" aria-controls="collapseOne"> </button>
+                            <button id="chart-heading" class="btn btn-link" data-toggle="collapse"
+                                    data-target="#collapseOne"
+                                    aria-expanded="true" aria-controls="collapseOne"></button>
                         </h5>
                     </div>
 
@@ -76,55 +82,109 @@
                 <div class="card d-none" id="doc-card">
                     <div class="card-header" id="headingTwo">
                         <h5 class="mb-0">
-                            <button id="doc-list-heading" class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo"
+                            <button id="doc-list-heading" class="btn btn-link collapsed" data-toggle="collapse"
+                                    data-target="#collapseTwo"
                                     aria-expanded="false" aria-controls="collapseTwo">
                                 Relevant Documents for Topic
                             </button>
                         </h5>
                     </div>
                     <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                            <ul class="card-body list-group" id="doc-list" style="height: 70vh;overflow-y: scroll;">
-                                No content yet.
-                            </ul>
+                        <ul class="card-body list-group" id="doc-list" style="height: 70vh;overflow-y: scroll;">
+                            No content yet.
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
         <script>
             function map_setup(maps) {
-                var mapping = {};
+                var map_names = new Set();
+                var n_topics = {}
+                var map_data = {}
 
                 maps.forEach(
                     function (map, index) {
-                        mapping[index] = map;
+                        map_names.add(map["name"]);
 
-                        var html = `<option selected value=${index}>${map["name"]} (${map["num_topics"]})</option>`;
+                        if (map["name"] in n_topics) {
+                            n_topics[map["name"]].add(map["num_topics"]);
+                        }
+                        else {
+                            n_topics[map["name"]] = new Set([map["num_topics"]]);
+                        }
+
+                        map_data[[map["name"], map["num_topics"]]] = map["data"];
+                    }
+                );
+
+                var map_names = Array.from(map_names).sort();
+
+                map_names.forEach(
+                    function (map_name, index) {
+
+                        var html = `<option value="${map_name}">${map_name}</option>`;
 
                         $("#map-select").append($(html));
                     }
                 );
 
+                function updateNTopicSelect() {
+
+                    var selected_map = $("#map-select" ).val();
+
+                    $("#ntopic-select").html("");
+                    n_topics[selected_map].forEach(
+                        function(n_top, index) {
+
+                            var html = `<option value=${n_top}>${n_top}</option>`;
+
+                            $("#ntopic-select").append($(html));
+                        }
+                    );
+                }
+
                 var vis = null;
 
-                $("#map-select" )
-                  .change(
-                    function () {
+                function updateLDAVis() {
 
                     history.pushState(null, "Query", location.origin + location.pathname);
-
-                    var selected_map = $( "select option:selected" ).val();
 
                     $("#chart").html("");
                     $("#doc-list").html("");
                     $("#mds").html("<h6 id=\"mds-heading\" class=\"mt-2 mb-0\"></h6>");
                     $("svg").remove();
 
-                    vis = new LDAvis(mapping[selected_map]["data"]);
-                  })
-                  .change();
+                    var selected_map = $("#map-select" ).val();
+
+                    var n_topics = $("#ntopic-select" ).val();
+
+                    vis = new LDAvis(map_data[[selected_map,n_topics]]);
+                }
+
+                $("#map-select" )
+                  .change(
+                    function () {
+                        updateNTopicSelect();
+
+                        updateLDAVis();
+                    }
+                  );
+
+                updateNTopicSelect();
+
+                $("#ntopic-select" )
+                  .change(
+                    function () {
+                        updateLDAVis();
+                    }
+                  );
+
+                updateLDAVis();
             };
 
             $.get("topic_models").done(map_setup);
+
         </script>
     </div>
 </div>
