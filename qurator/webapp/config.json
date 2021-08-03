@@ -50,48 +50,364 @@
   ],
   "TOPIC_MODELS": [
     {
-      "name": "Persons, Locations, Organisations",
-      "data": "data/lda_test.json"
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-1.json",
+      "num_topics": 20.0
     },
     {
       "name": "Persons",
-      "data": "data/lda_test-PER.json"
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-2.json",
+      "num_topics": 40.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-3.json",
+      "num_topics": 60.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-4.json",
+      "num_topics": 80.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-5.json",
+      "num_topics": 100.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-6.json",
+      "num_topics": 120.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-7.json",
+      "num_topics": 140.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-8.json",
+      "num_topics": 160.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-9.json",
+      "num_topics": 180.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-10.json",
+      "num_topics": 200.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-11.json",
+      "num_topics": 220.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-12.json",
+      "num_topics": 240.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-13.json",
+      "num_topics": 260.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-14.json",
+      "num_topics": 280.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-15.json",
+      "num_topics": 300.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-16.json",
+      "num_topics": 320.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-17.json",
+      "num_topics": 340.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-18.json",
+      "num_topics": 360.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-19.json",
+      "num_topics": 380.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-20.json",
+      "num_topics": 400.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-21.json",
+      "num_topics": 420.0
+    },
+    {
+      "name": "Persons",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER-22.json",
+      "num_topics": 440.0
     },
     {
       "name": "Locations",
-      "data": "data/lda_test-LOC.json"
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-1.json",
+      "num_topics": 20.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-2.json",
+      "num_topics": 40.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-3.json",
+      "num_topics": 60.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-4.json",
+      "num_topics": 80.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-5.json",
+      "num_topics": 100.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-6.json",
+      "num_topics": 120.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-7.json",
+      "num_topics": 140.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-8.json",
+      "num_topics": 160.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-9.json",
+      "num_topics": 180.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-10.json",
+      "num_topics": 200.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-11.json",
+      "num_topics": 220.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-12.json",
+      "num_topics": 240.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-13.json",
+      "num_topics": 260.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-14.json",
+      "num_topics": 280.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-15.json",
+      "num_topics": 300.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-16.json",
+      "num_topics": 320.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-17.json",
+      "num_topics": 340.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-18.json",
+      "num_topics": 360.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-19.json",
+      "num_topics": 380.0
+    },
+    {
+      "name": "Locations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-LOC-20.json",
+      "num_topics": 400.0
     },
     {
       "name": "Organisations",
-      "data": "data/lda_test-ORG.json"
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-1.json",
+      "num_topics": 20.0
     },
     {
-      "name": "ORG-1",
-      "data": "data/ned-lda-grid-search-num_topics-ORG-1.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-2.json",
+      "num_topics": 40.0
     },
     {
-      "name": "ORG-2",
-      "data": "data/ned-lda-grid-search-num_topics-ORG-2.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-3.json",
+      "num_topics": 60.0
     },
     {
-      "name": "ORG-3",
-      "data": "data/ned-lda-grid-search-num_topics-ORG-3.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-4.json",
+      "num_topics": 80.0
     },
     {
-      "name": "ORG-4",
-      "data": "data/ned-lda-grid-search-num_topics-ORG-4.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-5.json",
+      "num_topics": 100.0
     },
     {
-      "name": "PER-1",
-      "data": "data/ned-lda-grid-search-num_topics-PER-1.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-6.json",
+      "num_topics": 120.0
     },
     {
-      "name": "PER-2",
-      "data": "data/ned-lda-grid-search-num_topics-PER-2.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-7.json",
+      "num_topics": 140.0
     },
     {
-      "name": "PER-3",
-      "data": "data/ned-lda-grid-search-num_topics-PER-3.json"
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-8.json",
+      "num_topics": 160.0
+    },
+    {
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-9.json",
+      "num_topics": 180.0
+    },
+    {
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-10.json",
+      "num_topics": 200.0
+    },
+    {
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-11.json",
+      "num_topics": 220.0
+    },
+    {
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-12.json",
+      "num_topics": 240.0
+    },
+    {
+      "name": "Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-ORG-13.json",
+      "num_topics": 260.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-1.json",
+      "num_topics": 20.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-2.json",
+      "num_topics": 40.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-3.json",
+      "num_topics": 60.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-4.json",
+      "num_topics": 80.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-5.json",
+      "num_topics": 100.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-6.json",
+      "num_topics": 120.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-7.json",
+      "num_topics": 140.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-8.json",
+      "num_topics": 160.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-9.json",
+      "num_topics": 180.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-10.json",
+      "num_topics": 200.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-11.json",
+      "num_topics": 220.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-12.json",
+      "num_topics": 240.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-13.json",
+      "num_topics": 260.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-14.json",
+      "num_topics": 280.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-15.json",
+      "num_topics": 300.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-16.json",
+      "num_topics": 320.0
+    },
+    {
+      "name": "Persons, Locations, Organisations",
+      "data": "data/topic_modelling/ned-lda-grid-search-num_topics-min_proba0.5-min_freq0.1-PER,LOC,ORG-17.json",
+      "num_topics": 340.0
     }
   ]
 }

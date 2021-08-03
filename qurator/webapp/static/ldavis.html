@@ -98,7 +98,7 @@
                     function (map, index) {
                         mapping[index] = map;
 
-                        var html = `<option selected value=${index}>${map["name"]}</option>`;
+                        var html = `<option selected value=${index}>${map["name"]} (${map["num_topics"]})</option>`;
 
                         $("#map-select").append($(html));
                     }

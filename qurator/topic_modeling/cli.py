@@ -15,12 +15,15 @@ import os
 import pyLDAvis
 import pyLDAvis.gensim as gensimvis
 from pathlib import Path
+import json
 
 import gensim
 from gensim.models import CoherenceModel
 
 import logging
 logging.basicConfig(filename='gensim.log', format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
+
+from pprint import pprint
 
 
 def make_docs(data):
@@ -491,3 +494,31 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
             generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info, n_jobs=processes+1)
 
     pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)
+
+
+@click.command()
+@click.argument('grid-search-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('grid-search-name', type=str, required=True, nargs=1)
+def make_config(grid_search_file, grid_search_name):
+
+    name_map = { 'PER': 'Persons',
+                 'LOC': 'Locations',
+                 'ORG': 'Organisations',
+                 'PER,LOC,ORG': 'Persons, Locations, Organisations'}
+
+    if grid_search_name in name_map:
+        grid_search_name = name_map[grid_search_name]
+
+    path, fname = os.path.split(grid_search_file)
+
+    fn = "{}/{}".format(path, Path(fname).stem)
+
+    df = pd.read_pickle(grid_search_file)
+
+    configs = []
+
+    for i, row in df.iterrows():
+
+        configs.append({'name': grid_search_name, 'data': "{}-{}.json".format(fn, i+1), 'num_topics': row.num_topics})
+
+    print(json.dumps(configs))
