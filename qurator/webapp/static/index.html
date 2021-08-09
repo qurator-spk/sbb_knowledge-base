@@ -11,6 +11,9 @@
 
     <title>NER auf den digitalen Sammlungen</title>
     <script src="js/jquery-3.4.1.js"></script>
+    <style>
+        .selected{background-color:#f0e442}
+    </style>
 </head>
 <body>
 <div class="container-fluid" style="height: 95vh;">
@@ -22,7 +25,7 @@
         <div class="col-10">
             <div class="row">
                 <div class="col-9 text-center">
-                    <h1>NER auf den digitalen Sammlungen</h1>
+                    <h1>NER+EL auf den digitalisierten Sammlungen</h1>
                 </div>
                 <div class="col">
                 </div>
@@ -37,16 +40,22 @@
                                     <select id="task" class="selectpicker col-md-auto" onchange="task_select()">
                                         <option value="fulltext">OCR-Text aus ALTO Datei</option>
                                         <option value="tokenize">Wort- und Satztokenisierung</option>
-                                        <option value="ner" selected>Named Entity Recognition</option>
+                                        <option value="ner" selected>Named Entity Recognition + Linking</option>
                                         <option value="bert-tokens">BERT Tokens</option>
                                     </select>
                                 </div>
-                                <div class="form-group row ml-2" id="model_select">
-                                    <label for="model" class="col-sm-2 col-form-label">Model:</label>
+                                <div class="form-group row ml-2" id="model_select" onchange="model_select()">
+                                    <label for="model" class="col-sm-2 col-form-label">NER-Model:</label>
                                     <select id="model" class="selectpicker col-md-auto">
                                     </select>
                                 </div>
-
+                                <div class="form-group row ml-2" id="el_model_select" onchange="el_model_select()">
+                                    <label for="el-model" class="col-sm-2 col-form-label">EL-Model:</label>
+                                    <select id="el-model" class="selectpicker col-md-auto">
+                                        <option value="precomputed" selected>Precomputed</option>
+                                        <option value="ned/ned" selected>German</option>
+                                    </select>
+                                </div>
                                 <div class="form-group row ml-2">
                                     <label for="ppn" class="col-sm-2 col-form-label">PPN:</label>
                                     <input id="ppn" list="ppnexamples" class="col-sm-8" type="text" required/>
@@ -63,16 +72,21 @@
             </div>
 
             <div class="row mt-5">
-                <div class="col-9" id="resultregion">
+                <div class="col-6" id="resultregion">
                 </div>
-                <div class="col" id="legende">
+                <div class="col-4" >
+                    <div id="legende">
+                    </div>
+                    <div id="entity-linking">
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
 </div>
-<script src="js/ner.js"></script>
-<script src="js/ner-ds-sbb.js"></script>
+<script src="js/ner-el.js"></script>
+<script src="js/sbb-tools.js"></script>
+<script src="js/ds-sbb.js"></script>
 </body>
 </html>

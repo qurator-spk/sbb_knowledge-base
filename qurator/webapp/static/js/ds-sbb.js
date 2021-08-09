@@ -12,7 +12,7 @@ $(document).ready(function(){
     $.get( "ner/models")
         .done(
             function( data ) {
-                var tmp="";
+                var tmp=`<option value="precomputed">Precomputed</option>`;
                 $.each(data,
                     function(index, item){
 
