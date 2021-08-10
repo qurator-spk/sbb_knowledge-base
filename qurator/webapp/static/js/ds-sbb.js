@@ -9,10 +9,13 @@ $(document).ready(function(){
         }
     );
 
+    task_select();
+    model_select();
+
     $.get( "ner/models")
         .done(
             function( data ) {
-                var tmp=`<option value="precomputed">Precomputed</option>`;
+                var tmp="";
                 $.each(data,
                     function(index, item){
 
@@ -100,14 +103,5 @@ function update() {
 
     $("#resultregion").html(spinner_html);
 
-    $.get( "digisam-fulltext/" + ppn)
-        .done(function( data ) {
-
-            do_task(task, model_id, data.text)
-        })
-        .fail(
-            function() {
-                console.log('Failed.');
-                $("#resultregion").html('Failed.');
-            });
+    do_task(task, model_id, ppn);
 }

@@ -8,7 +8,7 @@ from qurator.sbb.xml import get_entity_coordinates
 
 import io
 from PIL import Image, ImageDraw
-
+import json
 
 app = Flask(__name__)
 
@@ -19,11 +19,13 @@ logger = logging.getLogger(__name__)
 
 class Digisam:
 
-    _conn = None
+    _fulltext_conn = None
+    _ner_el_conn = None
 
-    def __init__(self, data_path):
+    def __init__(self, fulltext_path, ner_el_path):
 
-        self._data_path = data_path
+        self._fulltext_data_path = fulltext_path
+        self._ner_el_path = ner_el_path
 
     @staticmethod
     def create_connection(db_file):
@@ -40,18 +42,53 @@ class Digisam:
 
         return None
 
-    def get(self, ppn):
+    def get_fulltext(self, ppn):
 
-        if Digisam._conn is None:
-            Digisam._conn = self.create_connection(self._data_path)
+        if Digisam._fulltext_conn is None:
+            Digisam._fulltext_conn = self.create_connection(self._fulltext_data_path)
 
-        df = pd.read_sql_query("select file_name, text from text where ppn=?;", Digisam._conn, params=(ppn,)). \
+        df = pd.read_sql_query("select file_name, text from text where ppn=?;", Digisam._fulltext_conn, params=(ppn,)).\
             sort_values('file_name')
 
         return df
 
+    def get_ner(self, ppn):
 
-digisam = Digisam(app.config['FULLTEXT_PATH'])
+        if Digisam._ner_el_conn is None:
+            Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
+
+        docs = pd.read_sql('select * from tagged where ppn==?', params=(ppn,), con=Digisam._ner_el_conn)
+
+        if docs is None or len(docs) == 0:
+            return []
+
+        docs['page'] = docs.file_name.str.extract('.*?([0-9]+).*?').astype(int)
+
+        ner_result = []
+        for _, doc_row in docs.sort_values('page').iterrows():
+            ner_result += [[{'word': word, 'prediction': tag} for word, tag in zip(sen_text, sen_tags)]
+                           for sen_text, sen_tags in zip(json.loads(doc_row.text), json.loads(doc_row.tags))]
+
+        return ner_result
+
+    def get_el(self, ppn):
+
+        if Digisam._ner_el_conn is None:
+            Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
+
+        df = pd.read_sql('select * from entity_linking where ppn=?', params=(ppn,), con=Digisam._ner_el_conn)
+
+        el_result = \
+            {entity_id:
+                 {'ranking': [[row.page_title, {'proba_1': row.proba, 'wikidata': row.wikidata}]
+                              for _, row in candidates.iterrows()]}
+                                for entity_id, candidates in df.groupby('entity_id')}
+
+        return el_result
+
+
+digisam = Digisam(fulltext_path=app.config['FULLTEXT_PATH'],
+                  ner_el_path=app.config['NER+EL-PRECOMPUTATION'])
 
 
 @app.route('/')
@@ -72,16 +109,16 @@ def get_topic_models():
 @app.route('/digisam-fulltext/<ppn>')
 def fulltext(ppn):
 
-    df = digisam.get(ppn)
+    df = digisam.get_fulltext(ppn)
 
     if len(df) == 0:
 
-        df = digisam.get('PPN' + ppn)
+        df = digisam.get_fulltext('PPN' + ppn)
 
         if len(df) == 0:
 
             if ppn.startswith('PPN'):
-                df = digisam.get(ppn[3:])
+                df = digisam.get_fulltext(ppn[3:])
 
             if len(df) == 0:
 
@@ -98,6 +135,46 @@ def fulltext(ppn):
     ret = {'text': text, 'ppn': ppn}
 
     return jsonify(ret)
+
+
+@app.route('/digisam-ner/<ppn>')
+def ner(ppn):
+
+    ner_result = digisam.get_ner(ppn)
+
+    if len(ner_result) == 0:
+
+        ner_result = digisam.get_ner('PPN' + ppn)
+
+        if len(ner_result) == 0:
+
+            if ppn.startswith('PPN'):
+                ner_result = digisam.get_ner(ppn[3:])
+
+            if len(ner_result) == 0:
+                return 'bad request!', 400
+
+    return jsonify(ner_result)
+
+
+@app.route('/digisam-el/<ppn>')
+def el(ppn):
+
+    el_result = digisam.get_el(ppn)
+
+    if len(el_result) == 0:
+
+        el_result = digisam.get_el('PPN' + ppn)
+
+        if len(el_result) == 0:
+
+            if ppn.startswith('PPN'):
+                el_result = digisam.get_el(ppn[3:])
+
+            if len(el_result) == 0:
+                return 'bad request!', 400
+
+    return jsonify(el_result)
 
 
 def find_file(path, ppn, page, ending):

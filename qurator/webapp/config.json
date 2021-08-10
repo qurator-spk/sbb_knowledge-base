@@ -1,5 +1,6 @@
 {
   "FULLTEXT_PATH": "data/digisam/fulltext.sqlite3",
+  "NER+EL-PRECOMPUTATION": "data/digisam/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3",
   "IMAGE_PATH": "/srv/digisam_images/sbb",
   "ALTO_PATH": "/qurator-share/alto-ner-annotated/digisam-ner-tagged-DC-SBB-MULTILANG",
   "PPN_EXAMPLES": [

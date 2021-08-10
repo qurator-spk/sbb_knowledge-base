@@ -1,12 +1,10 @@
 
 function NED(ner_url, parse_url, ned_url,
-            result_text_element="#result-text", result_entities_element="#result-entities") {
+            result_text_element="#result-text", result_entities_element="#result-entities",
+            ner_result=null, ned_result={}) {
 
     var that = null;
-
-    var ner_result = null;
     var ner_parsed = null;
-    var ned_result = { };
 
     var spinner_html =
             `<div class="d-flex justify-content-center">
@@ -23,9 +21,6 @@ function NED(ner_url, parse_url, ned_url,
             <div class="card-body" id="linking-list">
             </div>
         </div>`;
-
-    $(result_entities_element).html(el_html);
-    result_entities_element="#linking-list";
 
     function runNER (input_text, onSuccess) {
 
@@ -145,10 +140,6 @@ function NED(ner_url, parse_url, ned_url,
 
     function selectEntity(entity, onSuccess) {
 
-        $(result_entities_element).html(spinner_html);
-
-        console.log(entity);
-
         if (entity in ned_result) {
             if ('ranking' in ned_result[entity]) {
                 makeResultList(ned_result[entity]['ranking']);
@@ -159,6 +150,12 @@ function NED(ner_url, parse_url, ned_url,
                 $(result_entities_element).html("NOT FOUND");
             }
         }
+
+        if (ned_url == null) return;
+
+        $(result_entities_element).html(spinner_html);
+
+        console.log(entity);
 
         if((ner_parsed==null) || (!(entity in ner_parsed) )){
             console.log(entity)
@@ -186,8 +183,6 @@ function NED(ner_url, parse_url, ned_url,
                 }
             }
         );
-
-        // console.log(ned_result[entity]);
     }
 
     function showNERText( data ) {
@@ -302,21 +297,32 @@ function NED(ner_url, parse_url, ned_url,
         init:
             function(input_text) {
 
-                $(result_text_element).empty();
-                $("#ner-text").empty();
+                //$(result_text_element).empty();
+                //$("#ner-text").empty();
 
-                runNER( input_text,
-                    function (ner_result) {
-                        showNERText(ner_result);
+                if (ner_result==null) {
+                    runNER( input_text,
+                        function (ner_result) {
 
-                        console.log(ner_result);
+                            parseNER( ner_result,
+                                function(ned_result) {
+                                    $(result_entities_element).html(el_html);
+                                    result_entities_element="#linking-list";
+                                });
 
-                        parseNER( ner_result,
-                            function(ned_result) {
-                                console.log(ned_result);
-                            });
-                    }
-                );
+                            showNERText(ner_result);
+                        }
+                    );
+                }
+                else {
+                    parseNER( ner_result,
+                        function(ned_result) {
+                            $(result_entities_element).html(el_html);
+                            result_entities_element="#linking-list";
+                        });
+
+                    showNERText(ner_result);
+                }
             }
     };
 

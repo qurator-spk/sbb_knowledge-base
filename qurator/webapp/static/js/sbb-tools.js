@@ -1,15 +1,22 @@
 
 function task_select() {
 
+    var precomputed_option = `<option value="precomputed" id="precomputed-model">Precomputed</option>`;
+
     var task = $('#task').val();
 
     $('#model_select').hide();
     $('#el_model_select').hide();
+    $('#precomputed-model').remove();
 
 
     if ((task == "ner") || (task == "bert-tokens")){
 
         $('#model_select').show();
+    }
+
+    if (task == "ner") {
+        $('#model_select option').first().before(precomputed_option);
     }
 
     if (task == "ner") {
@@ -36,9 +43,28 @@ function el_model_select() {
     }
 }
 
-function do_task(task, model_id, input_text) {
 
-    var post_data = { "text" : input_text }
+function do_on_fulltext(ppn, func) {
+    $.get( "digisam-fulltext/" + ppn)
+        .done(function( data ) {
+            func(data.text);
+        })
+        .fail(
+            function() {
+                console.log('Failed.');
+                $("#resultregion").html('Failed.');
+            });
+}
+
+
+function do_task(task, model_id, ppn) {
+
+    $(".inp").prop("disabled", true);
+    $("#go-button").text("Clear");
+    $("#go-button").click(
+        function(){
+            location.reload();
+        });
 
     var text_region_html =
         `<div class="card">
@@ -72,88 +98,156 @@ function do_task(task, model_id, input_text) {
 
     $("#legende").html("");
 
+    $("#resultregion").html(spinner_html);
+
     if (task == "fulltext") {
-        $("#resultregion").html(text_region_html)
-        $("#textregion").html(input_text)
+
+        do_on_fulltext(ppn,
+            function(input_text) {
+                $("#resultregion").html(text_region_html);
+                $("#textregion").html(input_text);
+             });
     }
     else if (task == "tokenize") {
 
-        $("#resultregion").html(spinner_html)
+        do_on_fulltext(ppn,
+            function(input_text) {
 
-        $.ajax(
-            {
-            url:  "ner/tokenized",
-            data: JSON.stringify(post_data),
-            type: 'POST',
-            contentType: "application/json",
-            success:
-                function( data ) {
-                    text_html = ""
-                    data.forEach(
-                        function(sentence) {
+                $("#resultregion").html(spinner_html)
 
-                            text_html += JSON.stringify(sentence)
+                var post_data = { "text" : input_text }
 
-                            text_html += '<br/>'
+                $.ajax(
+                    {
+                    url:  "ner/tokenized",
+                    data: JSON.stringify(post_data),
+                    type: 'POST',
+                    contentType: "application/json",
+                    success:
+                        function( data ) {
+                            text_html = ""
+                            data.forEach(
+                                function(sentence) {
+
+                                    text_html += JSON.stringify(sentence)
+
+                                    text_html += '<br/>'
+                                }
+                            )
+                            $("#resultregion").html(text_region_html);
+                            $("#textregion").html(text_html);
                         }
-                    )
-                    $("#resultregion").html(text_region_html)
-                    $("#textregion").html(text_html)
-                    $("#legende").html(legende_html)
-                }
-            ,
-            error:
-                function(error) {
-                    console.log(error);
-                }
-            })
+                    ,
+                    error:
+                        function(error) {
+                            console.log(error);
+                        }
+                    });
+             });
     }
     else if (task == "ner") {
 
-        $("#resultregion").html(spinner_html)
-
         var el_model = $('#el-model').val();
 
-        var ned = NED("ner/ner/" + model_id, "ned/parse",
-                      el_model+"?return_full=0&priority=0","#resultregion", "#entity-linking");
+        var ner_url = "ner/ner/" + model_id;
+        var ned_url= el_model+"?return_full=0&priority=0";
 
-        ned.init(input_text);
+        if (model_id == "precomputed") {
 
-        $("#legende").html(legende_html)
+            ner_url="";
+
+            var ppn = $('#ppn').val();
+
+            $.get( "digisam-ner/" + ppn)
+                .done(function( ner_result ) {
+
+                    if (el_model == "precomputed") {
+                        ned_url=null;
+
+                        $.get( "digisam-el/" + ppn).done(
+                            function( el_result ) {
+
+                                var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
+                                              ner_result, el_result);
+
+                                ned.init("");
+
+                                $("#legende").html(legende_html);
+
+                            })
+                        .fail(
+                            function() {
+                                console.log('Failed.');
+                                $("#resultregion").html('Failed.');
+                            });
+                    }
+                    else {
+                        var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
+                                      ner_result);
+
+                        ned.init("");
+
+                        $("#legende").html(legende_html);
+                    }
+                })
+                .fail(
+                    function() {
+                        console.log('Failed.');
+                        $("#resultregion").html('Failed.');
+                    });
+        }
+        else {
+            do_on_fulltext(ppn,
+                function(input_text) {
+
+                    var ned = NED(ner_url, "ned/parse",
+                                  el_model+"?return_full=0&priority=0","#resultregion", "#entity-linking");
+
+                    ned.init(input_text);
+
+                    $("#legende").html(legende_html);
+                 });
+        }
      }
      else if (task == "bert-tokens") {
-        $("#resultregion").html(spinner_html);
 
-        $.ajax(
-            {
-            url:  "ner/ner-bert-tokens/" + model_id,
-            data: JSON.stringify(post_data),
-            type: 'POST',
-            contentType: "application/json",
-            success:
-                function( data ) {
-                    text_html = ""
-                    data.forEach(
-                        function(sentence) {
-                            sentence.forEach(
-                                function(part) {
+        do_on_fulltext(ppn,
+            function(input_text) {
 
-                                     if (text_html != "") text_html += ' '
+                $("#resultregion").html(spinner_html);
 
-                                     text_html += part.token + "(" + part.prediction + ")"
-                                })
-                             text_html += '<br/>'
+                var post_data = { "text" : input_text }
+
+                $.ajax(
+                    {
+                    url:  "ner/ner-bert-tokens/" + model_id,
+                    data: JSON.stringify(post_data),
+                    type: 'POST',
+                    contentType: "application/json",
+                    success:
+                        function( data ) {
+                            text_html = ""
+                            data.forEach(
+                                function(sentence) {
+                                    sentence.forEach(
+                                        function(part) {
+
+                                             if (text_html != "") text_html += ' '
+
+                                             text_html += part.token + "(" + part.prediction + ")"
+                                        })
+                                     text_html += '<br/>'
+                                }
+                            )
+                            $("#resultregion").html(text_region_html)
+                            $("#textregion").html(text_html)
                         }
-                    )
-                    $("#resultregion").html(text_region_html)
-                    $("#textregion").html(text_html)
-                    $("#legende").html(legende_html)
-                }
-            ,
-            error:
-                function(error) {
-                    console.log(error);
-                }
-            })
+                    ,
+                    error:
+                        function(error) {
+                            console.log(error);
+                        }
+                    });
+            });
      }
 }
