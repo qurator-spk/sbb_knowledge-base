@@ -1,86 +1,117 @@
+(function() {
 
-$(document).ready(function(){
+var tools = sbb_tools();
+var has_results = false;
 
-    $('#nerform').submit(
-        function(e){
-            e.preventDefault();
+$(document).ready(
 
-            update();
-        }
-    );
+    function() {
 
-    task_select();
-    model_select();
+        $('#task').change(function(){ tools.task_select(); });
+        $('#model_select').change(function(){ tools.model_select(); });
+        $('#el_model_select').change(function(){ tools.el_model_select(); });
 
-    $.get( "ner/models")
-        .done(
-            function( data ) {
-                var tmp="";
-                $.each(data,
-                    function(index, item){
+        $('#nerform').submit(
+            function(e){
+                e.preventDefault();
 
-                        selected=""
-                        if (item.default) {
-                            selected = "selected"
-                        }
+                update();
+            }
+        );
 
-                        tmp += '<option value="' + item.id + '" ' + selected + ' >' + item.name + '</option>'
-                    });
-                    $('#model').html(tmp);
+        $.get( "ner/models")
+            .done(
+                function( data ) {
+                    var tmp="";
 
-                    var url_params = new URLSearchParams(window.location.search);
+                    $.each(data,
+                        function(index, item){
 
-                    var do_update=false;
+                            selected=""
+                            if (item.default) {
+                                selected = "selected"
+                            }
 
-                    if (url_params.has('ppn')) {
+                            tmp += '<option value="' + item.id + '" ' + selected + ' >' + item.name + '</option>'
+                        });
 
-                        var ppn = url_params.get('ppn')
+                     $('#model').html(tmp);
 
-                        $('#ppn').val(ppn);
+                     var url_params = new URLSearchParams(window.location.search);
 
-                        do_update = true;
+                     var do_update=false;
+
+                     if (url_params.has('ppn')) {
+
+                         var ppn = url_params.get('ppn')
+
+                         $('#ppn').val(ppn);
+
+                         do_update = true;
+                     }
+
+                     if (url_params.has('model_id')) {
+
+                         var model_id = url_params.get('model_id')
+
+                         $('#model').val(model_id);
+
+                         do_update = true;
+                     }
+
+                     if (url_params.has('el_model_id')) {
+
+                         var el_model_id = url_params.get('el_model_id')
+
+                         $('#el-model').val(el_model_id);
+
+                         do_update = true;
+                     }
+
+                     if (url_params.has('task')) {
+
+                         var task = url_params.get('task')
+
+                         $('#task').val(task);
+
+                         do_update = true;
+                     }
+
+                     tools.task_select();
+
+                     if (do_update) update();
                     }
+                );
 
-                    if (url_params.has('model_id')) {
+        $.get( "ppnexamples")
+            .done(
+                function( data ) {
+                    var tmp="";
+                    $.each(data,
+                        function(index, item){
 
-                        var model_id = url_params.get('model_id')
-
-                        $('#model').val(model_id);
-
-                        do_update = true;
-                    }
-
-                    if (url_params.has('task')) {
-
-                        var task = url_params.get('task')
-
-                        $('#task').val(task);
-
-                        do_update = true;
-                    }
-
-                    task_select()
-
-                    if (do_update) update();
-                }
-            );
-
-    $.get( "ppnexamples")
-        .done(
-            function( data ) {
-                var tmp="";
-                $.each(data,
-                    function(index, item){
-
-                        tmp += '<option value="' + item.ppn + '">' + item.name + '</option>'
-                    });
+                            tmp += '<option value="' + item.ppn + '">' + item.name + '</option>'
+                        });
                     $('#ppnexamples').html(tmp);
-                }
-            );
-});
+                });
+    });
 
 
 function update() {
+
+    if (has_results) {
+        $(".inp").prop("disabled", false);
+        $("#go-button").text("Go");
+        has_results = false;
+        tools.reset_view();
+
+        return;
+    }
+    else {
+        has_results = true;
+        $(".inp").prop("disabled", true);
+        $("#go-button").text("Clear");
+    }
 
     var spinner_html =
         `<div class="d-flex justify-content-center">
@@ -91,17 +122,21 @@ function update() {
 
     var task = $('#task').val();
     var model_id = $('#model').val();
+    var el_model_id = $('#el-model').val();
     var ppn = $('#ppn').val();
 
     var url_params = new URLSearchParams(window.location.search);
 
     url_params.set('ppn', ppn)
     url_params.set('model_id', model_id)
+    url_params.set('el_model_id', el_model_id)
     url_params.set('task', task)
 
     window.history.replaceState({}, '', `${location.pathname}?${url_params}`);
 
     $("#resultregion").html(spinner_html);
 
-    do_task(task, model_id, ppn);
+    tools.do_task(task, model_id, ppn);
 }
+
+})();
