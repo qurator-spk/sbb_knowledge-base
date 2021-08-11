@@ -1428,9 +1428,13 @@ LDAvis = function(json_file) {
 
                     var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i].ppn;
 
-                    var link = '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + topic_docs[i].title + ' </a>';
-
-                    var item = '<li href="" class="list-group-item text-left">' + link + "</li>";
+                    var item = `
+                        <li href="" class="list-group-item text-left">
+                            <a href="${url}" target="_blank" rel="noopener noreferrer"> ${topic_docs[i].title} </a>
+                            <a class="btn btn-info btn-sm ml-3"
+                                href="index.html?ppn=${topic_docs[i].ppn}&model_id=precomputed&el_model_id=precomputed&task=ner"
+                                target="_blank" rel="noopener noreferrer">NER+EL</a>
+                        </li>`;
 
                     $("#doc-list").append(item);
                 }
