@@ -16,7 +16,10 @@ function NED(ner_url, parse_url, ned_url,
     var el_html =
          `<div class="card">
             <div class="card-header">
-                Entity-Linking:
+                <p> <b> Entity-Linking: </b> </p>
+                <p style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe</p>
+                <p style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL confidence low</p>
+                <p style="padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray">EL confidence medium</p>
             </div>
             <div class="card-body" id="linking-list">
             </div>
@@ -126,12 +129,16 @@ function NED(ner_url, parse_url, ned_url,
 
                 //if (Number(candidate[1]) < 0.1) return;
 
-                entities_html += '<a href="https://de.wikipedia.org/wiki/' + candidate[0] + '">'
-                                        + candidate[0] + '</a> '
-                                        + '(' + Number(candidate[1]['proba_1']).toFixed(2)
-                                        + ', <a href="https://www.wikidata.org/wiki/' + candidate[1]['wikidata'] + '">'
-                                        + candidate[1]['wikidata'] + '</a>'
-                                        + ')' +' <br/>';
+                entities_html +=
+                    `<a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
+                        ${candidate[0]}
+                    </a>
+                    (${Number(candidate[1]['proba_1']).toFixed(2)}
+                    <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
+                        ${candidate[1]['wikidata']}
+                    </a>)
+                    <br/>
+                    `;
             }
         );
 
@@ -151,7 +158,10 @@ function NED(ner_url, parse_url, ned_url,
             }
         }
 
-        if (ned_url == null) return;
+        if (ned_url == null) {
+            $(result_entities_element).html("NOT FOUND");
+            return;
+        }
 
         $(result_entities_element).html(spinner_html);
 
@@ -189,11 +199,39 @@ function NED(ner_url, parse_url, ned_url,
 
         function getColor(entity_type) {
             if (entity_type.endsWith('PER'))
-                return "red"
+                return "color: red"
             else if (entity_type.endsWith('LOC'))
-                return "green"
+                return "color: green"
             else if (entity_type.endsWith('ORG'))
-                return "blue"
+                return "color: blue"
+        }
+
+        function getBorderColor(entity_text, entity_type) {
+
+            var entity = entity_text + "-" + entity_type;
+
+            if ((entity in ned_result) && ('ranking' in ned_result[entity])) {
+                var entities = ned_result[entity]['ranking'];
+
+                var probas=[];
+
+                entities.forEach(function(candidate) { probas.push(Number(candidate[1]["proba_1"])); });
+
+                var max_proba = Math.max.apply(Math, probas);
+
+                console.log(max_proba);
+
+                if (max_proba < 0.15)
+                    return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
+
+                if (max_proba > 0.5)
+                    return "padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray";
+
+                return "padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray";
+            }
+            else {
+                return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
+            }
         }
 
         var text_region_html =
@@ -216,24 +254,38 @@ function NED(ner_url, parse_url, ned_url,
                 var entity_text = ""
                 var entity_type = ""
 
+                function entity_item(selector) {
+                    var item =
+                        `<a id="ent-sel-${entities.length}" class="${selector}"
+                            style="${getColor(entity_type)} ;${getBorderColor(entity_text, entity_type)}">
+                            ${entity_text}
+                         </a>
+                         `;
+
+                    return item;
+                }
+
+                function add_entity() {
+                    var selector = entity_text + ' ' + entity_type.slice(entity_type.length-3);
+
+                    selector = selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
+
+                    text_html.push(entity_item(selector));
+
+                    entities.push(entity_text);
+                    entity_types.push(entity_type);
+                    entity_text = "";
+                }
+
                 sentence.forEach(
                     function(token) {
 
-                         if ((entity_text != "") && ((token.prediction == 'O') || (token.prediction.startsWith('B-')))
-                               || (token.prediction.slice(-3) != entity_type)) {
+                         if ((entity_text != "")
+                            && ((token.prediction == 'O')
+                                || (token.prediction.startsWith('B-'))
+                                || (token.prediction.slice(-3) != entity_type))) {
 
-                            var selector = entity_text + ' ' + entity_type.slice(entity_type.length-3);
-
-                            selector = selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
-
-                            text_html.push(' <font color="' + getColor(entity_type) + '">'
-                                                + '<a id="ent-sel-'+ entities.length +'" class="' +
-                                                selector +'"> '+ entity_text + '</a>' +
-                                           '</font> ');
-
-                            entities.push(entity_text);
-                            entity_types.push(entity_type);
-                            entity_text = "";
+                            add_entity();
                         }
 
                          if (token.prediction == 'O') {
@@ -253,17 +305,7 @@ function NED(ner_url, parse_url, ned_url,
 
                  if ((entity_text != "") && (entity_text != null)) {
 
-                    var selector = entity_text + ' ' + entity_type;
-
-                    selector = selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
-
-                    text_html.push(' <font color="' + getColor(entity_type) + '">'
-                                                + '<a id="ent-sel-'+ entities.length +'"class="' +
-                                                        selector +'"> '+ entity_text + '</a>' +
-                                           '</font> ');
-
-                    entities.push(entity_text);
-                    entity_types.push(entity_type);
+                    add_entity();
                  }
 
                  text_html.push('<br/>');
@@ -296,9 +338,6 @@ function NED(ner_url, parse_url, ned_url,
     that = {
         init:
             function(input_text) {
-
-                //$(result_text_element).empty();
-                //$("#ner-text").empty();
 
                 if (ner_result==null) {
                     runNER( input_text,

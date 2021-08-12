@@ -75,7 +75,7 @@ function sbb_tools() {
         var legende_html =
              `<div class="card">
                 <div class="card-header">
-                    Legende:
+                    <b>Entity-Recognition:</b>
                 </div>
                 <div class="card-body">
                     <div class="ml-2" >[<font color="red">Person</font>]</div>
@@ -160,7 +160,7 @@ function sbb_tools() {
                         if (el_model == "precomputed") {
                             ned_url=null;
 
-                            $.get( "digisam-el/" + ppn).done(
+                            $.get( "digisam-el/" + ppn + "/0.15").done(
                                 function( el_result ) {
 
                                     var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",

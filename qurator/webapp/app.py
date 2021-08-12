@@ -71,18 +71,20 @@ class Digisam:
 
         return ner_result
 
-    def get_el(self, ppn):
+    def get_el(self, ppn, threshold):
 
         if Digisam._ner_el_conn is None:
             Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
 
         df = pd.read_sql('select * from entity_linking where ppn=?', params=(ppn,), con=Digisam._ner_el_conn)
 
+        df = df.loc[df.proba > threshold]
+
         el_result = \
             {entity_id:
                  {'ranking': [[row.page_title, {'proba_1': row.proba, 'wikidata': row.wikidata}]
                               for _, row in candidates.iterrows()]}
-                                for entity_id, candidates in df.groupby('entity_id')}
+             for entity_id, candidates in df.groupby('entity_id')}
 
         return el_result
 
@@ -157,10 +159,12 @@ def ner(ppn):
     return jsonify(ner_result)
 
 
-@app.route('/digisam-el/<ppn>')
-def el(ppn):
+@app.route('/digisam-el/<ppn>/<threshold>')
+def el(ppn, threshold=0.15):
 
-    el_result = digisam.get_el(ppn)
+    threshold = float(threshold)
+
+    el_result = digisam.get_el(ppn, threshold)
 
     if len(el_result) == 0:
 
