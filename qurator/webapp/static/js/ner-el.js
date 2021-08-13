@@ -17,9 +17,9 @@ function NED(ner_url, parse_url, ned_url,
          `<div class="card">
             <div class="card-header">
                 <p> <b> Entity-Linking: </b> </p>
-                <p style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe</p>
-                <p style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL confidence low</p>
-                <p style="padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray">EL confidence medium</p>
+                <p> <span style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe </span></p>
+                <p> <span style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL confidence low </span></p>
+                <p> <span style="padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray">EL confidence medium </span></p>
             </div>
             <div class="card-body" id="linking-list">
             </div>
@@ -41,12 +41,11 @@ function NED(ner_url, parse_url, ned_url,
                     function(result) {
                         ner_result = result;
                         onSuccess(result);
-
-                        console.log(result);
                     },
                 error:
                     function(error) {
                         console.log(error);
+                        $(result_text_element).html("Failed.");
                     }
             }
         );
@@ -68,6 +67,7 @@ function NED(ner_url, parse_url, ned_url,
                     },
                 error:
                     function(error) {
+                        $(result_entities_element).html("Failed.");
                         console.log(error);
                     },
                 timeout: 360000
@@ -81,6 +81,7 @@ function NED(ner_url, parse_url, ned_url,
     function runNED (input, onSuccess) {
 
         if (ner_parsed == null) {
+            $(result_entities_element).html("NER data missing.");
             console.log('Parsed NER data missing.');
             return;
         }
@@ -125,10 +126,6 @@ function NED(ner_url, parse_url, ned_url,
         entities.forEach(
             function(candidate, index) {
 
-                if (index > 10) return;
-
-                //if (Number(candidate[1]) < 0.1) return;
-
                 entities_html +=
                     `<a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
                         ${candidate[0]}
@@ -154,12 +151,12 @@ function NED(ner_url, parse_url, ned_url,
                 return;
             }
             else {
-                $(result_entities_element).html("NOT FOUND");
+                $(result_entities_element).html("Not found.");
             }
         }
 
         if (ned_url == null) {
-            $(result_entities_element).html("NOT FOUND");
+            $(result_entities_element).html("Not found.");
             return;
         }
 
@@ -168,8 +165,8 @@ function NED(ner_url, parse_url, ned_url,
         console.log(entity);
 
         if((ner_parsed==null) || (!(entity in ner_parsed) )){
-            console.log(entity)
-            $(result_entities_element).html("NO NER DATA.");
+            console.log("NER data missing: ", entity)
+            $(result_entities_element).html("NER data missing.");
             return;
         }
 
@@ -185,11 +182,11 @@ function NED(ner_url, parse_url, ned_url,
                         onSuccess();
                     }
                     else {
-                        $(result_entities_element).html("NOT FOUND");
+                        $(result_entities_element).html("Not found.");
                     }
                 }
                 else {
-                    $(result_entities_element).html("NOT FOUND");
+                    $(result_entities_element).html("Not found");
                 }
             }
         );
@@ -304,7 +301,6 @@ function NED(ner_url, parse_url, ned_url,
                     });
 
                  if ((entity_text != "") && (entity_text != null)) {
-
                     add_entity();
                  }
 
