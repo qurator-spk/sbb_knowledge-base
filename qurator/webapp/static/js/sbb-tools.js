@@ -17,8 +17,12 @@ function sbb_tools() {
         }
 
         if (task == "ner") {
-            $('#model_select option').first().before(precomputed_option);
+            if ($('#model_select option').first().length > 0)
+                $('#model_select option').first().before(precomputed_option);
+            else
+                $('#model').append(precomputed_option);
         }
+
 
         if (task == "ner") {
             $('#el_model_select').show();

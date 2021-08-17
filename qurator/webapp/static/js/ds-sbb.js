@@ -19,68 +19,77 @@ $(document).ready(
             }
         );
 
+        function main_setup(data) {
+            var tmp="";
+
+             $.each(data,
+                 function(index, item){
+
+                     selected=""
+                     if (item.default) {
+                         selected = "selected"
+                     }
+
+                     tmp += '<option value="' + item.id + '" ' + selected + ' >' + item.name + '</option>'
+                 });
+
+              //$('#model_select option').first().after(tmp);
+
+              var url_params = new URLSearchParams(window.location.search);
+
+              var do_update=false;
+
+              if (url_params.has('ppn')) {
+
+                  var ppn = url_params.get('ppn')
+
+                  $('#ppn').val(ppn);
+
+                  do_update = true;
+              }
+
+              if (url_params.has('model_id')) {
+
+                  var model_id = url_params.get('model_id')
+
+                  $('#model').val(model_id);
+
+                  do_update = true;
+              }
+
+              if (url_params.has('el_model_id')) {
+
+                  var el_model_id = url_params.get('el_model_id')
+
+                  $('#el-model').val(el_model_id);
+
+                  do_update = true;
+              }
+
+              if (url_params.has('task')) {
+
+                  var task = url_params.get('task')
+
+                  $('#task').val(task);
+
+                  do_update = true;
+              }
+
+              tools.task_select();
+
+              if (do_update) update();
+        }
+
         $.get( "ner/models")
             .done(
                 function( data ) {
-                    var tmp="";
-
-                    $.each(data,
-                        function(index, item){
-
-                            selected=""
-                            if (item.default) {
-                                selected = "selected"
-                            }
-
-                            tmp += '<option value="' + item.id + '" ' + selected + ' >' + item.name + '</option>'
-                        });
-
-                     $('#model').html(tmp);
-
-                     var url_params = new URLSearchParams(window.location.search);
-
-                     var do_update=false;
-
-                     if (url_params.has('ppn')) {
-
-                         var ppn = url_params.get('ppn')
-
-                         $('#ppn').val(ppn);
-
-                         do_update = true;
-                     }
-
-                     if (url_params.has('model_id')) {
-
-                         var model_id = url_params.get('model_id')
-
-                         $('#model').val(model_id);
-
-                         do_update = true;
-                     }
-
-                     if (url_params.has('el_model_id')) {
-
-                         var el_model_id = url_params.get('el_model_id')
-
-                         $('#el-model').val(el_model_id);
-
-                         do_update = true;
-                     }
-
-                     if (url_params.has('task')) {
-
-                         var task = url_params.get('task')
-
-                         $('#task').val(task);
-
-                         do_update = true;
-                     }
-
-                     tools.task_select();
-
-                     if (do_update) update();
-                    }
+                    main_setup(data);
+                }
+                )
+            .fail(
+                function() {
+                    main_setup([]);
+                }
                 );
 
         $.get( "ppnexamples")
