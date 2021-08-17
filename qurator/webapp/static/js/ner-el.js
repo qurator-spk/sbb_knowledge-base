@@ -350,11 +350,18 @@ function NED(ner_url, parse_url, ned_url,
                     );
                 }
                 else {
-                    parseNER( ner_result,
-                        function(ned_result) {
-                            $(result_entities_element).html(el_html);
-                            result_entities_element="#linking-list";
-                        });
+                    if (ned_result == null) {
+
+                        parseNER( ner_result,
+                            function(ned_result) {
+                                $(result_entities_element).html(el_html);
+                                result_entities_element="#linking-list";
+                            });
+                    }
+                    else {
+                        $(result_entities_element).html(el_html);
+                        result_entities_element="#linking-list";
+                    }
 
                     showNERText(ner_result);
                 }
