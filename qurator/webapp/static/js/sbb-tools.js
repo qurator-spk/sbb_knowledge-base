@@ -17,8 +17,12 @@ function sbb_tools() {
         }
 
         if (task == "ner") {
-            $('#model_select option').first().before(precomputed_option);
+            if ($('#model_select option').first().length > 0)
+                $('#model_select option').first().before(precomputed_option);
+            else
+                $('#model').append(precomputed_option);
         }
+
 
         if (task == "ner") {
             $('#el_model_select').show();
@@ -86,8 +90,8 @@ function sbb_tools() {
             </div>`;
 
         var spinner_html =
-            `<div class="d-flex justify-content-center">
-                <div class="spinner-border align-center" role="status">
+            `<div class="d-flex justify-content-center mt-5">
+                <div class="spinner-border align-center mt-5" role="status">
                     <span class="sr-only">Loading...</span>
                 </div>
              </div>`;
