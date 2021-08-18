@@ -350,6 +350,8 @@ function NED(ner_url, parse_url, ned_url,
                     );
                 }
                 else {
+                    showNERText(ner_result);
+
                     if (ned_result == null) {
 
                         parseNER( ner_result,
