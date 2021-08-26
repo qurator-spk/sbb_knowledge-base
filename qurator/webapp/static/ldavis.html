@@ -38,7 +38,12 @@
             </div>
         </div>
         <div class="col-lg-6 col-md-12 text-center">
-
+            <div class="form-group form-inline mb-3 mt-3">
+                <label for="search-for" class="ml-3">Search:</label>
+                <input type="text" list="suggestions" style="width:75vh;" class="ml-3" id="search-for" autocomplete="off"/>
+                 <datalist id="suggestions">
+                 </datalist>
+            </div>
             <div id="accordion">
                 <div class="card">
                     <div class="card-header" id="headingOne">
@@ -145,6 +150,7 @@
                 }
 
                 var vis = null;
+                var map_name = null;
 
                 function updateLDAVis() {
 
@@ -158,8 +164,55 @@
                     var selected_map = $("#map-select" ).val();
 
                     var n_topics = $("#ntopic-select" ).val();
+                    map_name = map_data[[selected_map,n_topics]]
 
-                    vis = new LDAvis(map_data[[selected_map,n_topics]]);
+                    LDAvis("topic_models/" + map_name,
+                        function(vis) {
+
+                            (function(term_on, term_off) {
+                                 $("#search-for").on('input',
+                                    function () {
+
+                                        var val = this.value;
+
+                                        if (val == "") {
+                                            term_off(null);
+                                            return;
+                                        }
+
+                                        if($('#suggestions option').filter(
+                                            function(){
+                                                return this.value.toUpperCase() === val.toUpperCase();
+                                            }).length)
+                                        {
+                                            term_on(this.value);
+                                        }
+                                    }
+                                 );
+
+                                 vis.term_on =
+                                    function(termElem) {
+
+                                        var text = $("#search-for").val();
+
+                                        if (text != "") return;
+
+                                        term_on(termElem);
+                                    };
+
+                                 vis.term_off =
+                                    function(termElem) {
+
+                                        var text = $("#search-for").val();
+
+                                        if (text != "") return;
+
+                                        term_off(termElem);
+                                    };
+
+                             })(vis.term_on, vis.term_off);
+                        }
+                    );
                 }
 
                 $("#map-select" )
@@ -179,6 +232,33 @@
                         updateLDAVis();
                     }
                   );
+
+                $("#search-for").change(
+                    function() {
+
+                        var text = $("#search-for").val();
+
+                        if($('#suggestions option').filter(
+                            function(){
+                                return this.value.toUpperCase() === text;
+                            }).length){
+                            return;
+                        }
+
+                        $.get("suggestion/" + map_name + "/" + text).done(
+                            function(suggestions) {
+
+                                var tmp="";
+                                $.each(suggestions,
+                                   function(index, item){
+                                        tmp += `<option value="${item}">${item}</option>`
+                                    });
+
+                                $('#suggestions').html(tmp);
+                            }
+                        );
+                    }
+                );
 
                 updateLDAVis();
             };

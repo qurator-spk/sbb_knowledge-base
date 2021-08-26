@@ -93,6 +93,39 @@ digisam = Digisam(fulltext_path=app.config['FULLTEXT_PATH'],
                   ner_el_path=app.config['NER+EL-PRECOMPUTATION'])
 
 
+class TopicModels:
+
+    def __init__(self, model_dir):
+        self._model_dir = model_dir
+        self._models = {}
+
+    def get_model(self, file):
+
+        abs_file = os.path.join(self._model_dir, file)
+
+        if file in self._models:
+            return self._models[file]['model']
+
+        with open(abs_file, 'r') as f:
+            ret = json.load(f)
+
+        token_table = pd.DataFrame.from_dict(ret['token.table'])
+
+        self._models[file] = {'model': ret, 'tokens': token_table}
+
+        return ret
+
+    def get_tokens(self, file):
+
+        if file not in self._models:
+            self.get_model(file)
+
+        return self._models[file]['tokens']
+
+
+topic_models = TopicModels(app.config['TOPIC_MODEL_DIR'])
+
+
 @app.route('/')
 def entry():
     return redirect("/index.html", code=302)
@@ -104,8 +137,25 @@ def get_ppnexamples():
 
 
 @app.route('/topic_models')
-def get_topic_models():
-    return jsonify(app.config['TOPIC_MODELS'])
+@app.route('/topic_models/<file>')
+def get_topic_models(file=None):
+
+    if file is None or len(file) == 0:
+        return jsonify(app.config['TOPIC_MODELS'])
+    else:
+        ret = topic_models.get_model(file)
+
+        return jsonify(ret)
+
+
+@app.route('/suggestion/<file>/<text>')
+def get_suggestion(file, text):
+
+    tokens = topic_models.get_tokens(file)
+
+    sugg = tokens.loc[tokens.Term.str.contains(text)].drop_duplicates('Term').sort_values('Freq', ascending=False)
+
+    return jsonify(sugg.Term.tolist())
 
 
 @app.route('/digisam-fulltext/<ppn>')
@@ -231,3 +281,4 @@ def get_image(ppn, page):
 @app.route('/<path:path>')
 def send_js(path):
     return send_from_directory('static', path)
+

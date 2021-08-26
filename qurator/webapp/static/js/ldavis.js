@@ -1,4 +1,6 @@
-LDAvis = function(json_file) {
+function LDAvis (json_file, ready_func) {
+
+    var that = {};
 
     // This section sets up the logic for event handling
     var current_clicked = {
@@ -180,7 +182,7 @@ LDAvis = function(json_file) {
             function() {
                 // remove term selection if it exists (from a saved URL)
                 var termElem = document.getElementById(termID + vis_state.term);
-                if (termElem !== undefined) term_off(termElem);
+                if (termElem !== undefined) that.term_off(termElem);
                 vis_state.term = "";
                 var value_old = document.getElementById(topicID).value;
                 var value_new = Math.min(K, +value_old + 1).toFixed(0);
@@ -201,7 +203,7 @@ LDAvis = function(json_file) {
 		        // remove term selection if it exists (from a saved URL)
 		        var termElem = document.getElementById(termID + vis_state.term);
 
-		        if (termElem !== undefined) term_off(termElem);
+		        if (termElem !== undefined) that.term_off(termElem);
 
 		        vis_state.term = "";
 
@@ -224,7 +226,7 @@ LDAvis = function(json_file) {
                 // remove term selection if it exists (from a saved URL)
                 var termElem = document.getElementById(termID + vis_state.term);
 
-                if (termElem !== undefined) term_off(termElem);
+                if (termElem !== undefined) that.term_off(termElem);
 
                 vis_state.term = "";
                 topic_off(document.getElementById(topicID + vis_state.topic))
@@ -598,11 +600,11 @@ LDAvis = function(json_file) {
         // .on("click", function(d) {
         // 	var old_term = termID + vis_state.term;
         // 	if (vis_state.term != "" && old_term != this.id) {
-        // 	    term_off(document.getElementById(old_term));
+        // 	    that.term_off(document.getElementById(old_term));
         // 	}
         // 	vis_state.term = d.Term;
         // 	state_save(true);
-        // 	term_on(this);
+        // 	that.term_on(this);
         // 	debugger;
         // })
 //            .on("click", function(d) {
@@ -610,7 +612,7 @@ LDAvis = function(json_file) {
 //            })
             .on("mouseout", function() {
                 vis_state.term = "";
-                term_off(this);
+                that.term_off(this);
                 state_save(true);
             });
 
@@ -773,15 +775,15 @@ LDAvis = function(json_file) {
             // .on("click", function(d) {
             //     var old_term = termID + vis_state.term;
             //     if (vis_state.term != "" && old_term != this.id) {
-            // 	term_off(document.getElementById(old_term));
+            // 	that.term_off(document.getElementById(old_term));
             //     }
             //     vis_state.term = d.Term;
             //     state_save(true);
-            //     term_on(this);
+            //     that.term_on(this);
             // })
                 .on("mouseout", function() {
                     vis_state.term = "";
-                    term_off(this);
+                    that.term_off(this);
                     state_save(true);
                 });
 
@@ -1190,19 +1192,26 @@ LDAvis = function(json_file) {
         function term_hover(term) {
             var old_term = termID + vis_state.term;
             if (vis_state.term != "" && old_term != term.id) {
-                term_off(document.getElementById(old_term));
+                that.term_off(document.getElementById(old_term));
             }
             vis_state.term = term.innerHTML;
-            term_on(term);
+            that.term_on(term);
             state_save(true);
         }
 
         // updates vis when a term is selected via click or hover
-        function term_on(term) {
+        that.term_on = function (term) {
             if (term == null) return null;
-            term.style["fontWeight"] = "bold";
-            var d = term.__data__
-            var Term = d.Term;
+
+            var Term = term;
+            if (!(typeof term === 'string') && !(term instanceof String)) {
+
+                term.style["fontWeight"] = "bold";
+
+                Term = term.__data__.Term;
+            }
+
+
             var dat2 = mdsData3.filter(function(d2) {
                 return d2.Term == Term
             });
@@ -1253,12 +1262,13 @@ LDAvis = function(json_file) {
 
             // Alter the guide
             d3.select(".circleGuideTitle")
-                .text("Conditional topic distribution given term = '" + term.innerHTML + "'");
+                .text("Conditional topic distribution given term = '" + Term + "'");
         }
 
-        function term_off(term) {
-            if (term == null) return null;
-            term.style["fontWeight"] = "normal";
+        that.term_off = function (term) {
+            if (term != null) {
+                term.style["fontWeight"] = "normal";
+            }
 
             d3.selectAll(".dot")
                 .data(mdsData)
@@ -1288,7 +1298,6 @@ LDAvis = function(json_file) {
                 .attr("y1", mdsheight + 2 * newSmall)
                 .attr("y2", mdsheight + 2 * newSmall);
         }
-
 
         // serialize the visualization state using fragment identifiers -- http://en.wikipedia.org/wiki/Fragment_identifier
         // location.hash holds the address information
@@ -1340,7 +1349,7 @@ LDAvis = function(json_file) {
 
             var termElem = document.getElementById(termID + vis_state.term);
 
-            if (termElem !== undefined) term_on(termElem);
+            if (termElem !== undefined) that.term_on(termElem);
         }
 
         function state_url() {
@@ -1376,7 +1385,7 @@ LDAvis = function(json_file) {
                 }
             }
             if (vis_state.term != "") {
-                term_off(document.getElementById(termID + vis_state.term));
+                that.term_off(document.getElementById(termID + vis_state.term));
             }
             vis_state.term = "";
             document.getElementById(topicID).value = vis_state.topic = 0;
@@ -1488,6 +1497,10 @@ LDAvis = function(json_file) {
             Shiny.onInputChange(shinyClickedTerm, newterm_term);
         }
 
+        //that.term_on = term_on;
+        //that.term_off = term_off;
+
+        ready_func(that);
     });
     // var current_clicked = {
     //     what: "nothing",
@@ -1495,6 +1508,5 @@ LDAvis = function(json_file) {
     // },
 
     //debugger;
-
 }
 
