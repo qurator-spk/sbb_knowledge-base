@@ -14,7 +14,7 @@ function BasicAuth(auth_area) {
         var logout_html =
         `
         <div class="alert alert-success mb-3">
-            <span> Logged in as ${user} </span>
+            <span> [${user}] </span>
             <button class="btn btn-secondary ml-2" id="logout">Logout</button>
         </div>
         `;
@@ -28,7 +28,7 @@ function BasicAuth(auth_area) {
         var login_html =
         `
         <div class="alert alert-info mb-3">
-            <span> No login. </span>
+            <span> [Logged out] </span>
             <button class="btn btn-primary ml-2" id="login">Login</button>
         </div>
         `;
