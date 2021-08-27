@@ -35,6 +35,7 @@
                                 <div class="form-group row ml-2">
                                     <div class="col-3 my-auto">
                                         <label for="task" class="col-form-label">Task:</label>
+                                        <br>
                                         <select id="task" class="selectpicker col-md-auto inp">
                                             <option value="fulltext">OCR-Text aus ALTO Datei</option>
                                             <option value="tokenize">Wort- und Satztokenisierung</option>
@@ -44,11 +45,13 @@
                                     </div>
                                     <div class="col-2 justify-content-center my-auto" id="model_select">
                                         <label for="model" class="col-form-label">NER-Model:</label>
+                                        <br>
                                         <select id="model" class="selectpicker inp">
                                         </select>
                                     </div>
                                     <div class="col-2 justify-content-center my-auto" id="el_model_select">
                                         <label for="el-model" class="col-form-label">EL-Model:</label>
+                                        <br>
                                         <select id="el-model" class="selectpicker inp">
                                             <option value="precomputed">Precomputed</option>
                                             <option value="ned/ned">German</option>
