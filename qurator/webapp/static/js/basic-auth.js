@@ -4,6 +4,7 @@ function BasicAuth(auth_area) {
     var that=null;
 
     function logout() {
+        user=null;
         $.get({'url': 'authenticate',  'username': "some", "password": "some"}).
             done(enable_logout).
             fail(enable_login);

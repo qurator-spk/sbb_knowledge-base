@@ -10,7 +10,7 @@ function sbb_tools() {
                 Ergebnis:
             </div>
             <div class="card-block">
-                <div id="textregion" style="overflow-y:scroll;height: 45vh;"></div>
+                <div id="textregion" style="overflow-y:scroll;height: 60vh;"></div>
             </div>
         </div>`;
 
@@ -20,10 +20,10 @@ function sbb_tools() {
                 <b>Entity-Recognition:</b>
             </div>
             <div class="card-body">
-                <div class="ml-2" >[<font color="red">Person</font>]</div>
-                <div class="ml-2" >[<font color="green">Ort</font>]</div>
-                <div class="ml-2" >[<font color="blue">Organisation</font>]</div>
-                <div class="ml-2" >[keine Named Entity]</div>
+                <span>[<font color="red">Person</font>]</span>
+                <span>[<font color="green">Ort</font>]</span>
+                <span>[<font color="blue">Organisation</font>]</span>
+                <span>[keine Named Entity]</div>
             </div>
         </div>`;
 
@@ -177,11 +177,96 @@ function sbb_tools() {
         var ner_url = "ner/ner/" + model_id;
         var ned_url= el_model+"?return_full=0&priority=0";
 
-        ned = NED(ner_url, "ned/parse", ned_url,"#resultregion", "#entity-linking");
+        ned = NED2(ner_url, "ned/parse", ned_url,"#resultregion", "#entity-linking");
 
         ned.init(input_text);
 
         $("#legende").html(legende_html);
+    }
+
+    function NED2(ner_url, parse_url, ned_url, result_element, result_entities_element, ner_result=null, ned_result={}) {
+
+        ned = NED(ner_url, parse_url, ned_url, result_element, result_entities_element, ner_result, ned_result);
+
+        function make_candidate(candidate) {
+
+            var parts = candidate[0].split(/(?=[\.|\-|_])/);
+
+            var tmp = parts.join("&shy;")
+
+            return `
+            <tr>
+                <td class="my-auto">
+                    <a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
+                        <p class="text-wrap">${tmp}</p>
+                    </a>
+                </td>
+                <td class="my-auto">
+                    <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
+                        ${candidate[1]['wikidata']}
+                    </a>
+                </td>
+                <td class="my-auto">
+                    ${Number(candidate[1]['proba_1']).toFixed(2)}
+                </td>
+                <td class="my-auto">
+                    <div class="form">
+                    <select class="form-select form-select-sm">
+                      <option value="?">?</option>
+                      <option value="+">+</option>
+                      <option value="-">-</option>
+                    </select>
+                    </div>
+
+                </td>
+            </tr>
+            `;
+        }
+
+
+        (function(makeResultList, getColor){
+
+            ned.makeResultList =
+                function(entities) {
+                    $(ned.getResultEntitiesElement()).html("");
+
+                    if (basic_auth.getUser() == null) {
+
+                        makeResultList(entities);
+
+                        return;
+                    }
+
+                    var entities_html = "";
+
+                    entities.forEach(
+                        function(candidate, index) {
+                            entities_html += make_candidate(candidate);
+                        }
+                    );
+
+                    entities_html =
+                    `
+                        <table class="table">
+                          <thead>
+                            <tr>
+                              <th scope="col">Wiki&shy;pedia</th>
+                              <th scope="col">Wiki&shy;data</th>
+                              <th scope="col">Confi&shy;dence</th>
+                              <th scope="col">Valid Answer?</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${entities_html}
+                          </tbody>
+                        </table>
+                    `;
+
+                    $(ned.getResultEntitiesElement()).html(entities_html);
+                }
+        })(ned.makeResultList, ned.getColor);
+
+        return ned;
     }
 
     function setup_precomputed(ppn) {
@@ -198,7 +283,7 @@ function sbb_tools() {
                     $.get( "digisam-el/" + ppn + "/0.15").done(
                         function( el_result ) {
 
-                            var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
+                            var ned = NED2(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
                                           ner_result, el_result);
                             ned.init("");
 
@@ -212,7 +297,7 @@ function sbb_tools() {
                         });
                 }
                 else {
-                    var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
+                    var ned = NED2(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
                                   ner_result);
 
                     ned.init("");
@@ -279,6 +364,8 @@ function sbb_tools() {
     $('#task').change(function(){ task_select(); });
     $('#model_select').change(function(){ model_select(); });
     $('#el_model_select').change(function(){ el_model_select(); });
+
+    //$('select').selectpicker();
 
     return that;
 }

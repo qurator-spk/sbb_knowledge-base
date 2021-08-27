@@ -23,8 +23,6 @@ from gensim.models import CoherenceModel
 import logging
 logging.basicConfig(filename='gensim.log', format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
 
-from pprint import pprint
-
 
 def make_docs(data):
     docs = []

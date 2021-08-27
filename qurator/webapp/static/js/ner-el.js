@@ -17,9 +17,9 @@ function NED(ner_url, parse_url, ned_url,
          `<div class="card">
             <div class="card-header">
                 <p> <b> Entity-Linking: </b> </p>
-                <p> <span style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe </span></p>
-                <p> <span style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL confidence low </span></p>
-                <p> <span style="padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray">EL confidence medium </span></p>
+                <span class="ml-1" style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe </span>
+                <span class="ml-1" style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL-conf-low </span>
+                <span class="ml-1" style="padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray">EL-conf-medium </span>
             </div>
             <div class="card-body" id="linking-list">
             </div>
@@ -27,7 +27,7 @@ function NED(ner_url, parse_url, ned_url,
 
     function runNER (input_text, onSuccess) {
 
-        $(result_entities_element).html("");
+        that.cleanResultList();
         $(result_text_element).html(spinner_html);
 
         let post_data = { "text" : input_text };
@@ -206,7 +206,7 @@ function NED(ner_url, parse_url, ned_url,
                     Ergebnis:
                 </div>
                 <div class="card-block">
-                    <div id="ner-text" style="overflow-y:scroll;height: 45vh;"></div>
+                    <div id="ner-text" style="overflow-y:scroll;height: 60vh;"></div>
                 </div>
             </div>`;
 
@@ -337,25 +337,62 @@ function NED(ner_url, parse_url, ned_url,
             },
         makeResultList:
             function (entities) {
+
+                function make_candidate(candidate) {
+
+                    var parts = candidate[0].split(/(?=[\.|\-|_])/);
+
+                    var tmp = parts.join("&shy;")
+
+                    return `
+                    <tr>
+                        <td class="my-auto">
+                            <a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
+                                <p class="text-wrap">${tmp}</p>
+                            </a>
+                        </td>
+                        <td class="my-auto">
+                            <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
+                                ${candidate[1]['wikidata']}
+                            </a>
+                        </td>
+                        <td class="my-auto">
+                            ${Number(candidate[1]['proba_1']).toFixed(2)}
+                        </td>
+                    </tr>
+                    `;
+                }
+
                 var entities_html = "";
 
                 entities.forEach(
                     function(candidate, index) {
-
-                        entities_html +=
-                            `<a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
-                                ${candidate[0]}
-                            </a>
-                            (${Number(candidate[1]['proba_1']).toFixed(2)}
-                            <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
-                                ${candidate[1]['wikidata']}
-                            </a>)
-                            <br/>
-                            `;
+                        entities_html += make_candidate(candidate);
                     }
                 );
 
+                entities_html =
+                `
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Wiki&shy;pedia</th>
+                          <th scope="col">Wiki&shy;data</th>
+                          <th scope="col">Confi&shy;dence</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${entities_html}
+                      </tbody>
+                    </table>
+                `;
+
                 $(result_entities_element).html(entities_html);
+            },
+        getResultEntitiesElement: function() { return result_entities_element; },
+        cleanResultList:
+            function() {
+                $(result_entities_element).html("");
             },
         getColor:
             function (entity_text, entity_type) {
