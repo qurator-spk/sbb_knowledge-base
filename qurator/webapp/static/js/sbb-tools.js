@@ -1,5 +1,39 @@
 function sbb_tools() {
 
+    var that = null;
+    var basic_auth = BasicAuth('#auth-area');
+    var ned = null;
+
+    var text_region_html =
+        `<div class="card">
+            <div class="card-header">
+                Ergebnis:
+            </div>
+            <div class="card-block">
+                <div id="textregion" style="overflow-y:scroll;height: 45vh;"></div>
+            </div>
+        </div>`;
+
+    var legende_html =
+         `<div class="card">
+            <div class="card-header">
+                <b>Entity-Recognition:</b>
+            </div>
+            <div class="card-body">
+                <div class="ml-2" >[<font color="red">Person</font>]</div>
+                <div class="ml-2" >[<font color="green">Ort</font>]</div>
+                <div class="ml-2" >[<font color="blue">Organisation</font>]</div>
+                <div class="ml-2" >[keine Named Entity]</div>
+            </div>
+        </div>`;
+
+    var spinner_html =
+        `<div class="d-flex justify-content-center mt-5">
+            <div class="spinner-border align-center mt-5" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+         </div>`;
+
     function task_select() {
 
         var precomputed_option = `<option value="precomputed" id="precomputed-model">Precomputed</option>`;
@@ -28,13 +62,7 @@ function sbb_tools() {
             $('#el_model_select').show();
         }
 
-        reset_view();
-    }
-
-    function reset_view() {
-        $("#resultregion").html("");
-        $("#legende").html("");
-        $("#entity-linking").html("");
+        that.reset_view();
     }
 
     function model_select() {
@@ -64,197 +92,193 @@ function sbb_tools() {
                 });
     }
 
-    function do_task(task, model_id, ppn) {
+    function show_fulltext(input_text) {
+        $("#resultregion").html(text_region_html);
+        $("#textregion").html(input_text);
+    }
 
-        var text_region_html =
-            `<div class="card">
-                <div class="card-header">
-                    Ergebnis:
-                </div>
-                <div class="card-block">
-                    <div id="textregion" style="overflow-y:scroll;height: 45vh;"></div>
-                </div>
-            </div>`;
+    function show_tokenized_full_text(input_text) {
 
-        var legende_html =
-             `<div class="card">
-                <div class="card-header">
-                    <b>Entity-Recognition:</b>
-                </div>
-                <div class="card-body">
-                    <div class="ml-2" >[<font color="red">Person</font>]</div>
-                    <div class="ml-2" >[<font color="green">Ort</font>]</div>
-                    <div class="ml-2" >[<font color="blue">Organisation</font>]</div>
-                    <div class="ml-2" >[keine Named Entity]</div>
-                </div>
-            </div>`;
+       $("#resultregion").html(spinner_html)
 
-        var spinner_html =
-            `<div class="d-flex justify-content-center mt-5">
-                <div class="spinner-border align-center mt-5" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-             </div>`;
+       var post_data = { "text" : input_text }
 
-        $("#legende").html("");
+       $.ajax(
+           {
+           url:  "ner/tokenized",
+           data: JSON.stringify(post_data),
+           type: 'POST',
+           contentType: "application/json",
+           success:
+               function( data ) {
+                   text_html = ""
+                   data.forEach(
+                       function(sentence) {
 
+                           text_html += JSON.stringify(sentence)
+
+                           text_html += '<br/>'
+                       }
+                   )
+                   $("#resultregion").html(text_region_html);
+                   $("#textregion").html(text_html);
+               }
+           ,
+           error:
+               function(error) {
+                   console.log(error);
+               }
+           });
+    }
+
+    function show_BERT_tokens(input_text) {
+
+        var model_id = $('#model').val();
         $("#resultregion").html(spinner_html);
 
-        if (task == "fulltext") {
+        var post_data = { "text" : input_text }
 
-            do_on_fulltext(ppn,
-                function(input_text) {
-                    $("#resultregion").html(text_region_html);
-                    $("#textregion").html(input_text);
-                 });
-        }
-        else if (task == "tokenize") {
+        $.ajax(
+            {
+            url:  "ner/ner-bert-tokens/" + model_id,
+            data: JSON.stringify(post_data),
+            type: 'POST',
+            contentType: "application/json",
+            success:
+                function( data ) {
+                    text_html = ""
+                    data.forEach(
+                        function(sentence) {
+                            sentence.forEach(
+                                function(part) {
 
-            do_on_fulltext(ppn,
-                function(input_text) {
+                                     if (text_html != "") text_html += ' '
 
-                    $("#resultregion").html(spinner_html)
-
-                    var post_data = { "text" : input_text }
-
-                    $.ajax(
-                        {
-                        url:  "ner/tokenized",
-                        data: JSON.stringify(post_data),
-                        type: 'POST',
-                        contentType: "application/json",
-                        success:
-                            function( data ) {
-                                text_html = ""
-                                data.forEach(
-                                    function(sentence) {
-
-                                        text_html += JSON.stringify(sentence)
-
-                                        text_html += '<br/>'
-                                    }
-                                )
-                                $("#resultregion").html(text_region_html);
-                                $("#textregion").html(text_html);
-                            }
-                        ,
-                        error:
-                            function(error) {
-                                console.log(error);
-                            }
-                        });
-                 });
-        }
-        else if (task == "ner") {
-
-            var el_model = $('#el-model').val();
-
-            var ner_url = "ner/ner/" + model_id;
-            var ned_url= el_model+"?return_full=0&priority=0";
-
-            if (model_id == "precomputed") {
-
-                ner_url="";
-
-                var ppn = $('#ppn').val();
-
-                $.get( "digisam-ner/" + ppn)
-                    .done(function( ner_result ) {
-
-                        if (el_model == "precomputed") {
-                            ned_url=null;
-
-                            $.get( "digisam-el/" + ppn + "/0.15").done(
-                                function( el_result ) {
-
-                                    var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
-                                                  ner_result, el_result);
-
-                                    ned.init("");
-
-                                    $("#legende").html(legende_html);
-
+                                     text_html += part.token + "(" + part.prediction + ")"
                                 })
-                            .fail(
-                                function() {
-                                    console.log('Failed.');
-                                    $("#resultregion").html('Failed.');
-                                });
+                             text_html += '<br/>'
                         }
-                        else {
-                            var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
-                                          ner_result);
+                    )
+                    $("#resultregion").html(text_region_html)
+                    $("#textregion").html(text_html)
+                }
+            ,
+            error:
+                function(error) {
+                    console.log(error);
+                }
+            });
+    }
 
+    function setup_NED(input_text) {
+
+        var model_id = $('#model').val();
+        var el_model = $('#el-model').val();
+        var ner_url = "ner/ner/" + model_id;
+        var ned_url= el_model+"?return_full=0&priority=0";
+
+        ned = NED(ner_url, "ned/parse", ned_url,"#resultregion", "#entity-linking");
+
+        ned.init(input_text);
+
+        $("#legende").html(legende_html);
+    }
+
+    function setup_precomputed(ppn) {
+        var el_model = $('#el-model').val();
+        var ner_url = "";
+        var ned_url= el_model+"?return_full=0&priority=0";
+
+        $.get("digisam-ner/" + ppn).done(
+            function( ner_result ) {
+
+                if (el_model == "precomputed") {
+                    ned_url=null;
+
+                    $.get( "digisam-el/" + ppn + "/0.15").done(
+                        function( el_result ) {
+
+                            var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
+                                          ner_result, el_result);
                             ned.init("");
 
                             $("#legende").html(legende_html);
-                        }
-                    })
+
+                        })
                     .fail(
                         function() {
                             console.log('Failed.');
                             $("#resultregion").html('Failed.');
                         });
+                }
+                else {
+                    var ned = NED(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
+                                  ner_result);
+
+                    ned.init("");
+
+                    $("#legende").html(legende_html);
+                }
             }
-            else {
-                do_on_fulltext(ppn,
-                    function(input_text) {
-
-                        var ned = NED(ner_url, "ned/parse",
-                                      el_model+"?return_full=0&priority=0","#resultregion", "#entity-linking");
-
-                        ned.init(input_text);
-
-                        $("#legende").html(legende_html);
-                     });
+        ).fail(
+            function() {
+                console.log('Failed.');
+                $("#resultregion").html('Failed.');
             }
-         }
-         else if (task == "bert-tokens") {
-
-            do_on_fulltext(ppn,
-                function(input_text) {
-
-                    $("#resultregion").html(spinner_html);
-
-                    var post_data = { "text" : input_text }
-
-                    $.ajax(
-                        {
-                        url:  "ner/ner-bert-tokens/" + model_id,
-                        data: JSON.stringify(post_data),
-                        type: 'POST',
-                        contentType: "application/json",
-                        success:
-                            function( data ) {
-                                text_html = ""
-                                data.forEach(
-                                    function(sentence) {
-                                        sentence.forEach(
-                                            function(part) {
-
-                                                 if (text_html != "") text_html += ' '
-
-                                                 text_html += part.token + "(" + part.prediction + ")"
-                                            })
-                                         text_html += '<br/>'
-                                    }
-                                )
-                                $("#resultregion").html(text_region_html)
-                                $("#textregion").html(text_html)
-                            }
-                        ,
-                        error:
-                            function(error) {
-                                console.log(error);
-                            }
-                        });
-                });
-         }
+        );
     }
+
+    that = {
+
+        reset_view:
+            function () {
+                $("#resultregion").html("");
+                $("#legende").html("");
+                $("#entity-linking").html("");
+            },
+        init:
+            function (task, ppn) {
+
+                basic_auth.getUser();
+
+                $("#resultregion").html(spinner_html);
+
+                var model_id = $('#model').val();
+
+                $("#legende").html("");
+
+                $("#resultregion").html(spinner_html);
+
+                if (task == "fulltext") {
+
+                    do_on_fulltext(ppn, show_fulltext);
+                }
+                else if (task == "tokenize") {
+
+                    do_on_fulltext(ppn, show_tokenized_full_text);
+                }
+                else if (task == "ner") {
+
+                    if (model_id == "precomputed") {
+                        setup_precomputed(ppn);
+                    }
+                    else {
+                        do_on_fulltext(ppn, setup_NED);
+                    }
+                 }
+                 else if (task == "bert-tokens") {
+
+                    do_on_fulltext(ppn, show_BERT_tokens);
+                 }
+            }
+    };
 
     task_select();
     model_select();
 
-    return { 'do_task': do_task, 'reset_view': reset_view, 'task_select': task_select, 'model_select': model_select,
-     'el_model_select': el_model_select}
+    $('#task').change(function(){ task_select(); });
+    $('#model_select').change(function(){ model_select(); });
+    $('#el_model_select').change(function(){ el_model_select(); });
+
+    return that;
 }

@@ -1,18 +1,28 @@
 import os
 import logging
-from flask import Flask, send_from_directory, redirect, jsonify, send_file
+from flask import Flask, request, send_from_directory, redirect, jsonify, send_file
 import pandas as pd
 from sqlite3 import Error
 import sqlite3
 from qurator.sbb.xml import get_entity_coordinates
+from flask_htpasswd import HtPasswdAuth
 
 import io
 from PIL import Image, ImageDraw
 import json
+import random
+import string
 
 app = Flask(__name__)
 
 app.config.from_json('config.json' if not os.environ.get('CONFIG') else os.environ.get('CONFIG'))
+
+app.config['FLASK_HTPASSWD_PATH'] = app.config['PASSWD_FILE']
+app.config['FLASK_AUTH_REALM'] = app.config['AUTH_REALM']
+app.config['FLASK_SECRET'] = \
+    ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(40))
+
+htpasswd = HtPasswdAuth(app)
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +139,29 @@ topic_models = TopicModels(app.config['TOPIC_MODEL_DIR'])
 @app.route('/')
 def entry():
     return redirect("/index.html", code=302)
+
+
+@app.route('/authenticate')
+@htpasswd.required
+def authenticate(user):
+
+    return jsonify({'user': user})
+
+
+@app.route('/auth-test')
+@htpasswd.required
+def auth_test(user):
+
+    return jsonify({'user': user})
+
+
+@app.after_request
+def after(response):
+
+    if request.url.endswith('auth-test'):
+            response.headers.remove('WWW-Authenticate')
+
+    return response
 
 
 @app.route('/ppnexamples')

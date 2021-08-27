@@ -120,33 +120,11 @@ function NED(ner_url, parse_url, ned_url,
         })(ned_request_counter);
     }
 
-    function makeResultList(entities) {
-        var entities_html = "";
-
-        entities.forEach(
-            function(candidate, index) {
-
-                entities_html +=
-                    `<a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
-                        ${candidate[0]}
-                    </a>
-                    (${Number(candidate[1]['proba_1']).toFixed(2)}
-                    <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
-                        ${candidate[1]['wikidata']}
-                    </a>)
-                    <br/>
-                    `;
-            }
-        );
-
-        $(result_entities_element).html(entities_html);
-    }
-
     function selectEntity(entity, onSuccess) {
 
         if (entity in ned_result) {
             if ('ranking' in ned_result[entity]) {
-                makeResultList(ned_result[entity]['ranking']);
+                that.makeResultList(ned_result[entity]['ranking']);
                 onSuccess();
                 return;
             }
@@ -177,7 +155,7 @@ function NED(ner_url, parse_url, ned_url,
             function() {
                 if (entity in ned_result) {
                     if ('ranking' in ned_result[entity]) {
-                        makeResultList(ned_result[entity]['ranking']);
+                        that.makeResultList(ned_result[entity]['ranking']);
 
                         onSuccess();
                     }
@@ -194,15 +172,6 @@ function NED(ner_url, parse_url, ned_url,
 
     function showNERText( data ) {
 
-        function getColor(entity_type) {
-            if (entity_type.endsWith('PER'))
-                return "color: red"
-            else if (entity_type.endsWith('LOC'))
-                return "color: green"
-            else if (entity_type.endsWith('ORG'))
-                return "color: blue"
-        }
-
         function getBorderColor(entity_text, entity_type) {
 
             var entity = entity_text + "-" + entity_type;
@@ -216,7 +185,7 @@ function NED(ner_url, parse_url, ned_url,
 
                 var max_proba = Math.max.apply(Math, probas);
 
-                console.log(max_proba);
+                //console.log(max_proba);
 
                 if (max_proba < 0.15)
                     return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
@@ -254,7 +223,7 @@ function NED(ner_url, parse_url, ned_url,
                 function entity_item(selector) {
                     var item =
                         `<a id="ent-sel-${entities.length}" class="${selector}"
-                            style="${getColor(entity_type)} ;${getBorderColor(entity_text, entity_type)}">
+                            style="${that.getColor(entity_text, entity_type)} ;${getBorderColor(entity_text, entity_type)}">
                             ${entity_text}
                          </a>
                          `;
@@ -365,6 +334,37 @@ function NED(ner_url, parse_url, ned_url,
                         result_entities_element="#linking-list";
                     }
                 }
+            },
+        makeResultList:
+            function (entities) {
+                var entities_html = "";
+
+                entities.forEach(
+                    function(candidate, index) {
+
+                        entities_html +=
+                            `<a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
+                                ${candidate[0]}
+                            </a>
+                            (${Number(candidate[1]['proba_1']).toFixed(2)}
+                            <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
+                                ${candidate[1]['wikidata']}
+                            </a>)
+                            <br/>
+                            `;
+                    }
+                );
+
+                $(result_entities_element).html(entities_html);
+            },
+        getColor:
+            function (entity_text, entity_type) {
+                if (entity_type.endsWith('PER'))
+                    return "color: red"
+                else if (entity_type.endsWith('LOC'))
+                    return "color: green"
+                else if (entity_type.endsWith('ORG'))
+                    return "color: blue"
             }
     };
 

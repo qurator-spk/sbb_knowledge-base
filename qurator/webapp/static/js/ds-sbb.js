@@ -1,14 +1,11 @@
 (function() {
 
-var tools = sbb_tools();
+var tools = null;
 var has_results = false;
 
 $(document).ready(
 
     function() {
-        $('#task').change(function(){ tools.task_select(); });
-        $('#model_select').change(function(){ tools.model_select(); });
-        $('#el_model_select').change(function(){ tools.el_model_select(); });
 
         $('#nerform').submit(
             function(e){
@@ -73,7 +70,7 @@ $(document).ready(
                   do_update = true;
               }
 
-              tools.task_select();
+              tools = sbb_tools();
 
               if (do_update) update();
         }
@@ -120,13 +117,6 @@ function update() {
         $("#go-button").text("Clear");
     }
 
-    var spinner_html =
-        `<div class="d-flex justify-content-center">
-            <div class="spinner-border align-center" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
-         </div>`;
-
     var task = $('#task').val();
     var model_id = $('#model').val();
     var el_model_id = $('#el-model').val();
@@ -141,9 +131,7 @@ function update() {
 
     window.history.replaceState({}, '', `${location.pathname}?${url_params}`);
 
-    $("#resultregion").html(spinner_html);
-
-    tools.do_task(task, model_id, ppn);
+    tools.init(task,  ppn);
 }
 
 })();
