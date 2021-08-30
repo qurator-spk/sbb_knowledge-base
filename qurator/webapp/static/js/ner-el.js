@@ -124,7 +124,7 @@ function NED(ner_url, parse_url, ned_url,
 
         if (entity in ned_result) {
             if ('ranking' in ned_result[entity]) {
-                that.makeResultList(ned_result[entity]['ranking']);
+                that.makeResultList(entity, ned_result[entity]['ranking']);
                 onSuccess();
                 return;
             }
@@ -155,7 +155,7 @@ function NED(ner_url, parse_url, ned_url,
             function() {
                 if (entity in ned_result) {
                     if ('ranking' in ned_result[entity]) {
-                        that.makeResultList(ned_result[entity]['ranking']);
+                        that.makeResultList(entity, ned_result[entity]['ranking']);
 
                         onSuccess();
                     }
@@ -170,143 +170,151 @@ function NED(ner_url, parse_url, ned_url,
         );
     }
 
-    function showNERText( data ) {
+    that = {
+        showNERText :
+            function () {
 
-        function getBorderColor(entity_text, entity_type) {
+                function getBorderColor(entity_text, entity_type) {
 
-            var entity = entity_text + "-" + entity_type;
+                    var entity = entity_text + "-" + entity_type;
 
-            if ((entity in ned_result) && ('ranking' in ned_result[entity])) {
-                var entities = ned_result[entity]['ranking'];
+                    if ((entity in ned_result) && ('ranking' in ned_result[entity])) {
+                        var entities = ned_result[entity]['ranking'];
 
-                var probas=[];
+                        var probas=[];
 
-                entities.forEach(function(candidate) { probas.push(Number(candidate[1]["proba_1"])); });
+                        entities.forEach(function(candidate) { probas.push(Number(candidate[1]["proba_1"])); });
 
-                var max_proba = Math.max.apply(Math, probas);
+                        var max_proba = Math.max.apply(Math, probas);
 
-                //console.log(max_proba);
+                        //console.log(max_proba);
 
-                if (max_proba < 0.15)
-                    return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
+                        if (max_proba < 0.15)
+                            return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
 
-                if (max_proba > 0.5)
-                    return "padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray";
+                        if (max_proba > 0.5)
+                            return "padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray";
 
-                return "padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray";
-            }
-            else {
-                return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
-            }
-        }
-
-        var text_region_html =
-            `<div class="card">
-                <div class="card-header">
-                    Ergebnis:
-                </div>
-                <div class="card-block">
-                    <div id="ner-text" style="overflow-y:scroll;height: 60vh;"></div>
-                </div>
-            </div>`;
-
-        var text_html = [];
-        var entities = [];
-        var entity_types = [];
-
-        data.forEach(
-            function(sentence) {
-
-                var entity_text = ""
-                var entity_type = ""
-
-                function entity_item(selector) {
-                    var item =
-                        `<a id="ent-sel-${entities.length}" class="${selector}"
-                            style="${that.getColor(entity_text, entity_type)} ;${getBorderColor(entity_text, entity_type)}">
-                            ${entity_text}
-                         </a>
-                         `;
-
-                    return item;
+                        return "padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray";
+                    }
+                    else {
+                        return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
+                    }
                 }
 
-                function add_entity() {
-                    var selector = entity_text + ' ' + entity_type.slice(entity_type.length-3);
+                var text_region_html =
+                    `<div class="card">
+                        <div class="card-header">
+                            Ergebnis:
+                        </div>
+                        <div class="card-block">
+                            <div id="ner-text" style="overflow-y:scroll;height: 60vh;"></div>
+                        </div>
+                    </div>`;
 
-                    selector = selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
+                var text_html = [];
+                var entities = [];
+                var entity_types = [];
 
-                    text_html.push(entity_item(selector));
+                ner_result.forEach(
+                    function(sentence) {
 
-                    entities.push(entity_text);
-                    entity_types.push(entity_type);
-                    entity_text = "";
-                }
+                        var entity_text = ""
+                        var entity_type = ""
 
-                sentence.forEach(
-                    function(token) {
+                        function entity_item(selector) {
+                            var item =
+                                `<a id="ent-sel-${entities.length}" class="${selector} ${that.getEntityItemClass(entity_text, entity_type)}"
+                                    style="${that.getColor(entity_text, entity_type)} ;${getBorderColor(entity_text, entity_type)}">
+                                    ${entity_text}
+                                 </a>
+                                 `;
 
-                         if ((entity_text != "")
-                            && ((token.prediction == 'O')
-                                || (token.prediction.startsWith('B-'))
-                                || (token.prediction.slice(-3) != entity_type))) {
-
-                            add_entity();
+                            return item;
                         }
 
-                         if (token.prediction == 'O') {
+                        function add_entity() {
+                            var selector = entity_text + ' ' + entity_type.slice(entity_type.length-3);
 
-                            if (text_html.length > 0) text_html.push(' ');
+                            selector = selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
 
-                            text_html.push(token.word);
+                            text_html.push(entity_item(selector));
+
+                            entities.push(entity_text);
+                            entity_types.push(entity_type);
+                            entity_text = "";
+                        }
+
+                        sentence.forEach(
+                            function(token) {
+
+                                 if ((entity_text != "")
+                                    && ((token.prediction == 'O')
+                                        || (token.prediction.startsWith('B-'))
+                                        || (token.prediction.slice(-3) != entity_type))) {
+
+                                    add_entity();
+                                }
+
+                                 if (token.prediction == 'O') {
+
+                                    if (text_html.length > 0) text_html.push(' ');
+
+                                    text_html.push(token.word);
+                                 }
+                                 else {
+                                    entity_type = token.prediction.slice(-3)
+
+                                    if (entity_text != "") entity_text += " ";
+
+                                    entity_text += token.word;
+                                 }
+                            });
+
+                         if ((entity_text != "") && (entity_text != null)) {
+                            add_entity();
                          }
-                         else {
-                            entity_type = token.prediction.slice(-3)
 
-                            if (entity_text != "") entity_text += " ";
+                         text_html.push('<br/>');
+                    }
+                )
+                $(result_text_element).html(text_region_html);
+                $("#ner-text")[0].innerHTML = text_html.join("");
 
-                            entity_text += token.word;
-                         }
-                    });
+                entities.forEach(
+                    function(entity, idx) {
+                        var selector = entity + ' ' + entity_types[idx];
 
-                 if ((entity_text != "") && (entity_text != null)) {
-                    add_entity();
-                 }
+                        selector = '.' + selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
 
-                 text_html.push('<br/>');
-            }
-        )
-        $(result_text_element).html(text_region_html);
-        $("#ner-text")[0].innerHTML = text_html.join("");
-
-        entities.forEach(
-            function(entity, idx) {
-                var selector = entity + ' ' + entity_types[idx];
-
-                selector = '.' + selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
-
-                $("#ent-sel-" + idx).click(
-                    function() {
-                        $(".selected").removeClass('selected');
-
-                        selectEntity(entity + "-" + entity_types[idx],
+                        $("#ent-sel-" + idx).click(
                             function() {
-                                $(selector).addClass('selected');
+                                var has_gt = $(selector).hasClass("with-gt")
+
+                                $(".selected").removeClass('selected');
+
+                                selectEntity(entity + "-" + entity_types[idx],
+                                    function() {
+                                        $(selector).addClass('selected');
+
+                                        if (has_gt) {
+                                            $(selector).addClass('with-gt');
+                                        }
+                                    }
+                                );
                             }
                         );
                     }
                 );
-            }
-        );
-    }
-
-    that = {
+            },
         init:
             function(input_text) {
 
                 if (ner_result==null) {
                     runNER( input_text,
-                        function (ner_result) {
+                        function (result) {
+
+                            ner_result = result;
 
                             parseNER( ner_result,
                                 function(ned_result) {
@@ -314,12 +322,12 @@ function NED(ner_url, parse_url, ned_url,
                                     result_entities_element="#linking-list";
                                 });
 
-                            showNERText(ner_result);
+                            that.showNERText();
                         }
                     );
                 }
                 else {
-                    showNERText(ner_result);
+                    that.showNERText();
 
                     if (ned_result == null) {
 
@@ -336,7 +344,7 @@ function NED(ner_url, parse_url, ned_url,
                 }
             },
         makeResultList:
-            function (entities) {
+            function (entity, candidates) {
 
                 function make_candidate(candidate) {
 
@@ -363,15 +371,15 @@ function NED(ner_url, parse_url, ned_url,
                     `;
                 }
 
-                var entities_html = "";
+                var candidates_html = "";
 
-                entities.forEach(
+                candidates.forEach(
                     function(candidate, index) {
-                        entities_html += make_candidate(candidate);
+                        candidates_html += make_candidate(candidate);
                     }
                 );
 
-                entities_html =
+                candidates_html =
                 `
                     <table class="table">
                       <thead>
@@ -382,14 +390,17 @@ function NED(ner_url, parse_url, ned_url,
                         </tr>
                       </thead>
                       <tbody>
-                        ${entities_html}
+                        ${candidates_html}
                       </tbody>
                     </table>
                 `;
 
-                $(result_entities_element).html(entities_html);
+                $(result_entities_element).html(candidates_html);
             },
-        getResultEntitiesElement: function() { return result_entities_element; },
+        getResultEntitiesElement:
+            function() {
+                return result_entities_element;
+            },
         cleanResultList:
             function() {
                 $(result_entities_element).html("");
@@ -402,6 +413,10 @@ function NED(ner_url, parse_url, ned_url,
                     return "color: green"
                 else if (entity_type.endsWith('ORG'))
                     return "color: blue"
+            },
+        getEntityItemClass:
+            function(entity_text, entity_type ) {
+                return "";
             }
     };
 

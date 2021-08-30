@@ -3,6 +3,45 @@ function sbb_tools() {
     var that = null;
     var basic_auth = BasicAuth('#auth-area');
     var ned = null;
+    var el_gt = { };
+
+    (function(enable_login, enable_logout) {
+
+        basic_auth.enable_logout =
+            function() {
+                enable_logout();
+
+                if (ned == null) return;
+
+                if(basic_auth.getUser() != null) {
+                    $.get("annotate/" + ned.ppn).done(
+                        function(data) {
+
+                            el_gt = data;
+
+                            ned.showNERText();
+                        }
+                    ).fail(
+                        function(error) {
+                            console.log(error);
+                        }
+                    );
+                }
+            }
+
+        basic_auth.enable_login =
+            function() {
+
+                enable_login();
+
+                if (ned==null) return;
+
+                el_gt = {};
+
+                ned.showNERText();
+            };
+
+    })(basic_auth.enable_login, basic_auth.enable_logout);
 
     var text_region_html =
         `<div class="card">
@@ -43,7 +82,6 @@ function sbb_tools() {
         $('#model_select').hide();
         $('#el_model_select').hide();
         $('#precomputed-model').remove();
-
 
         if ((task == "ner") || (task == "bert-tokens")){
 
@@ -184,70 +222,176 @@ function sbb_tools() {
         $("#legende").html(legende_html);
     }
 
-    function NED2(ner_url, parse_url, ned_url, result_element, result_entities_element, ner_result=null, ned_result={}) {
+    function NED2(ppn, ner_url, parse_url, ned_url, result_element, result_entities_element, ner_result=null, ned_result={}) {
 
         ned = NED(ner_url, parse_url, ned_url, result_element, result_entities_element, ner_result, ned_result);
 
-        function make_candidate(candidate) {
+        ned.ppn = ppn;
 
-            var parts = candidate[0].split(/(?=[\.|\-|_])/);
+        function append_candidate(entity, candidate) {
 
-            var tmp = parts.join("&shy;")
+            function insert_soft_hyphens(text) {
+                var parts = text.split(/(?=[\.|\-|_])/);
 
-            return `
-            <tr>
-                <td class="my-auto">
-                    <a href="https://de.wikipedia.org/wiki/${candidate[0]}" target="_blank" rel="noopener noreferrer">
-                        <p class="text-wrap">${tmp}</p>
-                    </a>
-                </td>
-                <td class="my-auto">
-                    <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
-                        ${candidate[1]['wikidata']}
-                    </a>
-                </td>
-                <td class="my-auto">
-                    ${Number(candidate[1]['proba_1']).toFixed(2)}
-                </td>
-                <td class="my-auto">
-                    <div class="form">
-                    <select class="form-select form-select-sm">
+                var tmp = parts.join("&shy;")
+
+                return tmp;
+            }
+
+            var page_title = candidate[0];
+
+
+            var page_title_vis = insert_soft_hyphens(page_title);
+
+            var wikidata_vis = insert_soft_hyphens(candidate[1]['wikidata']);
+
+            var select_id = `select-gt-${entity}-${page_title}`.replace(/\W/g, '-');
+
+            var wikipedia_html = "";
+            var wikidata_html = "";
+            var conf_html = "";
+
+            var input_html =
+                `
+                <div class="form">
+                    <select class="form-select form-select-sm" id="${select_id}">
                       <option value="?">?</option>
                       <option value="+">+</option>
                       <option value="-">-</option>
                     </select>
-                    </div>
+                </div>
+                `;
 
+            if (page_title == "DO-NOT-LINK") {
+
+                wikipedia_html = `<p class="text-wrap">${page_title_vis}</p>`;
+
+                wikidata_html = `${wikidata_vis}`;
+            }
+            else if (page_title == "SUGGEST") {
+
+                wikipedia_html = `<span>Suggest:</span>`;
+
+                wikidata_html =
+                    `
+                    <input type="text" size=6/>
+                    `;
+                input_html = "";
+            }
+            else {
+
+                wikipedia_html =
+                `
+                    <a href="https://de.wikipedia.org/wiki/${page_title}" target="_blank" rel="noopener noreferrer">
+                        <p class="text-wrap">${page_title_vis}</p>
+                    </a>
+                `;
+
+                wikidata_html =
+                `
+                    <a href="https://www.wikidata.org/wiki/${candidate[1]['wikidata']}" target="_blank" rel="noopener noreferrer">
+                        ${wikidata_vis}
+                    </a>
+                `;
+
+                conf_html = `${Number(candidate[1]['proba_1']).toFixed(2)}`;
+            }
+
+            var cand_html = `
+            <tr>
+                <td class="my-auto">
+                    ${wikipedia_html}
+                </td>
+                <td class="my-auto">
+                    ${wikidata_html}
+                </td>
+                <td class="my-auto">
+                    ${conf_html}
+                </td>
+                <td class="my-auto">
+                    ${input_html}
                 </td>
             </tr>
             `;
+
+            $("#entity-result-list").append(cand_html);
+
+            if ((entity in el_gt) && (page_title in el_gt[entity])){
+                $(`#${select_id}`).val(el_gt[entity][page_title]);
+            }
+
+            (function(entity, candidate) {
+                $(`#${select_id}`).change(
+                    function() {
+                        var label = $(this).val();
+
+                        var post_data =
+                            {
+                                entity: entity,
+                                candidate : candidate,
+                                label : label
+                            };
+
+                        $.ajax(
+                            {
+                                url:  `annotate/${ppn}`,
+                                data: JSON.stringify(post_data),
+                                type: 'POST',
+                                contentType: "application/json",
+                                success:
+                                    function() {
+                                    },
+                                error:
+                                    function(error) {
+                                        console.log(error);
+                                    }
+                            }
+                        );
+
+                        if (label != "?") {
+                            if (entity in el_gt) {
+                                el_gt[entity][page_title] = label;
+                            }
+                            else {
+                                el_gt[entity] = { 'length': 1};
+                                el_gt[entity][page_title] = label;
+                            }
+
+                            $(".selected").addClass('with-gt');
+                        }
+                        else {
+                            if (entity in el_gt) {
+                                delete el_gt[entity][page_title];
+                                el_gt[entity].length--;
+
+                                if (el_gt[entity].length < 1) {
+                                    delete el_gt[entity];
+
+                                    $(".selected").removeClass('with-gt');
+                                }
+                            }
+                        }
+                    }
+                );
+            })(entity, candidate);
         }
 
-
-        (function(makeResultList, getColor){
+        (function(makeResultList, getColor, getEntityItemClass){
 
             ned.makeResultList =
-                function(entities) {
+                function(entity, candidates) {
                     $(ned.getResultEntitiesElement()).html("");
 
                     if (basic_auth.getUser() == null) {
 
-                        makeResultList(entities);
+                        makeResultList(entity, candidates);
 
                         return;
                     }
 
-                    var entities_html = "";
-
-                    entities.forEach(
-                        function(candidate, index) {
-                            entities_html += make_candidate(candidate);
-                        }
-                    );
-
-                    entities_html =
+                    var candidates_table =
                     `
-                        <table class="table">
+                        <table class="table table-responsive">
                           <thead>
                             <tr>
                               <th scope="col">Wiki&shy;pedia</th>
@@ -256,15 +400,51 @@ function sbb_tools() {
                               <th scope="col">Valid Answer?</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            ${entities_html}
+                          <tbody id="entity-result-list">
                           </tbody>
                         </table>
                     `;
 
-                    $(ned.getResultEntitiesElement()).html(entities_html);
-                }
-        })(ned.makeResultList, ned.getColor);
+                    $(ned.getResultEntitiesElement()).html(candidates_table);
+
+                    candidates.forEach(
+                        function(candidate, index) {
+                            append_candidate(entity, candidate);
+                        }
+                    );
+
+                    append_candidate(entity,
+                        ["DO-NOT-LINK",
+                        {   "wikidata": "DO-NOT-LINK",
+                            "proba_1": "nan",
+                            "start_page": -1,
+                            "stop_page": -1}]);
+
+                    append_candidate(entity,
+                        ["SUGGEST",
+                        {   "wikidata": "SUGGEST",
+                            "proba_1": "nan",
+                            "start_page": -1,
+                            "stop_page": -1}]);
+                };
+            ned.getColor =
+                function(entity_text, entity_type) {
+                    return getColor(entity_text, entity_type);
+                };
+
+            ned.getEntityItemClass =
+                function(entity_text, entity_type) {
+
+                    var entity = entity_text + "-" + entity_type;
+
+                    if (entity in el_gt) {
+                        return getEntityItemClass() + " with-gt";
+                    }
+
+                    return getEntityItemClass();
+                };
+
+        })(ned.makeResultList, ned.getColor, ned.getEntityItemClass);
 
         return ned;
     }
@@ -273,6 +453,11 @@ function sbb_tools() {
         var el_model = $('#el-model').val();
         var ner_url = "";
         var ned_url= el_model+"?return_full=0&priority=0";
+
+        function make_NED(ner_result, el_result) {
+            var ned = NED2(ppn, ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking", ner_result, el_result);
+            ned.init("");
+        }
 
         $.get("digisam-ner/" + ppn).done(
             function( ner_result ) {
@@ -283,9 +468,19 @@ function sbb_tools() {
                     $.get( "digisam-el/" + ppn + "/0.15").done(
                         function( el_result ) {
 
-                            var ned = NED2(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
-                                          ner_result, el_result);
-                            ned.init("");
+                            if(basic_auth.getUser() != null) {
+                                $.get("annotate/" + ppn).done(
+                                    function(data) {
+
+                                        el_gt = data;
+
+                                        make_NED(ner_result, el_result);
+                                    }
+                                ).fail(function() { make_NED(ner_result, el_result); });
+                            }
+                            else {
+                                make_NED(ner_result, el_result);
+                            }
 
                             $("#legende").html(legende_html);
 
@@ -297,10 +492,7 @@ function sbb_tools() {
                         });
                 }
                 else {
-                    var ned = NED2(ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking",
-                                  ner_result);
-
-                    ned.init("");
+                    make_NED(ner_result, {});
 
                     $("#legende").html(legende_html);
                 }
@@ -320,6 +512,9 @@ function sbb_tools() {
                 $("#resultregion").html("");
                 $("#legende").html("");
                 $("#entity-linking").html("");
+
+                el_gt = {};
+                ned = null;
             },
         init:
             function (task, ppn) {

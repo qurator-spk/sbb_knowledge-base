@@ -81,18 +81,36 @@ class Digisam:
 
         return ner_result
 
-    def get_el(self, ppn, threshold):
+    def get_el_con(self):
 
         if Digisam._ner_el_conn is None:
             Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
 
-        df = pd.read_sql('select * from entity_linking where ppn=?', params=(ppn,), con=Digisam._ner_el_conn)
+            Digisam._ner_el_conn. \
+                execute('create table if not exists "entity_linking_gt"'
+                        '("index" integer primary key,"user" TEXT, "entity_id" TEXT, "page_title" TEXT, '
+                        '"wikidata" TEXT, "ppn" TEXT, start_page INTEGER, stop_page INTEGER, "label", TEXT)')
+
+            Digisam._ner_el_conn. \
+                execute('create index if not exists idx_place_gt on '
+                        'entity_linking_gt(entity_id, wikidata, ppn, start_page, stop_page, user);')
+
+            Digisam._ner_el_conn. \
+                execute('create index if not exists idx_ppn_gt on '
+                        'entity_linking_gt(ppn, user);')
+
+        return self._ner_el_conn
+
+    def get_el(self, ppn, threshold):
+
+        df = pd.read_sql('select * from entity_linking where ppn=?', params=(ppn,), con=self.get_el_con())
 
         df = df.loc[df.proba > threshold]
 
         el_result = \
             {entity_id:
-                 {'ranking': [[row.page_title, {'proba_1': row.proba, 'wikidata': row.wikidata}]
+                 {'ranking': [[row.page_title, {'proba_1': row.proba, 'wikidata': row.wikidata,
+                                                'start_page': row.start_page, 'stop_page': row.stop_page}]
                               for _, row in candidates.iterrows()]}
              for entity_id, candidates in df.groupby('entity_id')}
 
@@ -262,6 +280,42 @@ def el(ppn, threshold=0.15):
                 return 'bad request!', 400
 
     return jsonify(el_result)
+
+
+@app.route('/annotate/<ppn>', methods=['GET', 'POST'])
+@htpasswd.required
+def add_annotation(user, ppn):
+
+    if request.method == 'GET':
+
+        gt = pd.read_sql("SELECT * from entity_linking_gt WHERE user=? AND ppn=?",
+                         con=digisam.get_el_con(), params=(user, ppn))
+
+        ret = {entity_id: {page_title: candidates.sort_values('index', ascending=False).iloc[0].label
+                           for page_title, candidates in entries.groupby('page_title')}
+               for entity_id, entries in gt.groupby('entity_id')}
+
+        print(ret)
+
+        return jsonify(ret)
+
+    annotation = request.json
+
+    print(user, annotation)
+
+    new_entry = pd.DataFrame.from_dict(annotation['candidate'][1], orient='index').T
+
+    new_entry = new_entry.drop(columns=['proba_1'])
+
+    new_entry['page_title'] = annotation['candidate'][0]
+    new_entry['label'] = annotation['label']
+    new_entry['entity_id'] = annotation['entity']
+    new_entry['ppn'] = ppn
+    new_entry['user'] = user
+
+    new_entry.to_sql('entity_linking_gt', con=digisam.get_el_con(), if_exists='append', index=False)
+
+    return "OK", 200
 
 
 def find_file(path, ppn, page, ending):
