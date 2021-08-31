@@ -238,12 +238,63 @@ function sbb_tools() {
                 return tmp;
             }
 
-            var page_title = candidate[0];
+            function post_annotation(entity, candidate, label) {
+                var post_data =
+                    {
+                        entity: entity,
+                        candidate : candidate,
+                        label : label
+                    };
 
+                $.ajax(
+                    {
+                        url:  `annotate/${ppn}`,
+                        data: JSON.stringify(post_data),
+                        type: 'POST',
+                        contentType: "application/json",
+                        success:
+                            function() {
+                            },
+                        error:
+                            function(error) {
+                                console.log(error);
+                            }
+                    }
+                );
+            }
+
+            function update_gt(entity, page_title, label) {
+                if (label != "?") {
+                    if (entity in el_gt) {
+                        el_gt[entity][page_title] = label;
+                    }
+                    else {
+                        el_gt[entity] = { 'length': 1};
+                        el_gt[entity][page_title] = label;
+                    }
+
+                    $(".selected").addClass('with-gt');
+                }
+                else {
+                    if (entity in el_gt) {
+                        delete el_gt[entity][page_title];
+                        el_gt[entity].length--;
+
+                        if (el_gt[entity].length < 1) {
+                            delete el_gt[entity];
+
+                            $(".selected").removeClass('with-gt');
+                        }
+                    }
+                }
+            }
+
+            var page_title = candidate[0];
 
             var page_title_vis = insert_soft_hyphens(page_title);
 
-            var wikidata_vis = insert_soft_hyphens(candidate[1]['wikidata']);
+            var qid = candidate[1]['wikidata'];
+            var wikidata_vis = insert_soft_hyphens(qid);
 
             var select_id = `select-gt-${entity}-${page_title}`.replace(/\W/g, '-');
 
@@ -262,7 +313,7 @@ function sbb_tools() {
                 </div>
                 `;
 
-            if (page_title == "DO-NOT-LINK") {
+            if ((page_title == "DO-NOT-LINK") || (page_title == "JOIN-LEFT")) {
 
                 wikipedia_html = `<p class="text-wrap">${page_title_vis}</p>`;
 
@@ -270,11 +321,11 @@ function sbb_tools() {
             }
             else if (page_title == "SUGGEST") {
 
-                wikipedia_html = `<span>Suggest:</span>`;
+                wikipedia_html = `<button class="btn btn-outline-secondary btn-sm" id="${select_id}-btn">Suggest</button>`;
 
                 wikidata_html =
                     `
-                    <input type="text" size=6/>
+                    <input type="text" size=6/ id="${select_id}" disabled=true>
                     `;
                 input_html = "";
             }
@@ -317,66 +368,54 @@ function sbb_tools() {
             $("#entity-result-list").append(cand_html);
 
             if ((entity in el_gt) && (page_title in el_gt[entity])){
-                $(`#${select_id}`).val(el_gt[entity][page_title]);
+                    $(`#${select_id}`).val(el_gt[entity][page_title]);
             }
 
-            (function(entity, candidate) {
-                $(`#${select_id}`).change(
+            if (page_title == "SUGGEST") {
+
+                $(`#${select_id}-btn`).click(
                     function() {
-                        var label = $(this).val();
-
-                        var post_data =
-                            {
-                                entity: entity,
-                                candidate : candidate,
-                                label : label
-                            };
-
-                        $.ajax(
-                            {
-                                url:  `annotate/${ppn}`,
-                                data: JSON.stringify(post_data),
-                                type: 'POST',
-                                contentType: "application/json",
-                                success:
-                                    function() {
-                                    },
-                                error:
-                                    function(error) {
-                                        console.log(error);
-                                    }
-                            }
-                        );
-
-                        if (label != "?") {
-                            if (entity in el_gt) {
-                                el_gt[entity][page_title] = label;
-                            }
-                            else {
-                                el_gt[entity] = { 'length': 1};
-                                el_gt[entity][page_title] = label;
-                            }
-
-                            $(".selected").addClass('with-gt');
-                        }
-                        else {
-                            if (entity in el_gt) {
-                                delete el_gt[entity][page_title];
-                                el_gt[entity].length--;
-
-                                if (el_gt[entity].length < 1) {
-                                    delete el_gt[entity];
-
-                                    $(".selected").removeClass('with-gt');
-                                }
-                            }
-                        }
+                        $(`#${select_id}`).prop('disabled', false);
                     }
                 );
-            })(entity, candidate);
+
+                (function(entity, candidate) {
+                    $(`#${select_id}`).change(
+                        function() {
+                            var qid = $(this).val();
+
+                            if (qid.length < 1) {
+                                update_gt(entity, page_title, "?");
+                                post_annotation(entity, candidate, "?");
+                            }
+                            else {
+                                update_gt(entity, page_title, qid);
+                                post_annotation(entity, candidate, qid);
+                            }
+
+                            $(this).prop('disabled', true);
+                        }
+                    );
+                }
+                )(entity, candidate);
+            }
+            else {
+
+                (function(entity, candidate) {
+                    $(`#${select_id}`).change(
+                        function() {
+                            var label = $(this).val();
+
+                            post_annotation(entity, candidate, label)
+
+                            update_gt(entity, page_title, label);
+                        }
+                    );
+                })(entity, candidate);
+            }
         }
 
-        (function(makeResultList, getColor, getEntityItemClass){
+        (function(makeResultList, resultNotFound, getColor, getEntityItemClass){
 
             ned.makeResultList =
                 function(entity, candidates) {
@@ -421,12 +460,30 @@ function sbb_tools() {
                             "stop_page": -1}]);
 
                     append_candidate(entity,
+                        ["JOIN-LEFT",
+                        {   "wikidata": "JOIN-LEFT",
+                            "proba_1": "nan",
+                            "start_page": -1,
+                            "stop_page": -1}]);
+
+                    append_candidate(entity,
                         ["SUGGEST",
-                        {   "wikidata": "SUGGEST",
+                        {   "wikidata": "",
                             "proba_1": "nan",
                             "start_page": -1,
                             "stop_page": -1}]);
                 };
+
+            ned.resultNotFound =
+                function (entity) {
+                    if (basic_auth.getUser() == null) {
+                        resultNotFound(entity);
+                        return;
+                    }
+
+                    ned.makeResultList(entity, []);
+                };
+
             ned.getColor =
                 function(entity_text, entity_type) {
                     return getColor(entity_text, entity_type);
@@ -444,7 +501,7 @@ function sbb_tools() {
                     return getEntityItemClass();
                 };
 
-        })(ned.makeResultList, ned.getColor, ned.getEntityItemClass);
+        })(ned.makeResultList, ned.resultNotFound, ned.getColor, ned.getEntityItemClass);
 
         return ned;
     }

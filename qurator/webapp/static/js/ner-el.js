@@ -129,12 +129,14 @@ function NED(ner_url, parse_url, ned_url,
                 return;
             }
             else {
-                $(result_entities_element).html("Not found.");
+                that.resultNotFound(entity);
+                onSuccess();
             }
         }
 
         if (ned_url == null) {
-            $(result_entities_element).html("Not found.");
+            that.resultNotFound(entity);
+            onSuccess();
             return;
         }
 
@@ -160,11 +162,13 @@ function NED(ner_url, parse_url, ned_url,
                         onSuccess();
                     }
                     else {
-                        $(result_entities_element).html("Not found.");
+                        that.resultNotFound(entity);
+                        onSuccess();
                     }
                 }
                 else {
-                    $(result_entities_element).html("Not found");
+                    that.resultNotFound(entity);
+                    onSuccess();
                 }
             }
         );
@@ -396,6 +400,10 @@ function NED(ner_url, parse_url, ned_url,
                 `;
 
                 $(result_entities_element).html(candidates_html);
+            },
+        resultNotFound :
+            function(entity) {
+                $(result_entities_element).html("Not found.");
             },
         getResultEntitiesElement:
             function() {

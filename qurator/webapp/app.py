@@ -289,13 +289,30 @@ def add_annotation(user, ppn):
     if request.method == 'GET':
 
         gt = pd.read_sql("SELECT * from entity_linking_gt WHERE user=? AND ppn=?",
-                         con=digisam.get_el_con(), params=(user, ppn))
+                         con=digisam.get_el_con(), params=(user, ppn)).reset_index()
 
-        ret = {entity_id: {page_title: candidates.sort_values('index', ascending=False).iloc[0].label
-                           for page_title, candidates in entries.groupby('page_title')}
-               for entity_id, entries in gt.groupby('entity_id')}
+        ret = {}
 
-        print(ret)
+        for entity_id, entries in gt.groupby('entity_id'):
+
+            tmp = {}
+            for page_title, candidates in entries.groupby('page_title'):
+
+                last_label = candidates.sort_values('index', ascending=False).iloc[0].label
+
+                if last_label == '?':
+                    continue
+
+                tmp[page_title] = last_label
+
+            if len(tmp) == 0:
+                continue
+
+            tmp['length'] = len(tmp)
+
+            ret[entity_id] = tmp
+
+        # print(ret)
 
         return jsonify(ret)
 
