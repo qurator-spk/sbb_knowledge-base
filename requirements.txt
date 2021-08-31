@@ -21,7 +21,7 @@ cloudpickle
 pytest
 pytest-cov
 flask
-flask-htpassed
+flask-htpasswd
 somajo
 scipy
 gensim
