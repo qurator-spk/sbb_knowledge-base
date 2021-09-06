@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw
 import json
 import random
 import string
+import re
 
 app = Flask(__name__)
 
@@ -126,6 +127,9 @@ class TopicModels:
     def __init__(self, model_dir):
         self._model_dir = model_dir
         self._models = {}
+        self._corpus = {}
+
+        self._config = pd.DataFrame.from_dict(app.config['TOPIC_MODELS'])
 
     def get_model(self, file):
 
@@ -139,7 +143,17 @@ class TopicModels:
 
         token_table = pd.DataFrame.from_dict(ret['token.table'])
 
-        self._models[file] = {'model': ret, 'tokens': token_table}
+        docs = []
+        for key, val in ret['docs'].items():
+            tmp = pd.DataFrame.from_dict(val)
+            tmp['topic'] = key
+            docs.append(tmp)
+
+        docs = pd.concat(docs)
+
+        del ret['docs']
+
+        self._models[file] = {'model': ret, 'tokens': token_table, 'docs': docs}
 
         return ret
 
@@ -149,6 +163,32 @@ class TopicModels:
             self.get_model(file)
 
         return self._models[file]['tokens']
+
+    def get_docs(self, file):
+
+        if file not in self._models:
+            self.get_model(file)
+
+        return self._models[file]['docs']
+
+    def get_corpus(self, file):
+
+        corpus_file = self._config.loc[self._config.data == file].corpus.iloc[0]
+
+        if corpus_file in self._corpus:
+
+            return self._corpus[corpus_file]
+
+        abs_file = os.path.join(self._model_dir, corpus_file)
+
+        corpus = pd.read_pickle(abs_file).reset_index(drop=True)
+
+        self._corpus[corpus_file] = corpus
+
+        # import ipdb;
+        # ipdb.set_trace()
+
+        return corpus
 
 
 topic_models = TopicModels(app.config['TOPIC_MODEL_DIR'])
@@ -185,6 +225,35 @@ def after(response):
 @app.route('/ppnexamples')
 def get_ppnexamples():
     return jsonify(app.config['PPN_EXAMPLES'])
+
+
+@app.route('/topic_docs/<file>/<topic>')
+@app.route('/topic_docs/<file>/<topic>/<text>')
+def get_topic_docs(file, topic, text=None):
+
+    docs = topic_models.get_docs(file)
+
+    topic_docs = docs.loc[docs.topic == topic]
+
+    if text is not None:
+        qids = re.findall('Q[0-9]+', text)
+
+        corpus = topic_models.get_corpus(file)
+
+        tmp = topic_docs.merge(corpus, on="ppn")
+
+        tmp = tmp.loc[tmp.wikidata.isin(qids)]
+
+        topic_docs = \
+            pd.DataFrame([(ppn, part.title.iloc[0], part.wcount.sum()) for ppn, part in tmp.groupby('ppn')],
+                         columns=['ppn', 'title', 'wcount']).sort_values('wcount', ascending=False).\
+                reset_index(drop=True)
+
+        #import ipdb;ipdb.set_trace()
+
+    ret = [{'title': row.title, 'ppn': row.ppn} for _, row in topic_docs.iterrows()]
+
+    return jsonify(ret)
 
 
 @app.route('/topic_models')
@@ -284,7 +353,7 @@ def el(ppn, threshold=0.15):
 
 @app.route('/annotate/<ppn>', methods=['GET', 'POST'])
 @htpasswd.required
-def add_annotation(user, ppn):
+def annotations(user, ppn):
 
     if request.method == 'GET':
 

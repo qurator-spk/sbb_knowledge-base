@@ -106,15 +106,9 @@ function LDAvis (json_file, ready_func) {
       var shinyClickedTerm = outputId + "_term_click";
     }
 
-    var docs=null;
-
     // The actual read-in of the data and main code:
     d3.json(json_file,
     function(error, data) {
-
-        if ('docs' in data) {
-            docs = data['docs'];
-        }
 
         // set the number of topics to global variable K:
         K = data['mdsDat'].x.length;
@@ -189,13 +183,13 @@ function LDAvis (json_file, ready_func) {
 
                 // increment the value in the input box
                 document.getElementById(topicID).value = value_new;
-                topic_off(document.getElementById(topicID + value_old));
+                that.topic_off(document.getElementById(topicID + value_old));
 
                 var oldtopic = document.getElementById(topicID + value_new);
                 topic_on(oldtopic);
                 vis_state.topic = value_new;
                 state_save(true);
-                topic_click(oldtopic, value_new);
+                that.topic_click(oldtopic, value_new);
              });
 
         d3.select("#" + topicDown).on("click",
@@ -212,13 +206,13 @@ function LDAvis (json_file, ready_func) {
 
                 // increment the value in the input box
                 document.getElementById(topicID).value = value_new;
-                topic_off(document.getElementById(topicID + value_old));
+                that.topic_off(document.getElementById(topicID + value_old));
 
                 var oldtopic = document.getElementById(topicID + value_new);
                 topic_on(oldtopic);
                 vis_state.topic = value_new;
                 state_save(true);
-                topic_click(oldtopic, value_new);
+                that.topic_click(oldtopic, value_new);
             });
 
         d3.select("#" + topicID).on("keyup",
@@ -229,7 +223,7 @@ function LDAvis (json_file, ready_func) {
                 if (termElem !== undefined) that.term_off(termElem);
 
                 vis_state.term = "";
-                topic_off(document.getElementById(topicID + vis_state.topic))
+                that.topic_off(document.getElementById(topicID + vis_state.topic))
 
                 var value_new = document.getElementById(topicID).value;
 
@@ -240,7 +234,7 @@ function LDAvis (json_file, ready_func) {
                     vis_state.topic = value_new;
                     state_save(true);
                     document.getElementById(topicID).value = vis_state.topic;
-                    topic_click(oldtopic, value_new);
+                    that.topic_click(oldtopic, value_new);
                 }
             });
 
@@ -454,7 +448,7 @@ function LDAvis (json_file, ready_func) {
             function(d) {
                 var old_topic = topicID + vis_state.topic;
                 if (vis_state.topic > 0 && old_topic != this.id) {
-                    topic_off(document.getElementById(old_topic));
+                    that.topic_off(document.getElementById(old_topic));
                 }
                 topic_on(this);
             })
@@ -465,16 +459,16 @@ function LDAvis (json_file, ready_func) {
                 d3.event.stopPropagation();
                 var old_topic = topicID + vis_state.topic;
                 if (vis_state.topic > 0 && old_topic != this.id) {
-                    topic_off(document.getElementById(old_topic));
+                    that.topic_off(document.getElementById(old_topic));
                 }
                 // make sure topic input box value and fragment reflects clicked selection
                 document.getElementById(topicID).value = vis_state.topic = d.topics;
                 state_save(true);
                 topic_on(this);
-                topic_click(this, d.topics);
+                that.topic_click(this, d.topics);
             })
             .on("mouseout", function(d) {
-                if (vis_state.topic != d.topics) topic_off(this);
+                if (vis_state.topic != d.topics) that.topic_off(this);
                 if (vis_state.topic > 0) topic_on(document.getElementById(topicID + vis_state.topic));
             });
 
@@ -1106,7 +1100,7 @@ function LDAvis (json_file, ready_func) {
                 .call(xAxis);
         }
 
-        function topic_off(circle) {
+        that.topic_off = function (circle) {
             if (circle == null) return circle;
             // go back to original opacity/fill
             circle.style.opacity = base_opacity;
@@ -1376,7 +1370,7 @@ function LDAvis (json_file, ready_func) {
             }
                 
             if (vis_state.topic > 0) {
-                topic_off(document.getElementById(topicID + vis_state.topic));
+                that.topic_off(document.getElementById(topicID + vis_state.topic));
                 // set the style of any topic clicked to be back to regular style
                 // (no thick border around topic circle)
                 var old_topic_clicked_id = topicID + vis_state.topic_clicked;
@@ -1412,7 +1406,7 @@ function LDAvis (json_file, ready_func) {
             vis_state.topic_clicked = 0;
         }
         
-        function topic_click(newtopic, newtopic_num) {
+        that.topic_click = function (newtopic, newtopic_num) {
 
 //            if (!inShinyMode) {
 //              return null;
@@ -1424,29 +1418,6 @@ function LDAvis (json_file, ready_func) {
             var old_topic_clicked_id = topicID + vis_state.topic_clicked;
             if (vis_state.topic_clicked > 0 && old_topic_clicked_id != this.id) {
                 document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
-            }
-
-            if (docs != null) {
-                //console.log(docs[newtopic_num]);
-
-                $("#doc-list").html("");
-
-                topic_docs = docs[newtopic_num];
-
-                for (i = 0; i < topic_docs.length; i++) {
-
-                    var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i].ppn;
-
-                    var item = `
-                        <li href="" class="list-group-item text-left">
-                            <a href="${url}" target="_blank" rel="noopener noreferrer"> ${topic_docs[i].title} </a>
-                            <a class="btn btn-info btn-sm ml-3"
-                                href="index.html?ppn=${topic_docs[i].ppn}&model_id=precomputed&el_model_id=precomputed&task=ner"
-                                target="_blank" rel="noopener noreferrer">NER+EL</a>
-                        </li>`;
-
-                    $("#doc-list").append(item);
-                }
             }
 
             console.log(newtopic_num);
@@ -1496,9 +1467,6 @@ function LDAvis (json_file, ready_func) {
             // update shiny term input object to know about new term clicked
             Shiny.onInputChange(shinyClickedTerm, newterm_term);
         }
-
-        //that.term_on = term_on;
-        //that.term_off = term_off;
 
         ready_func(that);
     });

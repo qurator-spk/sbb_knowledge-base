@@ -5,6 +5,13 @@ function map_setup(maps) {
     var n_topics = {}
     var map_data = {}
 
+    var spinner_html =
+        `<div class="d-flex justify-content-center mt-5">
+            <div class="spinner-border align-center mt-5" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+         </div>`;
+
     maps.forEach(
         function (map, index) {
             map_names.add(map["name"]);
@@ -66,7 +73,38 @@ function map_setup(maps) {
         LDAvis("topic_models/" + map_name,
             function(vis) {
 
-                (function(term_on, term_off) {
+                (function(term_on, term_off, topic_click, topic_off) {
+
+                    var topic_num = null;
+
+                    function get_docs(text) {
+
+                        if (topic_num == null) return;
+
+                        if (text.length > 0) text = "/" + text;
+
+                        $.get("topic_docs/" + map_name + "/" + topic_num + text,
+                           function(topic_docs) {
+
+                               $("#doc-list").html("");
+
+                               for (i = 0; i < topic_docs.length; i++) {
+
+                                   var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i].ppn;
+
+                                   var item = `
+                                       <li href="" class="list-group-item text-left">
+                                           <a href="${url}" target="_blank" rel="noopener noreferrer"> ${topic_docs[i].title} </a>
+                                           <a class="btn btn-info btn-sm ml-3"
+                                               href="index.html?ppn=${topic_docs[i].ppn}&model_id=precomputed&el_model_id=precomputed&task=ner"
+                                               target="_blank" rel="noopener noreferrer">NER+EL</a>
+                                       </li>`;
+
+                                   $("#doc-list").append(item);
+                               }
+                           });
+                    }
+
                      $("#search-for").on('input',
                         function () {
 
@@ -74,6 +112,7 @@ function map_setup(maps) {
 
                             if (val == "") {
                                 term_off(null);
+                                get_docs("");
                                 return;
                             }
 
@@ -83,6 +122,7 @@ function map_setup(maps) {
                                 }).length)
                             {
                                 term_on(this.value);
+                                get_docs(this.value);
                             }
                         }
                      );
@@ -107,7 +147,27 @@ function map_setup(maps) {
                             term_off(termElem);
                         };
 
-                 })(vis.term_on, vis.term_off);
+                     vis.topic_click =
+                        function (newtopic, newtopic_num) {
+
+                            topic_num = newtopic_num;
+
+                            $("#doc-list").html(spinner_html);
+
+                            var text = $("#search-for").val();
+
+                            get_docs(text);
+
+                            topic_click(newtopic, newtopic_num);
+                        };
+
+                     vis.topic_off =
+                        function (circle) {
+
+                            topic_off(circle);
+                        };
+
+                 })(vis.term_on, vis.term_off, vis.topic_click, vis.topic_off);
             }
         );
     }
