@@ -25,6 +25,38 @@ function NED(ner_url, parse_url, ned_url,
             </div>
         </div>`;
 
+    var el_search_html =
+        `
+        <div class="card">
+            <div class="card-header my-auto">
+                <p> <b> Search-for-QID: </b></p>
+            </div>
+            <div class="card-body">
+                <div class="input-group justify-content-center">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary" type="button" id="entity-prev">Prev</button>
+                  </div>
+                  <input type="text" list="suggestions" id="search-for" autocomplete="off">
+                  <datalist id="suggestions"></datalist>
+                  </input>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="entity-next">Next</button>
+                  </div>
+                </div>
+            </div>
+        </div>
+        `;
+
+    var text_region_html =
+        `<div class="card">
+            <div class="card-header">
+                Ergebnis:
+            </div>
+            <div class="card-block">
+                <div id="ner-text" style="overflow-y:scroll;height: 60vh;"></div>
+            </div>
+        </div>`;
+
     function runNER (input_text, onSuccess) {
 
         that.cleanResultList();
@@ -174,47 +206,135 @@ function NED(ner_url, parse_url, ned_url,
         );
     }
 
+    function getBorderColor(entity_text, entity_type) {
+
+        var entity = entity_text + "-" + entity_type;
+
+        if ((entity in ned_result) && ('ranking' in ned_result[entity])) {
+            var entities = ned_result[entity]['ranking'];
+
+            var probas=[];
+
+            entities.forEach(function(candidate) { probas.push(Number(candidate[1]["proba_1"])); });
+
+            var max_proba = Math.max.apply(Math, probas);
+
+            if (max_proba < 0.15)
+                return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
+
+            if (max_proba > 0.5)
+                return "padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray";
+
+            return "padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray";
+        }
+        else {
+            return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
+        }
+    }
+
+    function make_surface_selector(entity_text, entity_type) {
+        var entity_id = entity_text + '-' + entity_type.slice(entity_type.length-3);
+
+        return entity_id.replace(/[^\w\s]|_/g, "-").replace(/\s+/g, "-");
+    }
+
+    function make_selectors(entity_text, entity_type) {
+        var entity_id = entity_text + '-' + entity_type.slice(entity_type.length-3);
+
+        var selector = make_surface_selector(entity_text, entity_type);
+
+        if (entity_id in ned_result) {
+            var ranking = ned_result[entity_id]['ranking'];
+
+            ranking.forEach(
+                function(item, index) {
+                    selector += " " + item[1]['wikidata']
+                }
+            );
+        }
+
+        return selector;
+    }
+
+    function setup_el_search() {
+
+        var pos = -1;
+        var search_id=null;
+
+        function next_occurrence(val, direction=1) {
+        
+            if ((val==null) || (val == "")) {
+                 pos=-1;
+                 search_id = "";
+                 return;
+            }
+
+            var selection = $("." + val);
+
+            if(selection.length < 1) {
+                pos=-1
+                search_id = "";
+                return;
+            }
+
+            var elem=null;
+            if ((pos==-1) || (search_id != val)){
+
+                elem = selection.get(0);
+
+                pos = selection.index(elem);
+
+                //console.log(pos);
+
+                search_id = val;
+            }
+            else {
+                pos += direction;
+                if (pos >= selection.length) pos=0;
+                if (pos < 0) pos=selection.length-1;
+
+                //console.log(pos);
+
+                elem = selection.eq(pos).get(0);
+            }
+
+            elem.scrollIntoView();
+            elem.click();
+        }
+
+        $("#search-for").on('input',
+            function () {
+
+                var val = this.value;
+
+                next_occurrence(val);
+            }
+        );
+
+        $("#entity-next").click(
+            function() {
+                next_occurrence(search_id, 1);
+            }
+        );
+
+        $("#entity-prev").click(
+            function() {
+                next_occurrence(search_id, -1);
+            }
+        );
+
+        var url_params = new URLSearchParams(window.location.search);
+
+        if (url_params.has('search_id')) {
+            next_occurrence(url_params.get('search_id'));
+
+            $("#search-for").val(url_params.get('search_id'));
+        }
+    }
+
     that = {
         showNERText :
             function () {
-
-                function getBorderColor(entity_text, entity_type) {
-
-                    var entity = entity_text + "-" + entity_type;
-
-                    if ((entity in ned_result) && ('ranking' in ned_result[entity])) {
-                        var entities = ned_result[entity]['ranking'];
-
-                        var probas=[];
-
-                        entities.forEach(function(candidate) { probas.push(Number(candidate[1]["proba_1"])); });
-
-                        var max_proba = Math.max.apply(Math, probas);
-
-                        //console.log(max_proba);
-
-                        if (max_proba < 0.15)
-                            return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
-
-                        if (max_proba > 0.5)
-                            return "padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray";
-
-                        return "padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray";
-                    }
-                    else {
-                        return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
-                    }
-                }
-
-                var text_region_html =
-                    `<div class="card">
-                        <div class="card-header">
-                            Ergebnis:
-                        </div>
-                        <div class="card-block">
-                            <div id="ner-text" style="overflow-y:scroll;height: 60vh;"></div>
-                        </div>
-                    </div>`;
 
                 var text_html = [];
                 var entities = [];
@@ -238,9 +358,8 @@ function NED(ner_url, parse_url, ned_url,
                         }
 
                         function add_entity() {
-                            var selector = entity_text + ' ' + entity_type.slice(entity_type.length-3);
 
-                            selector = selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
+                            var selector = make_selectors(entity_text, entity_type.slice(entity_type.length-3))
 
                             text_html.push(entity_item(selector));
 
@@ -287,9 +406,8 @@ function NED(ner_url, parse_url, ned_url,
 
                 entities.forEach(
                     function(entity, idx) {
-                        var selector = entity + ' ' + entity_types[idx];
 
-                        selector = '.' + selector.replace(/[^\w\s]|_/g, "").replace(/\s+/g, "-");
+                        var selector = '.' + make_surface_selector(entity, entity_types[idx]);
 
                         $("#ent-sel-" + idx).click(
                             function() {
@@ -342,8 +460,10 @@ function NED(ner_url, parse_url, ned_url,
                             });
                     }
                     else {
-                        $(result_entities_element).html(el_html);
+                        $(result_entities_element).html(el_search_html + el_html);
                         result_entities_element="#linking-list";
+
+                        setup_el_search();
                     }
                 }
             },

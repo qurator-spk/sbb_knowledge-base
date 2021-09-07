@@ -86,6 +86,8 @@ function map_setup(maps) {
                         $.get("topic_docs/" + map_name + "/" + topic_num + text,
                            function(topic_docs) {
 
+                               var search_id = $("#search-for").val().match(/Q[0-9]+/);
+
                                $("#doc-list").html("");
 
                                for (i = 0; i < topic_docs.length; i++) {
@@ -96,7 +98,7 @@ function map_setup(maps) {
                                        <li href="" class="list-group-item text-left">
                                            <a href="${url}" target="_blank" rel="noopener noreferrer"> ${topic_docs[i].title} </a>
                                            <a class="btn btn-info btn-sm ml-3"
-                                               href="index.html?ppn=${topic_docs[i].ppn}&model_id=precomputed&el_model_id=precomputed&task=ner"
+                                               href="index.html?ppn=${topic_docs[i].ppn}&model_id=precomputed&el_model_id=precomputed&task=ner&search_id=${search_id}"
                                                target="_blank" rel="noopener noreferrer">NER+EL</a>
                                        </li>`;
 
