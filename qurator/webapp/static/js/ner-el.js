@@ -152,12 +152,7 @@ function NED(ner_url, parse_url, ned_url,
         })(ned_request_counter);
     }
 
-    var selected_entity=null;
-
     function selectEntity(entity, onSuccess) {
-
-        if (selected_entity == entity) return;
-        selected_entity = entity;
 
         if (entity in ned_result) {
             if ('ranking' in ned_result[entity]) {
@@ -409,6 +404,8 @@ function NED(ner_url, parse_url, ned_url,
                 $(result_text_element).html(text_region_html);
                 $("#ner-text")[0].innerHTML = text_html.join("");
 
+                var selected_entity=null;
+
                 entities.forEach(
                     function(entity, idx) {
 
@@ -418,9 +415,12 @@ function NED(ner_url, parse_url, ned_url,
                             function() {
                                 var has_gt = $(selector).hasClass("with-gt")
 
+                                if (selected_entity == entity + "-" + entity_types[idx]) return;
+                                selected_entity = entity + "-" + entity_types[idx];
+
                                 $(".selected").removeClass('selected');
 
-                                selectEntity(entity + "-" + entity_types[idx],
+                                selectEntity(selected_entity,
                                     function() {
                                         $(selector).addClass('selected');
 
