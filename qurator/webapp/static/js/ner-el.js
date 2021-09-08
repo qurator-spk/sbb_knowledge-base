@@ -152,7 +152,12 @@ function NED(ner_url, parse_url, ned_url,
         })(ned_request_counter);
     }
 
+    var selected_entity=null;
+
     function selectEntity(entity, onSuccess) {
+
+        if (selected_entity == entity) return;
+        selected_entity = entity;
 
         if (entity in ned_result) {
             if ('ranking' in ned_result[entity]) {
