@@ -228,6 +228,17 @@ function sbb_tools() {
 
         ned.ppn = ppn;
 
+        $.get("meta_data/" + ppn).done(
+            function(result) {
+
+                var title = `
+                <p class="my-auto"><b>"${result.titleInfo_title}", ${result.name0_displayForm}, ${result["originInfo-publication0_dateIssued"]}:</b></p>
+                `;
+
+                ned.setTitle(title);
+            }
+        );
+
         function append_candidate(entity, candidate) {
 
             function insert_soft_hyphens(text) {

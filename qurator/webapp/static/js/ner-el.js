@@ -28,8 +28,8 @@ function NED(ner_url, parse_url, ned_url,
     var el_search_html =
         `
         <div class="card">
-            <div class="card-header my-auto">
-                <p> <b> Search-for-QID: </b></p>
+            <div class="card-header">
+                <p class"my-auto"> <b> Search-for-QID: </b></p>
             </div>
             <div class="card-body">
                 <div class="input-group justify-content-center">
@@ -49,8 +49,8 @@ function NED(ner_url, parse_url, ned_url,
 
     var text_region_html =
         `<div class="card">
-            <div class="card-header">
-                Ergebnis:
+            <div class="card-header" id="doc-title">
+                <b>Ergebnis:</b>
             </div>
             <div class="card-block">
                 <div id="ner-text" style="overflow-y:scroll;height: 60vh;"></div>
@@ -550,6 +550,10 @@ function NED(ner_url, parse_url, ned_url,
         getEntityItemClass:
             function(entity_text, entity_type ) {
                 return "";
+            },
+        setTitle:
+            function(title) {
+                $("#doc-title").html(title);
             }
     };
 

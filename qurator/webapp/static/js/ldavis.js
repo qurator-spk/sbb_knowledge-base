@@ -1406,31 +1406,32 @@ function LDAvis (json_file, ready_func) {
             vis_state.topic_clicked = 0;
         }
         
-        that.topic_click = function (newtopic, newtopic_num) {
+        that.topic_click =
+            function (newtopic, newtopic_num) {
 
-//            if (!inShinyMode) {
-//              return null;
-//            }
-            // set style of clicked topic to have thicker border
-            newtopic.style.strokeWidth = 2;
-            
-            // set style of old selected topic back to regular border
-            var old_topic_clicked_id = topicID + vis_state.topic_clicked;
-            if (vis_state.topic_clicked > 0 && old_topic_clicked_id != this.id) {
-                document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
+    //            if (!inShinyMode) {
+    //              return null;
+    //            }
+                // set style of clicked topic to have thicker border
+                newtopic.style.strokeWidth = 2;
+
+                // set style of old selected topic back to regular border
+                var old_topic_clicked_id = topicID + vis_state.topic_clicked;
+                if (vis_state.topic_clicked > 0 && old_topic_clicked_id != this.id) {
+                    document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
+                }
+
+                console.log(newtopic_num);
+
+                // save state of topic clicked
+                vis_state.topic_clicked = newtopic_num;
+
+    //            // update shiny topic input object to be new topic clicked
+    //            Shiny.onInputChange(shinyClickedTopic, newtopic_num);
+    //
+    //            // since topic changed, we want to reset the input term object back to null
+    //            Shiny.onInputChange(shinyClickedTerm, null);
             }
-
-            console.log(newtopic_num);
-
-            // save state of topic clicked
-            vis_state.topic_clicked = newtopic_num;
-            
-//            // update shiny topic input object to be new topic clicked
-//            Shiny.onInputChange(shinyClickedTopic, newtopic_num);
-//
-//            // since topic changed, we want to reset the input term object back to null
-//            Shiny.onInputChange(shinyClickedTerm, null);
-        }
         
         function term_click(newterm, newterm_term) {
 

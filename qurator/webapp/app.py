@@ -32,6 +32,7 @@ class Digisam:
 
     _fulltext_conn = None
     _ner_el_conn = None
+    _meta_data = None
 
     def __init__(self, fulltext_path, ner_el_path):
 
@@ -116,6 +117,20 @@ class Digisam:
              for entity_id, candidates in df.groupby('entity_id')}
 
         return el_result
+
+    def get_meta_data(self, ppn):
+
+        if self._meta_data is None:
+
+            self._meta_data = pd.read_pickle(app.config['META_DATA'])
+
+        if ppn in self._meta_data.index:
+
+            return self._meta_data.loc[ppn].astype(str).to_dict()
+
+        if 'PPN' + ppn in self._meta_data.index:
+
+            return self._meta_data.loc['PPN' + ppn].astype(str).to_dict()
 
 
 digisam = Digisam(fulltext_path=app.config['FULLTEXT_PATH'],
@@ -222,36 +237,48 @@ def after(response):
     return response
 
 
+@app.route('/meta_data', methods=['POST'])
+@app.route('/meta_data/<ppn>', methods=['GET'])
+def get_meta_data(ppn=None):
+
+    if request.method == 'GET':
+        return jsonify(digisam.get_meta_data(ppn))
+    else:
+        data = request.json
+
+        ret = {ppn: digisam.get_meta_data(ppn) for ppn in data['ppns']}
+
+        return jsonify(ret)
+
+
 @app.route('/ppnexamples')
 def get_ppnexamples():
     return jsonify(app.config['PPN_EXAMPLES'])
 
 
 @app.route('/topic_docs/<file>/<topic>')
-@app.route('/topic_docs/<file>/<topic>/<text>')
-def get_topic_docs(file, topic, text=None):
+@app.route('/topic_docs/<file>/<topic>/<order_by>')
+def get_topic_docs(file, topic, order_by=None):
 
     docs = topic_models.get_docs(file)
 
     topic_docs = docs.loc[docs.topic == topic]
 
-    if text is not None:
-        qids = re.findall('Q[0-9]+', text)
+    if order_by is not None:
+        order_by_qids = re.findall('Q[0-9]+', order_by)
 
         corpus = topic_models.get_corpus(file)
 
         tmp = topic_docs.merge(corpus, on="ppn")
 
-        tmp = tmp.loc[tmp.wikidata.isin(qids)]
+        tmp = tmp.loc[tmp.wikidata.isin(order_by_qids)]
 
         topic_docs = \
             pd.DataFrame([(ppn, part.title.iloc[0], part.wcount.sum()) for ppn, part in tmp.groupby('ppn')],
                          columns=['ppn', 'title', 'wcount']).sort_values('wcount', ascending=False).\
                 reset_index(drop=True)
 
-        #import ipdb;ipdb.set_trace()
-
-    ret = [{'title': row.title, 'ppn': row.ppn} for _, row in topic_docs.iterrows()]
+    ret = [row.ppn for _, row in topic_docs.iterrows()]
 
     return jsonify(ret)
 

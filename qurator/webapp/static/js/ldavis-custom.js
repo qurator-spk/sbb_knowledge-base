@@ -56,6 +56,64 @@ function map_setup(maps) {
     var vis = null;
     var map_name = null;
 
+    function make_doc_list(topic_docs) {
+
+        var search_id = $("#search-for").val().match(/Q[0-9]+/);
+
+        $("#doc-list").html("");
+
+        let post_data = { "ppns" : topic_docs };
+
+        $.ajax({
+                url:  "meta_data",
+                data: JSON.stringify(post_data),
+                type: 'POST',
+                contentType: "application/json",
+                success:
+                    function(result) {
+                        for (i = 0; i < topic_docs.length; i++) {
+
+                            var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i];
+
+                            var meta = result[topic_docs[i]];
+
+                            var author="";
+
+                            if ((meta.name0_displayForm != "None") && (meta.name0_role_roleTerm != "fnd")) {
+                                author = `; ${meta.name0_displayForm}`;
+                            }
+                            else if (meta["originInfo-publication0_publisher"] != "None") {
+                                author = `; ${meta["originInfo-publication0_publisher"]}`;
+                            }
+
+                            var item = `
+                                <li href="" class="list-group-item text-left">
+                                    <a href="${url}" target="_blank" rel="noopener noreferrer"> ${meta.titleInfo_title} </a> ${author}
+                                    <a class="btn btn-info btn-sm ml-3"
+                                        href="index.html?ppn=${topic_docs[i]}&model_id=precomputed&el_model_id=precomputed&task=ner&search_id=${search_id}"
+                                        target="_blank" rel="noopener noreferrer">NER+EL</a>
+                                </li>`;
+
+                            $("#doc-list").append(item);
+                        }
+                    },
+                error:
+                    function(error) {
+                        $("#doc-list").html("Not available.");
+                    }
+            }
+        );
+    }
+
+    function get_docs(topic_num, order_by) {
+
+        if (topic_num == null) return;
+
+        if (order_by.length > 0) order_by = "/" + order_by;
+
+        $.get("topic_docs/" + map_name + "/" + topic_num + order_by, make_doc_list);
+    }
+
     function updateLDAVis() {
 
         history.pushState(null, "Query", location.origin + location.pathname);
@@ -77,36 +135,6 @@ function map_setup(maps) {
 
                     var topic_num = null;
 
-                    function get_docs(text) {
-
-                        if (topic_num == null) return;
-
-                        if (text.length > 0) text = "/" + text;
-
-                        $.get("topic_docs/" + map_name + "/" + topic_num + text,
-                           function(topic_docs) {
-
-                               var search_id = $("#search-for").val().match(/Q[0-9]+/);
-
-                               $("#doc-list").html("");
-
-                               for (i = 0; i < topic_docs.length; i++) {
-
-                                   var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i].ppn;
-
-                                   var item = `
-                                       <li href="" class="list-group-item text-left">
-                                           <a href="${url}" target="_blank" rel="noopener noreferrer"> ${topic_docs[i].title} </a>
-                                           <a class="btn btn-info btn-sm ml-3"
-                                               href="index.html?ppn=${topic_docs[i].ppn}&model_id=precomputed&el_model_id=precomputed&task=ner&search_id=${search_id}"
-                                               target="_blank" rel="noopener noreferrer">NER+EL</a>
-                                       </li>`;
-
-                                   $("#doc-list").append(item);
-                               }
-                           });
-                    }
-
                      $("#search-for").on('input',
                         function () {
 
@@ -114,7 +142,7 @@ function map_setup(maps) {
 
                             if (val == "") {
                                 term_off(null);
-                                get_docs("");
+                                get_docs(topic_num, "");
                                 return;
                             }
 
@@ -124,7 +152,7 @@ function map_setup(maps) {
                                 }).length)
                             {
                                 term_on(this.value);
-                                get_docs(this.value);
+                                get_docs(topic_num, this.value);
                             }
                         }
                      );
@@ -158,7 +186,7 @@ function map_setup(maps) {
 
                             var text = $("#search-for").val();
 
-                            get_docs(text);
+                            get_docs(topic_num, text);
 
                             topic_click(newtopic, newtopic_num);
                         };
