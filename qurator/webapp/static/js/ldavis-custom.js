@@ -60,7 +60,7 @@ function map_setup(maps) {
 
         var search_id = $("#search-for").val().match(/Q[0-9]+/);
 
-        $("#doc-list").html("");
+        $("#doc-list").html(spinner_html);
 
         let post_data = { "ppns" : topic_docs };
 
@@ -71,6 +71,8 @@ function map_setup(maps) {
                 contentType: "application/json",
                 success:
                     function(result) {
+                        $("#doc-list").html("");
+
                         for (i = 0; i < topic_docs.length; i++) {
 
                             var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i];
