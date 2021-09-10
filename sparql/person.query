@@ -5,4 +5,7 @@ WHERE
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?person .
   FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
+  OPTIONAL {
+    ?person wdt:P569 ?dateofbirth
+  }
 }

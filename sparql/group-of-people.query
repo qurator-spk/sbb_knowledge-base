@@ -1,8 +1,11 @@
-SELECT ?organisation ?label ?sitelink
+SELECT ?organisation ?label ?sitelink ?inception
 WHERE
 {
   ?organisation wdt:P31/wdt:P279* wd:Q16334295;rdfs:label ?label. # instance of any subclass of group of people 
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?organisation.
-  FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
+  FILTER (CONTAINS(str(?sitelink), "__SITE__")).
+  OPTIONAL {
+    ?organisation wdt:P571 ?inception
+  }
 }

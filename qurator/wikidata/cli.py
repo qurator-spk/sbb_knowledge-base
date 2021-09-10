@@ -76,7 +76,7 @@ def run_sparql(endpoint=None, query=None, analytic=False):
 
     tmp = [pd.DataFrame.from_dict(r).loc[['value']] for r in result['results']['bindings']]
 
-    ret = pd.concat(tmp).reset_index(drop=True)
+    ret = pd.concat(tmp, sort=False).reset_index(drop=True)
 
     return ret
 
