@@ -1,8 +1,11 @@
-SELECT ?person ?label ?sitelink
+SELECT ?person ?label ?sitelink ?dateofbirth
 WHERE
 {
   ?person wdt:P31/wdt:P279* wd:Q97498056;rdfs:label ?label. # instance of any subclass of fictional person
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?person .
   FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
+  OPTIONAL {
+    ?person wdt:P569 ?dateofbirth
+  }
 }

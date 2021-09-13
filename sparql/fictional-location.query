@@ -4,5 +4,5 @@ WHERE
   ?location wdt:P31/wdt:P279* wd:Q3895768;rdfs:label ?label. # instance of any subclass of fictional location
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?location.
-  FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
+  FILTER (CONTAINS(str(?sitelink), "__SITE__")).
 }

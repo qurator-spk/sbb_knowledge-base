@@ -60,7 +60,8 @@ setup(
         "extract-corpus=qurator.topic_modeling.cli:extract_corpus",
         "extract-docs=qurator.topic_modeling.cli:extract_docs",
         "lda-grid-search=qurator.topic_modeling.cli:lda_grid_search",
-        "run-lda=qurator.topic_modeling.cli:run_lda"
+        "run-lda=qurator.topic_modeling.cli:run_lda",
+        "make-topicm-config=qurator.topic_modeling.cli:make_config"
       ]
     },
     python_requires='>=3.6.0',

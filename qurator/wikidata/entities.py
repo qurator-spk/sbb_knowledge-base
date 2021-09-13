@@ -17,7 +17,7 @@ def load_entities(path, lang, site):
 
         files = ['{}/{}-{}.pkl'.format(path, lang, c) for c in cl]
 
-        tmp = pd.concat([pd.read_pickle(f) for f in files]).\
+        tmp = pd.concat([pd.read_pickle(f) for f in files], sort=True).\
             drop_duplicates(subset=[entity_type]).\
             reset_index(drop=True)
 
@@ -33,8 +33,21 @@ def load_entities(path, lang, site):
 
     org = load_classes(org_classes, 'organisation')
 
-    ent = pd.concat([per, loc, org], sort=True).\
-        drop_duplicates(subset=['wikidata']).\
+    ent = pd.concat([per, loc, org], sort=True)
+
+    ent['dateofbirth'] = pd.to_datetime(ent.dateofbirth, yearfirst=True, errors="coerce")
+    ent['inception'] = pd.to_datetime(ent.inception, yearfirst=True, errors="coerce")
+
+    coords = ent.coords.str.extract('Point\(([\-0-9.]+)\w.([\-0-9.]+)\)').rename(columns={0:"longitude", 1:"latitude"})
+
+    ent['longitude'] = coords.longitude
+    ent['latitude'] = coords.latitude
+
+    #ent = ent.drop(columns=['coords'])
+
+    ent = ent.sort_values(['dateofbirth', 'inception'], ascending=[True, True])
+
+    ent = ent.drop_duplicates(subset=['wikidata'], keep="first").\
         reset_index(drop=True).\
         set_index('wikidata')
 
