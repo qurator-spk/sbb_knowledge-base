@@ -3,7 +3,6 @@ import urllib
 
 
 def load_entities(path, lang, site):
-
     per_classes = ['subject', 'fictional-character', 'fictional-person']
 
     loc_classes = ['geographic-entity', 'fictional-location']
@@ -14,15 +13,14 @@ def load_entities(path, lang, site):
     woa = pd.read_pickle("{}/{}-work-of-arts.pkl".format(path, lang))
 
     def load_classes(cl, entity_type):
-
         files = ['{}/{}-{}.pkl'.format(path, lang, c) for c in cl]
 
         tmp = pd.concat([pd.read_pickle(f) for f in files], sort=True).\
             drop_duplicates(subset=[entity_type]).\
             reset_index(drop=True)
 
-        tmp = tmp.loc[~tmp[entity_type].isin(woa.woa)].\
-            reset_index(drop=True).\
+        tmp = tmp.loc[~tmp[entity_type].isin(woa.woa)]. \
+            reset_index(drop=True). \
             rename(columns={entity_type: 'wikidata'})
 
         return tmp
@@ -38,17 +36,18 @@ def load_entities(path, lang, site):
     ent['dateofbirth'] = pd.to_datetime(ent.dateofbirth, yearfirst=True, errors="coerce")
     ent['inception'] = pd.to_datetime(ent.inception, yearfirst=True, errors="coerce")
 
-    coords = ent.coords.str.extract('Point\(([\-0-9.]+)\w.([\-0-9.]+)\)').rename(columns={0:"longitude", 1:"latitude"})
+    coords = ent.coords.str.extract(r'Point\(([\-0-9E.]+)\w.([\-0-9E.]+)\)'). \
+        rename(columns={0: "longitude", 1: "latitude"})
 
     ent['longitude'] = coords.longitude
     ent['latitude'] = coords.latitude
 
-    #ent = ent.drop(columns=['coords'])
+    # ent = ent.drop(columns=['coords'])
 
     ent = ent.sort_values(['dateofbirth', 'inception'], ascending=[True, True])
 
-    ent = ent.drop_duplicates(subset=['wikidata'], keep="first").\
-        reset_index(drop=True).\
+    ent = ent.drop_duplicates(subset=['wikidata'], keep="first"). \
+        reset_index(drop=True). \
         set_index('wikidata')
 
     ent['PER'] = False
