@@ -6,7 +6,9 @@ WHERE
   ?sitelink schema:about ?organisation.
   FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
   OPTIONAL {
-    ?organisation wdt:P625 ?coords
-    ?organisation wdt:P571 ?inception
+    ?organisation wdt:P625 ?coords .
+  }
+  OPTIONAL {
+    ?organisation wdt:P571 ?inception .
   }
 }
