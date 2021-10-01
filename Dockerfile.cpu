@@ -4,6 +4,8 @@ ARG http_proxy
 ENV http_proxy=$http_proxy
 ENV https_proxy=$http_proxy
 
+RUN echo $http_proxy
+
 RUN apt-get update && \
     apt-get -y install build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
