@@ -25,3 +25,4 @@ flask-htpasswd
 somajo
 scipy
 gensim
+gunicorn
