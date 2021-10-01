@@ -18,7 +18,9 @@ app = Flask(__name__)
 
 app.config.from_json('config.json' if not os.environ.get('CONFIG') else os.environ.get('CONFIG'))
 
-app.config['FLASK_HTPASSWD_PATH'] = app.config['PASSWD_FILE']
+app.config['FLASK_HTPASSWD_PATH'] = app.config['PASSWD_FILE'] \
+    if not os.environ.get('PASSWD_FILE') else os.environ.get('PASSWD_FILE')
+
 app.config['FLASK_AUTH_REALM'] = app.config['AUTH_REALM']
 app.config['FLASK_SECRET'] = \
     ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(40))

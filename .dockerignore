@@ -1,0 +1,8 @@
+data
+data/*
+*.egg_info
+venv
+models
+*.tar.gz
+*.pkl
+mysql2sqlite
