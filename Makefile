@@ -48,4 +48,4 @@ sbb-ner: $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3
 sbb-el: sbb-ner
 	batch-el --noproxy $(DATA_DIR)/digisam-ner-tagged-DC-SBB-MULTILANG.sqlite3 $(DATA_DIR)/language.pkl $(EL_ENDPOINTS)
 docker-cpu:
-	docker build --build-arg http_proxy=$http_proxy  -t qurator/webapp-sbb-tools-cpu -f Dockerfile.cpu .
+	docker build --build-arg http_proxy=${http_proxy}  -t qurator/webapp-sbb-tools-cpu -f Dockerfile.cpu .
