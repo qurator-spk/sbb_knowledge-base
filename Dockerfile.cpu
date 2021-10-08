@@ -16,7 +16,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 COPY requirements.txt /tmp
 RUN pip install -U pip
-RUN pip --no-cache-dir install -r /tmp/requirements.txt
+# RUN pip --no-cache-dir install -r /tmp/requirements.txt
 
 COPY . /usr/src/qurator-sbb-tools
 
@@ -27,4 +27,4 @@ RUN pip3 --no-cache-dir install -e /usr/src/qurator-sbb-tools
 
 WORKDIR /usr/src/qurator-sbb-tools
 
-CMD env PASSWD_FILE=/usr/src/qurator-sbb-tools/config/htpasswd CONFIG=/usr/src/qurator-sbb-tools/config/active.json env FLASK_APP=qurator/webapp/app.py env USE_CUDA=False gunicorn --bind 0.0.0.0:5000 qurator.webapp.wsgi:app
+CMD env PASSWD_FILE=/usr/src/qurator-sbb-tools/config/htpasswd CONFIG=/usr/src/qurator-sbb-tools/config/active.json env USE_CUDA=False gunicorn --bind 0.0.0.0:5000 qurator.webapp.wsgi:app
