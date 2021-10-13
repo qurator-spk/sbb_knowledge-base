@@ -56,55 +56,93 @@ function map_setup(maps) {
     var vis = null;
     var map_name = null;
 
+    var request_counter=0;
+
     function make_doc_list(topic_docs) {
 
-        var search_id = $("#search-for").val().match(/Q[0-9]+/);
+        request_counter += 1;
 
-        $("#doc-list").html(spinner_html);
+        (function(counter_at_request) {
 
-        let post_data = { "ppns" : topic_docs };
+            var search_id = $("#search-for").val().match(/Q[0-9]+/);
 
-        $.ajax({
-                url:  "meta_data",
-                data: JSON.stringify(post_data),
-                type: 'POST',
-                contentType: "application/json",
-                success:
-                    function(result) {
-                        $("#doc-list").html("");
+            $("#doc-list").html(spinner_html);
 
-                        for (i = 0; i < topic_docs.length; i++) {
+            function triggerNextDoc (meta_info) {
 
-                            var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + topic_docs[i];
+                if (topic_docs.length <= 0) return;
+                if (counter_at_request < request_counter) return;
 
-                            var meta = result[topic_docs[i]];
+                var next_doc = topic_docs.shift();
 
-                            var author="";
+                var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + next_doc;
 
-                            if ((meta.name0_displayForm != "None") && (meta.name0_role_roleTerm != "fnd")) {
-                                author = `; ${meta.name0_displayForm}`;
-                            }
-                            else if (meta["originInfo-publication0_publisher"] != "None") {
-                                author = `; ${meta["originInfo-publication0_publisher"]}`;
-                            }
+                var meta = meta_info[next_doc];
 
-                            var item = `
-                                <li href="" class="list-group-item text-left">
-                                    <a href="${url}" target="_blank" rel="noopener noreferrer"> ${meta.titleInfo_title} </a> ${author}
-                                    <a class="btn btn-info btn-sm ml-3"
-                                        href="index.html?ppn=${topic_docs[i]}&model_id=precomputed&el_model_id=precomputed&task=ner&search_id=${search_id}"
-                                        target="_blank" rel="noopener noreferrer">NER+EL</a>
-                                </li>`;
+                var author="";
 
-                            $("#doc-list").append(item);
+                if ((meta.name0_displayForm != "None") && (meta.name0_role_roleTerm != "fnd")) {
+                    author = `; ${meta.name0_displayForm}`;
+                }
+                else if (meta["originInfo-publication0_publisher"] != "None") {
+                    author = `; ${meta["originInfo-publication0_publisher"]}`;
+                }
+
+                var item = `
+                    <li class="list-group-item text-left" id="doc-list-PPN${next_doc}">
+                        <a href="${url}" target="_blank" rel="noopener noreferrer"> ${meta.titleInfo_title} </a> ${author}
+                        <a class="btn btn-info btn-sm ml-3"
+                            href="index.html?ppn=${next_doc}&model_id=precomputed&el_model_id=precomputed&task=ner&search_id=${search_id}"
+                            target="_blank" rel="noopener noreferrer">NER+EL</a>
+                    </li>`;
+
+                $("#doc-list").append(item);
+
+                (function(ppn) {
+                    $.get("images/ppn/" + ppn,
+                        function (result) {
+
+                            if (result.length == 0) return;
+
+                            var image_button = `
+                                <a class="btn btn-info btn-sm ml-3"
+                                    href="images/search.html?ids=${result.ids}"
+                                    target="_blank" rel="noopener noreferrer">
+                                    Graphical Objects (${result.ids.length})
+                                </a>
+                            `;
+
+                            $("#doc-list-" + ppn).append(image_button);
                         }
-                    },
-                error:
-                    function(error) {
-                        $("#doc-list").html("Not available.");
-                    }
+                    ).always(
+                        function() {
+                            triggerNextDoc(meta_info);
+                        }
+                    );
+                })("PPN" + next_doc);
             }
-        );
+
+            let post_data = { "ppns" : topic_docs };
+
+            $.ajax({
+                    url:  "meta_data",
+                    data: JSON.stringify(post_data),
+                    type: 'POST',
+                    contentType: "application/json",
+                    success:
+                        function(result) {
+                            $("#doc-list").html("");
+
+                            triggerNextDoc(result);
+                        },
+                    error:
+                        function(error) {
+                            $("#doc-list").html("Not available.");
+                        }
+                }
+            );
+
+        })(request_counter);
     }
 
     function get_docs(topic_num, order_by) {
