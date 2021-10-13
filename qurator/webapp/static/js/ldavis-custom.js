@@ -88,11 +88,14 @@ function map_setup(maps) {
                     author = `; ${meta["originInfo-publication0_publisher"]}`;
                 }
 
+                var search_params = ""
+                if (search_id != null) search_params = `&search_id=${search_id}`;
+
                 var item = `
                     <li class="list-group-item text-left" id="doc-list-PPN${next_doc}">
                         <a href="${url}" target="_blank" rel="noopener noreferrer"> ${meta.titleInfo_title} </a> ${author}
                         <a class="btn btn-info btn-sm ml-3"
-                            href="index.html?ppn=${next_doc}&model_id=precomputed&el_model_id=precomputed&task=ner&search_id=${search_id}"
+                            href="index.html?ppn=${next_doc}&model_id=precomputed&el_model_id=precomputed&task=ner${search_params}"
                             target="_blank" rel="noopener noreferrer">NER+EL</a>
                     </li>`;
 
