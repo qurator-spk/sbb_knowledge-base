@@ -1,6 +1,7 @@
 (function() {
 
 function map_setup(maps) {
+
     var map_names = new Set();
     var n_topics = {}
     var map_data = {}
@@ -148,9 +149,11 @@ function map_setup(maps) {
         })(request_counter);
     }
 
-    function get_docs(topic_num, order_by) {
+    var topic_num = 0;
 
-        if (topic_num == null) return;
+    function get_docs(order_by) {
+
+        if (topic_num == 0) return;
 
         if (order_by.length > 0) order_by = "/" + order_by;
 
@@ -174,38 +177,45 @@ function map_setup(maps) {
         LDAvis("topic_models/" + map_name,
             function(vis) {
 
-                (function(term_on, term_off, topic_click, topic_off) {
+                (function(term_on, term_off, topic_click, topic_off, state_url) {
 
-                    var topic_num = null;
+                    function update_on_search_input () {
 
-                     $("#search-for").on('input',
-                        function () {
+                        var val = $("#search-for").val();
 
-                            var val = this.value;
+                        if (val == "") {
+                            term_off(null);
+                            get_docs("");
 
-                            if (val == "") {
-                                term_off(null);
-                                get_docs(topic_num, "");
-                                return;
-                            }
-
-                            if($('#suggestions option').filter(
-                                function(){
-                                    return this.value.toUpperCase() === val.toUpperCase();
-                                }).length)
-                            {
-                                term_on(this.value);
-                                get_docs(topic_num, this.value);
-                            }
+                            vis.state_save(true);
+                            return;
                         }
-                     );
+
+                        if($('#suggestions option').filter(
+                            function(){
+                                return this.value.toUpperCase() === val.toUpperCase();
+                            }).length)
+                        {
+                            vis.term_hover(val);
+                            get_docs(val);
+                        }
+                    }
+
+                     $("#search-for").on('input', update_on_search_input);
 
                      vis.term_on =
                         function(termElem) {
 
                             var text = $("#search-for").val();
 
-                            if (text != "") return;
+                            //if (text != "") return;
+
+                            if (!(typeof termElem === 'string') && !(termElem instanceof String)) {
+                                $("#search-for").val(termElem.__data__.Term);
+                            }
+                            else {
+                                $("#search-for").val(termElem);
+                            }
 
                             term_on(termElem);
                         };
@@ -215,13 +225,15 @@ function map_setup(maps) {
 
                             var text = $("#search-for").val();
 
-                            if (text != "") return;
+                            //if (text != "") return;
+
+                            $("#search-for").val("");
 
                             term_off(termElem);
                         };
 
                      vis.topic_click =
-                        function (newtopic, newtopic_num) {
+                        function ( newtopic_num) {
 
                             topic_num = newtopic_num;
 
@@ -229,18 +241,39 @@ function map_setup(maps) {
 
                             var text = $("#search-for").val();
 
-                            get_docs(topic_num, text);
+                            get_docs(text);
 
-                            topic_click(newtopic, newtopic_num);
+                            topic_click(newtopic_num);
                         };
 
                      vis.topic_off =
-                        function (circle) {
+                        function (topic) {
 
-                            topic_off(circle);
+                            topic_num = topic;
+
+                            topic_off(topic);
                         };
 
-                 })(vis.term_on, vis.term_off, vis.topic_click, vis.topic_off);
+                     vis.state_url =
+                        function() {
+                            return state_url() +
+                                "&selected_map=" + $("#map-select" ).val() +
+                                "&n_topics=" + $("#ntopic-select" ).val();
+                        };
+
+                     vis.topic_on(topic_num);
+                     vis.topic_click(topic_num);
+
+                     var term = $("#search-for").val();
+
+                     if (term !== "") {
+                        vis.term_hover(term);
+                        get_docs(term);
+                     }
+
+                     vis.state_save(true);
+
+                 })(vis.term_on, vis.term_off, vis.topic_click, vis.topic_off, vis.state_url);
             }
         );
     }
@@ -248,6 +281,8 @@ function map_setup(maps) {
     $("#map-select" )
       .change(
         function () {
+            topic_num = 0;
+
             updateNTopicSelect();
 
             updateLDAVis();
@@ -259,36 +294,54 @@ function map_setup(maps) {
     $("#ntopic-select" )
       .change(
         function () {
+            topic_num = 0;
+
             updateLDAVis();
         }
       );
 
-    $("#search-for").change(
-        function() {
+    function update_suggestions() {
 
-            var text = $("#search-for").val();
+        var text = $("#search-for").val();
 
-            if($('#suggestions option').filter(
-                function(){
-                    return this.value.toUpperCase() === text;
-                }).length){
-                return;
+        if($('#suggestions option').filter(
+            function(){
+                return this.value.toUpperCase() === text;
+            }).length) return;
+
+        $.get("suggestion/" + map_name + "/" + text).done(
+            function(suggestions) {
+
+                var tmp="";
+                $.each(suggestions,
+                   function(index, item){
+                        tmp += `<option value="${item}">${item}</option>`
+                    });
+
+                $('#suggestions').html(tmp);
             }
+        );
+    }
 
-            $.get("suggestion/" + map_name + "/" + text).done(
-                function(suggestions) {
+    $("#search-for").change(update_suggestions);
 
-                    var tmp="";
-                    $.each(suggestions,
-                       function(index, item){
-                            tmp += `<option value="${item}">${item}</option>`
-                        });
+    var url_params = new URLSearchParams(window.location.search);
 
-                    $('#suggestions').html(tmp);
-                }
-            );
-        }
-    );
+    if (url_params.has("selected_map")) {
+        $("#map-select" ).val(url_params.get("selected_map"));
+    }
+
+    if (url_params.has("n_topics")) {
+        $("#ntopic-select" ).val(url_params.get("n_topics"));
+    }
+
+    if (url_params.has("term")) {
+        $("#search-for" ).val(url_params.get("term"));
+    }
+
+    if (url_params.has("topic")) {
+        topic_num = Number(url_params.get("topic"));
+    }
 
     updateLDAVis();
 };

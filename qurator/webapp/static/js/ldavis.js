@@ -168,80 +168,71 @@ function LDAvis (json_file, ready_func) {
                 var increased = lambda.old < vis_state.lambda;
                 if (vis_state.topic > 0) reorder_bars(increased);
                 // store the current lambda value
-                state_save(true);
+                that.state_save(true);
                 document.getElementById(lambdaID).value = vis_state.lambda;
             });
 
         d3.select("#" + topicUp).on("click",
             function() {
                 // remove term selection if it exists (from a saved URL)
-                var termElem = document.getElementById(termID + vis_state.term);
-                if (termElem !== undefined) that.term_off(termElem);
-                vis_state.term = "";
+                //that.term_off(vis_state.term);
+                //vis_state.term = "";
+
                 var value_old = document.getElementById(topicID).value;
                 var value_new = Math.min(K, +value_old + 1).toFixed(0);
 
                 // increment the value in the input box
                 document.getElementById(topicID).value = value_new;
-                that.topic_off(document.getElementById(topicID + value_old));
 
-                var oldtopic = document.getElementById(topicID + value_new);
-                topic_on(oldtopic);
-                vis_state.topic = value_new;
-                state_save(true);
-                that.topic_click(oldtopic, value_new);
+                that.topic_off(value_old);
+
+                that.topic_on(value_new);
+                that.topic_click(value_new);
+                that.state_save(true);
              });
 
         d3.select("#" + topicDown).on("click",
             function() {
 		        // remove term selection if it exists (from a saved URL)
-		        var termElem = document.getElementById(termID + vis_state.term);
-
-		        if (termElem !== undefined) that.term_off(termElem);
-
-		        vis_state.term = "";
+		        //that.term_off(vis_state.term);
+		        //vis_state.term = "";
 
                 var value_old = document.getElementById(topicID).value;
                 var value_new = Math.max(0, +value_old - 1).toFixed(0);
 
                 // increment the value in the input box
                 document.getElementById(topicID).value = value_new;
-                that.topic_off(document.getElementById(topicID + value_old));
+                that.topic_off(value_old);
 
-                var oldtopic = document.getElementById(topicID + value_new);
-                topic_on(oldtopic);
-                vis_state.topic = value_new;
-                state_save(true);
-                that.topic_click(oldtopic, value_new);
+                that.topic_on(value_new);
+                that.topic_click(value_new);
+                that.state_save(true);
             });
 
         d3.select("#" + topicID).on("keyup",
             function() {
-                // remove term selection if it exists (from a saved URL)
-                var termElem = document.getElementById(termID + vis_state.term);
+                //that.term_off(vis_state.term);
+                //vis_state.term = "";
 
-                if (termElem !== undefined) that.term_off(termElem);
-
-                vis_state.term = "";
-                that.topic_off(document.getElementById(topicID + vis_state.topic))
+                that.topic_off(vis_state.topic)
 
                 var value_new = document.getElementById(topicID).value;
 
                 if (!isNaN(value_new) && value_new > 0) {
                     value_new = Math.min(K, Math.max(1, value_new))
-                    var oldtopic = document.getElementById(topicID + value_new);
-                    topic_on(oldtopic);
+
+                    that.topic_on(value_new);
                     vis_state.topic = value_new;
-                    state_save(true);
+                    that.state_save(true);
                     document.getElementById(topicID).value = vis_state.topic;
-                    that.topic_click(oldtopic, value_new);
+
+                    that.topic_click(value_new);
                 }
             });
 
         d3.select("#" + topicClear)
             .on("click", function() {
-                state_reset();
-                state_save(true);
+                topic_clear();
             });
 
         // create linear scaling to pixels (and add some padding on outer region of scatterplot)
@@ -305,7 +296,7 @@ function LDAvis (json_file, ready_func) {
             .attr("opacity", 0)
             .on("click", function() {
                 state_reset();
-                state_save(true);
+                that.state_save(true);
             });
 
         mdsplot.append("line") // draw x-axis
@@ -447,29 +438,33 @@ function LDAvis (json_file, ready_func) {
             .on("mouseover",
             function(d) {
                 var old_topic = topicID + vis_state.topic;
-                if (vis_state.topic > 0 && old_topic != this.id) {
-                    that.topic_off(document.getElementById(old_topic));
+                if ((vis_state.topic > 0) && (old_topic != this.id)) {
+                    that.topic_off(vis_state.topic);
                 }
-                topic_on(this);
+                that.topic_on(d.topics);
             })
             .on("click",
             function(d) {
                 // prevent click event defined on the div container from firing 
                 // http://bl.ocks.org/jasondavies/3186840
                 d3.event.stopPropagation();
+
                 var old_topic = topicID + vis_state.topic;
-                if (vis_state.topic > 0 && old_topic != this.id) {
-                    that.topic_off(document.getElementById(old_topic));
+                if ((vis_state.topic > 0) && (old_topic != this.id)) {
+                    that.topic_off(vis_state.topic);
                 }
                 // make sure topic input box value and fragment reflects clicked selection
-                document.getElementById(topicID).value = vis_state.topic = d.topics;
-                state_save(true);
-                topic_on(this);
-                that.topic_click(this, d.topics);
+                document.getElementById(topicID).value = d.topics;
+
+                that.topic_on(d.topics);
+                that.topic_click(d.topics);
+
+                that.state_save(true);
             })
             .on("mouseout", function(d) {
-                if (vis_state.topic != d.topics) that.topic_off(this);
-                if (vis_state.topic > 0) topic_on(document.getElementById(topicID + vis_state.topic));
+                if (vis_state.topic != d.topics) that.topic_off(d.topics);
+
+                if (vis_state.topic > 0) that.topic_on(vis_state.topic);
             });
 
         d3.select("#mds-heading").text("Intertopic Distance Map (via multidimensional scaling)")
@@ -589,25 +584,12 @@ function LDAvis (json_file, ready_func) {
                 return d.Term;
             })
             .on("mouseover", function() {
-                term_hover(this);
+                that.term_hover(this.innerHTML);
             })
-        // .on("click", function(d) {
-        // 	var old_term = termID + vis_state.term;
-        // 	if (vis_state.term != "" && old_term != this.id) {
-        // 	    that.term_off(document.getElementById(old_term));
-        // 	}
-        // 	vis_state.term = d.Term;
-        // 	state_save(true);
-        // 	that.term_on(this);
-        // 	debugger;
-        // })
-//            .on("click", function(d) {
-//                term_click(this, d.Term)
-//            })
             .on("mouseout", function() {
                 vis_state.term = "";
-                that.term_off(this);
-                state_save(true);
+                that.term_off(this.__data__.Term);
+                that.state_save(true);
             });
 
 	    d3.select("#chart-heading").html("Most Salient Terms<sup>(1)</sup>")
@@ -764,21 +746,12 @@ function LDAvis (json_file, ready_func) {
                     return d.Term;
                 })
                 .on("mouseover", function() {
-                    term_hover(this);
+                    that.term_hover(this.innerHTML);
                 })
-            // .on("click", function(d) {
-            //     var old_term = termID + vis_state.term;
-            //     if (vis_state.term != "" && old_term != this.id) {
-            // 	that.term_off(document.getElementById(old_term));
-            //     }
-            //     vis_state.term = d.Term;
-            //     state_save(true);
-            //     that.term_on(this);
-            // })
                 .on("mouseout", function() {
                     vis_state.term = "";
-                    that.term_off(this);
-                    state_save(true);
+                    that.term_off(this.__data__.Term);
+                    that.state_save(true);
                 });
 
             var redbarsEnter = redbars.enter().append("rect")
@@ -958,29 +931,32 @@ function LDAvis (json_file, ready_func) {
 
         // function to update bar chart when a topic is selected
         // the circle argument should be the appropriate circle element
-        function topic_on(circle) {
+        that.topic_on = function(topic) {
 
-            if (circle == null) return null;
+            var circle = document.getElementById(topicID + topic);
+
+            if ((circle !== null) && (circle !== undefined)) {
             
-            // whenever the topic changes we have to remove the underline style
-            // from any clicked term
-            var old_term_clicked_id = termID + vis_state.term_clicked;
-            var topic_clicked_id = topicID + vis_state.topic_clicked;
-            if (vis_state.term_clicked != "" && circle.id != topic_clicked_id) {
-                var oldterm = document.getElementById(old_term_clicked_id);
-                if (oldterm != null) {
-                    oldterm.style.textDecoration = null;  
+                // whenever the topic changes we have to remove the underline style
+                // from any clicked term
+                var old_term_clicked_id = termID + vis_state.term_clicked;
+                var topic_clicked_id = topicID + vis_state.topic_clicked;
+                if (vis_state.term_clicked != "" && circle.id != topic_clicked_id) {
+                    var oldterm = document.getElementById(old_term_clicked_id);
+                    if (oldterm != null) {
+                        oldterm.style.textDecoration = null;
+                    }
                 }
+
+                // grab data bound to this element
+                var d = circle.__data__
+                var Freq = Math.round(d.Freq * 10) / 10,
+                topics = d.topics;
+
+                // change opacity and fill of the selected circle
+                circle.style.opacity = highlight_opacity;
+                circle.style.fill = color2;
             }
-
-            // grab data bound to this element
-            var d = circle.__data__
-            var Freq = Math.round(d.Freq * 10) / 10,
-            topics = d.topics;
-
-            // change opacity and fill of the selected circle
-            circle.style.opacity = highlight_opacity;
-            circle.style.fill = color2;
 
             // set text with info relevant to topic of interest
             d3.select("#chart-heading").text("Top-" + R + " Most Relevant Terms for Topic " + topics + " (" + Freq + "% of tokens)");
@@ -1050,8 +1026,6 @@ function LDAvis (json_file, ready_func) {
 
                     var result = qidMatcher.exec(d.Term);
 
-                    //console.log("topic_on:" + result[1]);
-
                     return "https://wikidata.org/wiki/" + result[1];
                 });
 
@@ -1100,11 +1074,16 @@ function LDAvis (json_file, ready_func) {
                 .call(xAxis);
         }
 
-        that.topic_off = function (circle) {
-            if (circle == null) return circle;
-            // go back to original opacity/fill
-            circle.style.opacity = base_opacity;
-            circle.style.fill = color1;
+        that.topic_off = function (topic) {
+
+            var circle = document.getElementById(topicID + topic);
+
+            if ((circle !== null) && (circle !== undefined)) {
+
+                // go back to original opacity/fill
+                circle.style.opacity = base_opacity;
+                circle.style.fill = color1;
+            }
 
             d3.select("#chart-heading").html("Top-" + R + " Most Salient Terms <sup>(1)</sup>");
             $("#lambdaInput").addClass("d-none");
@@ -1183,31 +1162,30 @@ function LDAvis (json_file, ready_func) {
         }
 
         // event definition for mousing over a term
-        function term_hover(term) {
-            var old_term = termID + vis_state.term;
-            if (vis_state.term != "" && old_term != term.id) {
-                that.term_off(document.getElementById(old_term));
+        that.term_hover = function(term) {
+
+            if (vis_state.term != "" && vis_state.term != term) {
+                that.term_off(vis_state.term);
             }
-            vis_state.term = term.innerHTML;
+
+            vis_state.term = term;
             that.term_on(term);
-            state_save(true);
+            that.state_save(true);
         }
 
         // updates vis when a term is selected via click or hover
         that.term_on = function (term) {
+
             if (term == null) return null;
 
-            var Term = term;
-            if (!(typeof term === 'string') && !(term instanceof String)) {
+            var termElem = document.getElementById(termID + term);
 
-                term.style["fontWeight"] = "bold";
-
-                Term = term.__data__.Term;
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "bold";
             }
 
-
             var dat2 = mdsData3.filter(function(d2) {
-                return d2.Term == Term
+                return d2.Term == term
             });
 
             var k = dat2.length; // number of topics for this token with non-zero frequency
@@ -1256,12 +1234,23 @@ function LDAvis (json_file, ready_func) {
 
             // Alter the guide
             d3.select(".circleGuideTitle")
-                .text("Conditional topic distribution given term = '" + Term + "'");
+                .text("Conditional topic distribution given term = '" + term + "'");
         }
 
         that.term_off = function (term) {
             if (term != null) {
-                term.style["fontWeight"] = "normal";
+                var termElem = document.getElementById(termID + term);
+
+                if ((termElem !== undefined) && (termElem !== null)) {
+                    termElem.style["fontWeight"] = "normal";
+                }
+            }
+            else {
+                var termElem = document.getElementById(termID + vis_state.term);
+
+                if ((termElem !== undefined) && (termElem !== null)) {
+                    termElem.style["fontWeight"] = "normal";
+                }
             }
 
             d3.selectAll(".dot")
@@ -1330,9 +1319,7 @@ function LDAvis (json_file, ready_func) {
             if (!isNaN(vis_state.topic)) {
                 document.getElementById(topicID).value = vis_state.topic;
 
-                if (vis_state.topic > 0) {
-                            topic_on(document.getElementById(topicID + vis_state.topic));
-                }
+                if (vis_state.topic > 0) that.topic_on(vis_state.topic);
 
                 if (vis_state.lambda < 1 && vis_state.topic > 0) {
                     reorder_bars(false);
@@ -1341,21 +1328,49 @@ function LDAvis (json_file, ready_func) {
 
 	        lambda.current = vis_state.lambda;
 
-            var termElem = document.getElementById(termID + vis_state.term);
+            //var termElem = document.getElementById(termID + vis_state.term);
 
-            if (termElem !== undefined) that.term_on(termElem);
+            //if (termElem !== undefined)
+            that.term_on(vis_state.term);
         }
 
-        function state_url() {
-            return location.origin + location.pathname + "#topic=" + vis_state.topic +
-                "&lambda=" + vis_state.lambda + "&term=" + vis_state.term;
+        that.state_url = function () {
+
+            var term_param="";
+            if (vis_state.term !== "") {
+                term_param = "&term=" + vis_state.term;
+            }
+
+            return location.origin + location.pathname + "?topic=" + vis_state.topic +
+                "&lambda=" + vis_state.lambda + term_param;
         }
 
-        function state_save(replace) {
+        that.state_save = function(replace) {
             if (replace)
-                history.replaceState(vis_state, "Query", state_url());
+                history.replaceState(vis_state, "Query", that.state_url());
             else
-                history.pushState(vis_state, "Query", state_url());
+                history.pushState(vis_state, "Query", that.state_url());
+        }
+
+        function topic_clear() {
+            if (vis_state.topic > 0) {
+                that.topic_off(vis_state.topic);
+
+                // set the style of any topic clicked to be back to regular style
+                // (no thick border around topic circle)
+                var old_topic_clicked_id = topicID + vis_state.topic_clicked;
+                if (vis_state.topic_clicked > 0) {
+                    document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
+                }
+            }
+
+            // set state of topic_clicked to 0, so we can click on topic x, reset
+            // vis, then click on topic x again without any problems
+            vis_state.topic_clicked = 0;
+
+            document.getElementById(topicID).value = vis_state.topic = 0;
+
+            that.state_save(true);
         }
 
         function state_reset() {
@@ -1368,22 +1383,15 @@ function LDAvis (json_file, ready_func) {
                     oldterm.style.textDecoration = null;  
                 }
             }
-                
-            if (vis_state.topic > 0) {
-                that.topic_off(document.getElementById(topicID + vis_state.topic));
-                // set the style of any topic clicked to be back to regular style
-                // (no thick border around topic circle)
-                var old_topic_clicked_id = topicID + vis_state.topic_clicked;
-                if (vis_state.topic_clicked > 0) {
-                    document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
-                }
-            }
+
             if (vis_state.term != "") {
-                that.term_off(document.getElementById(termID + vis_state.term));
+                that.term_off(vis_state.term);
             }
             vis_state.term = "";
-            document.getElementById(topicID).value = vis_state.topic = 0;
-            state_save(true);
+
+            topic_clear();
+
+            //that.state_save(true);
             
             // make sure term ids are all correct
             d3.selectAll(".terms").attr("id", function(d) {
@@ -1394,43 +1402,31 @@ function LDAvis (json_file, ready_func) {
             d3.selectAll(".wikidata").attr("id", function(d) {
                 return (wikiID + d.Term)
             });
-            
-            // update shiny inputs to be null
-            if (inShinyMode) {
-                Shiny.onInputChange(shinyClickedTopic, null);
-                Shiny.onInputChange(shinyClickedTerm, null);
-            }
-            
-            // set state of topic_clicked to 0, so we can click on topic x, reset
-            // vis, then click on topic x again without any problems
-            vis_state.topic_clicked = 0;
         }
         
         that.topic_click =
-            function (newtopic, newtopic_num) {
+            function (newtopic_num) {
 
-    //            if (!inShinyMode) {
-    //              return null;
-    //            }
+                var new_topic_clicked_id = topicID + newtopic_num;
+
                 // set style of clicked topic to have thicker border
-                newtopic.style.strokeWidth = 2;
+                var topicElem = document.getElementById(new_topic_clicked_id);
+
+                if ((topicElem !== undefined) && (topicElem !== null)){
+                    topicElem.style.strokeWidth = 2;
+                }
 
                 // set style of old selected topic back to regular border
                 var old_topic_clicked_id = topicID + vis_state.topic_clicked;
-                if (vis_state.topic_clicked > 0 && old_topic_clicked_id != this.id) {
+                if (vis_state.topic_clicked > 0 && old_topic_clicked_id != new_topic_clicked_id) {
                     document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
                 }
 
                 console.log(newtopic_num);
 
                 // save state of topic clicked
+                vis_state.topic = newtopic_num;
                 vis_state.topic_clicked = newtopic_num;
-
-    //            // update shiny topic input object to be new topic clicked
-    //            Shiny.onInputChange(shinyClickedTopic, newtopic_num);
-    //
-    //            // since topic changed, we want to reset the input term object back to null
-    //            Shiny.onInputChange(shinyClickedTerm, null);
             }
         
         function term_click(newterm, newterm_term) {
@@ -1471,11 +1467,5 @@ function LDAvis (json_file, ready_func) {
 
         ready_func(that);
     });
-    // var current_clicked = {
-    //     what: "nothing",
-    //     element: undefined
-    // },
-
-    //debugger;
 }
 
