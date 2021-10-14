@@ -496,10 +496,10 @@ function LDAvis (json_file, ready_func) {
         // Create new svg element that contains the bar chart.
         var chart_svg = d3.select("#chart").append("svg")
             .attr("width", barwidth + termwidth  + margin.left + margin.right)
-            .attr("height", barheight + 2 * margin.bottom);
+            .attr("height", barheight + 2 * margin.bottom + 5);
 
         var chart = chart_svg.append("g")
-            .attr("transform", "translate(" + +(termwidth + margin.left) + ", " + "0)")
+            .attr("transform", "translate(" + +(termwidth + margin.left) + ", " + "13)")
             .attr("id", "bar-freqs");
 
         // bar chart legend/guide:
@@ -673,11 +673,11 @@ function LDAvis (json_file, ready_func) {
             // Change Total Frequency bars
             var graybars = d3.select("#bar-freqs")
                 .selectAll(".bar-totals")
-                .data(dat3, function(d) {
-                    return d.Term;
-                });
+                .data(dat3, function(d) { return d.Term; });
 
-             var labels = d3.select("#bar-freqs").selectAll(".wikidata").data(dat3)
+             var labels = d3.select("#bar-freqs")
+                .selectAll(".wikidata")
+                .data(dat3, function(d) { return d.Term; });
 
 //            // Change word labels
 //            var labels = d3.select("#bar-freqs")
@@ -704,7 +704,8 @@ function LDAvis (json_file, ready_func) {
             var newaxis = d3.selectAll(".xaxis");
 
             // define the new elements to enter:
-            var graybarsEnter = graybars.enter().append("rect")
+            var graybarsEnter = graybars.enter()
+                .append("rect")
                 .attr("class", "bar-totals")
                 .attr("x", 0)
                 .attr("y", function(d) {
@@ -775,12 +776,14 @@ function LDAvis (json_file, ready_func) {
                     .attr("y", function(d) {
                         return y(d.Term);
                     });
+
                 labelsEnter
                     .transition().duration(duration)
                     .delay(duration)
                     .attr("y", function(d) {
                         return y(d.Term) + 12;
                     });
+
                 redbarsEnter
                     .attr("width", function(d) {
                         return x(d.Freq);
@@ -799,7 +802,7 @@ function LDAvis (json_file, ready_func) {
                     .attr("y", function(d) {
                         return y(d.Term);
                     });
-                labels.transition().duration(duration)
+                labels.selectAll(".terms").transition().duration(duration)
                     .delay(duration)
                     .attr("y", function(d) {
                         return y(d.Term) + 12;
@@ -826,13 +829,16 @@ function LDAvis (json_file, ready_func) {
                     })
                     .remove();
 
-                labels.exit()
+                var labelsExit = labels.exit();
+
+                labelsExit.selectAll(".terms")
                     .transition().duration(duration)
                     .delay(duration)
                     .attr("y", function(d, i) {
                         return barheight + margin.bottom + 18 + i * 18;
-                    })
-                    .remove();
+                    });
+
+                labelsExit.remove();
 
                 redbars.exit()
                     .transition().duration(duration)
@@ -861,11 +867,13 @@ function LDAvis (json_file, ready_func) {
                     .attr("width", function(d) {
                         return x(d.Total);
                     });
+
                 labelsEnter
                     .transition().duration(duration)
                     .attr("y", function(d) {
                         return y(d.Term) + 12;
                     });
+
                 redbarsEnter
                     .attr("width", 50) // FIXME by looking up old width of these bars
                     .transition().duration(duration)
@@ -886,10 +894,11 @@ function LDAvis (json_file, ready_func) {
                         return x(d.Total);
                     });
 
-                labels.transition().duration(duration)
+                labels.selectAll(".terms").transition().duration(duration)
                     .attr("y", function(d) {
                         return y(d.Term) + 12;
                     });
+
                 redbars.transition().duration(duration)
                     .attr("y", function(d) {
                         return y(d.Term);
@@ -906,12 +915,17 @@ function LDAvis (json_file, ready_func) {
                         return barheight + margin.bottom + 6 + i * 18 + 2 * rMax;
                     })
                     .remove();
-                labels.exit()
-                    .transition().duration(duration)
+
+                var labelsExit = labels.exit();
+
+                labelsExit.selectAll(".terms")
+                    .transition()
+                    .duration(duration)
                     .attr("y", function(d, i) {
                         return barheight + margin.bottom + 18 + i * 18 + 2 * rMax;
-                    })
-                    .remove();
+                    });
+
+                labelsExit.remove();
 
                 redbars.exit()
                     .transition().duration(duration)
