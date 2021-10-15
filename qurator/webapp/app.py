@@ -300,9 +300,16 @@ def get_topic_models(file=None):
 @app.route('/suggestion/<file>/<text>')
 def get_suggestion(file, text):
 
+    search_parts = re.findall(r'Q[0-9]+\w*\((.*?)\)', text)
+
+    if len(search_parts) > 0:
+        search_str = search_parts[-1]
+    else:
+        search_str = text
+
     tokens = topic_models.get_tokens(file)
 
-    sugg = tokens.loc[tokens.Term.str.contains(text)].drop_duplicates('Term').sort_values('Freq', ascending=False)
+    sugg = tokens.loc[tokens.Term.str.contains(search_str)].drop_duplicates('Term').sort_values('Freq', ascending=False)
 
     return jsonify(sugg.Term.tolist())
 

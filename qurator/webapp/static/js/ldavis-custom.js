@@ -160,9 +160,40 @@ function map_setup(maps) {
         $.get("topic_docs/" + map_name + "/" + topic_num + order_by, make_doc_list);
     }
 
-    function updateLDAVis() {
+    var search_term = "";
+    var last_search="";
 
-        //history.pushState(null, "Query", location.origin + location.pathname);
+    function update_suggestions() {
+
+        //console.log("update_suggestions");
+
+        search_term = $("#search-for").val();
+
+        if($('#suggestions option').filter(
+            function(){
+                return this.value.toUpperCase() === search_term;
+            }).length) return;
+
+        //console.log("get suggestions :" + "suggestion/" + map_name + "/" + search_term);
+
+        $.get("suggestion/" + map_name + "/" + search_term).done(
+            function(suggestions) {
+
+                var tmp="";
+                $.each(suggestions,
+                   function(index, item){
+                        tmp += `<option value="${item}">${item}</option>`
+                    });
+
+                //console.log("Suggestions: ", tmp);
+
+                $('#suggestions').html(tmp);
+                $('#suggestions').focus();
+            }
+        );
+    }
+
+    function updateLDAVis() {
 
         $("#chart").html("");
         $("#doc-list").html("");
@@ -174,6 +205,10 @@ function map_setup(maps) {
         var n_topics = $("#ntopic-select" ).val();
         map_name = map_data[[selected_map,n_topics]]
 
+        var docs_timeout=null;
+
+        update_suggestions();
+
         LDAvis("topic_models/" + map_name,
             function(vis) {
 
@@ -181,9 +216,11 @@ function map_setup(maps) {
 
                     function update_on_search_input () {
 
-                        var val = $("#search-for").val();
+                        search_term = $("#search-for").val();
 
-                        if (val == "") {
+                        //console.log("update_on_search_input: " + search_term);
+
+                        if (search_term == "") {
                             term_off(null);
                             get_docs("");
 
@@ -191,46 +228,75 @@ function map_setup(maps) {
                             return;
                         }
 
-                        if($('#suggestions option').filter(
+                        if ($('#suggestions option').filter(
                             function(){
-                                return this.value.toUpperCase() === val.toUpperCase();
+                                return this.value.toUpperCase() === search_term.toUpperCase();
                             }).length)
                         {
-                            vis.term_hover(val);
-                            get_docs(val);
+                            vis.term_hover(search_term);
+
+                            clearTimeout(docs_timeout);
+
+                            docs_timeout = setTimeout(
+                                function() {
+                                    get_docs(search_term);
+                                }, 2000);
+
+                            vis.state_save(true);
+
+                            last_search = search_term;
                         }
                     }
 
                      $("#search-for").on('input', update_on_search_input);
 
                      vis.term_on =
-                        function(termElem) {
+                        function(term) {
 
-                            var text = $("#search-for").val();
+                            //console.log("term_on");
 
-                            //if (text != "") return;
+                            search_term = $("#search-for").val();
 
-                            if (!(typeof termElem === 'string') && !(termElem instanceof String)) {
-                                $("#search-for").val(termElem.__data__.Term);
-                            }
-                            else {
-                                $("#search-for").val(termElem);
-                            }
+                            $("#search-for").val(term);
 
-                            term_on(termElem);
+                            term_on(term);
                         };
 
                      vis.term_off =
-                        function(termElem) {
+                        function(term) {
 
-                            var text = $("#search-for").val();
+                            //console.log("term_off:" + term + "=>" +  search_term);
 
-                            //if (text != "") return;
+                            $("#search-for").val(search_term);
 
-                            $("#search-for").val("");
+                            term_off(term);
 
-                            term_off(termElem);
-                        };
+                            if($('#suggestions option').filter(
+                                function(){
+                                    return this.value.toUpperCase() === search_term.toUpperCase();
+                                }).length)
+                            {
+                                clearTimeout(docs_timeout);
+
+                                docs_timeout = setTimeout(
+                                    function() {
+                                        get_docs(search_term);
+                                    }, 2000);
+
+                                term_on(search_term);
+                            }
+                            else if (search_term === "") {
+
+                                clearTimeout(docs_timeout);
+
+                                docs_timeout = setTimeout(
+                                    function() {
+                                        get_docs("");
+                                    }, 2000);
+                            }
+
+                            vis.state_save(true);
+                         };
 
                      vis.topic_click =
                         function ( newtopic_num) {
@@ -248,7 +314,6 @@ function map_setup(maps) {
 
                      vis.topic_off =
                         function (topic) {
-
                             topic_num = topic;
 
                             topic_off(topic);
@@ -267,7 +332,8 @@ function map_setup(maps) {
                      var term = $("#search-for").val();
 
                      if (term !== "") {
-                        vis.term_hover(term);
+                        last_search = term;
+                        vis.term_on(term);
                         get_docs(term);
                      }
 
@@ -300,30 +366,22 @@ function map_setup(maps) {
         }
       );
 
-    function update_suggestions() {
+    $("#search-for").on("keyup",
+        function(e) {
 
-        var text = $("#search-for").val();
+            //console.log("keyup");
 
-        if($('#suggestions option').filter(
-            function(){
-                return this.value.toUpperCase() === text;
-            }).length) return;
+            clearTimeout($(this).data('timeout'));
 
-        $.get("suggestion/" + map_name + "/" + text).done(
-            function(suggestions) {
+            if ($("#search-for").val() == last_search) return;
 
-                var tmp="";
-                $.each(suggestions,
-                   function(index, item){
-                        tmp += `<option value="${item}">${item}</option>`
-                    });
+            last_search = $("#search-for").val();
 
-                $('#suggestions').html(tmp);
-            }
-        );
-    }
+            //console.log(last_search);
 
-    $("#search-for").change(update_suggestions);
+            $(this).data('timeout', setTimeout($.proxy(update_suggestions, this), 500));
+        }
+    );
 
     var url_params = new URLSearchParams(window.location.search);
 

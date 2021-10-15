@@ -728,7 +728,7 @@ function LDAvis (json_file, ready_func) {
 
                         var result = qidMatcher.exec(d.Term);
 
-                        console.log("reorder:" + result[1]);
+                        //console.log("reorder:" + result[1]);
 
                         return "https://wikidata.org/wiki/" + result[1];
                     })
@@ -1184,7 +1184,7 @@ function LDAvis (json_file, ready_func) {
                 that.term_off(vis_state.term);
             }
 
-            vis_state.term = term;
+            // vis_state.term = term;
             that.term_on(term);
             that.state_save(true);
         }
@@ -1193,6 +1193,8 @@ function LDAvis (json_file, ready_func) {
         that.term_on = function (term) {
 
             if (term == null) return null;
+
+            vis_state.term = term;
 
             var termElem = document.getElementById(termID + term);
 
@@ -1448,7 +1450,7 @@ function LDAvis (json_file, ready_func) {
                     document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
                 }
 
-                console.log(newtopic_num);
+                //console.log(newtopic_num);
 
                 // save state of topic clicked
                 vis_state.topic = newtopic_num;
