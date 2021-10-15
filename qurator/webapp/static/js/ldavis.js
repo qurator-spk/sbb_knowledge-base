@@ -947,6 +947,8 @@ function LDAvis (json_file, ready_func) {
         // the circle argument should be the appropriate circle element
         that.topic_on = function(topic) {
 
+            if (topic < 1) return;
+
             var circle = document.getElementById(topicID + topic);
 
             if ((circle !== null) && (circle !== undefined)) {
@@ -1298,13 +1300,53 @@ function LDAvis (json_file, ready_func) {
 
         // serialize the visualization state using fragment identifiers -- http://en.wikipedia.org/wiki/Fragment_identifier
         // location.hash holds the address information
-        
-        var params = location.hash.split("&");
 
-        if (params.length > 1) {
-            vis_state.topic = params[0].split("=")[1];
-            vis_state.lambda = params[1].split("=")[1];
-            vis_state.term = params[2].split("=")[1];
+        var url_params = new URLSearchParams(window.location.search);
+
+        if (url_params.has("lambda")) {
+            vis_state.lambda=Number(url_params.get("lambda"));
+
+            // Force l (lambda identifier) to be in [0, 1]:
+            vis_state.lambda = Math.min(1, Math.max(0, vis_state.lambda));
+
+            // impose the value of lambda:
+            document.getElementById(lambdaID).value = vis_state.lambda;
+            document.getElementById(lambdaID + "-value").innerHTML = vis_state.lambda;
+
+            lambda.current = vis_state.lambda;
+        }
+
+        if (url_params.has("topic")) {
+            vis_state.topic=Number(url_params.get("topic"));
+
+            // Force k (topic identifier) to be an integer between 0 and K:
+            vis_state.topic = Math.round(Math.min(K, Math.max(0, vis_state.topic)));
+
+            // select the topic and transition the order of the bars (if approporiate)
+            if (!isNaN(vis_state.topic)) {
+                document.getElementById(topicID).value = vis_state.topic;
+
+                if (vis_state.topic > 0) that.topic_on(vis_state.topic);
+
+                if (vis_state.lambda < 1 && vis_state.topic > 0) {
+                    reorder_bars(false);
+                }
+            }
+
+            if (vis_state.topic == 0) {
+                $("#lambdaInput").addClass("d-none");
+                $("#doc-card").addClass("d-none");
+            }
+        }
+
+        if (url_params.has("term")) {
+            vis_state.term=url_params.get("term");
+
+            //var termElem = document.getElementById(termID + vis_state.term);
+
+            //if (termElem !== undefined)
+            that.term_on(vis_state.term);
+        }
 
             // Idea: write a function to parse the URL string
             // only accept values in [0,1] for lambda, {0, 1, ..., K} for topics (any string is OK for term)
@@ -1319,34 +1361,6 @@ function LDAvis (json_file, ready_func) {
 
             // Short-term: assume format of "#topic=k&lambda=l&term=s" where k, l, and s are strings (b/c they're from a URL)
 
-            // Force k (topic identifier) to be an integer between 0 and K:
-            vis_state.topic = Math.round(Math.min(K, Math.max(0, vis_state.topic)));
-
-            // Force l (lambda identifier) to be in [0, 1]:
-            vis_state.lambda = Math.min(1, Math.max(0, vis_state.lambda));
-
-            // impose the value of lambda:
-            document.getElementById(lambdaID).value = vis_state.lambda;
-            document.getElementById(lambdaID + "-value").innerHTML = vis_state.lambda;
-
-            // select the topic and transition the order of the bars (if approporiate)
-            if (!isNaN(vis_state.topic)) {
-                document.getElementById(topicID).value = vis_state.topic;
-
-                if (vis_state.topic > 0) that.topic_on(vis_state.topic);
-
-                if (vis_state.lambda < 1 && vis_state.topic > 0) {
-                    reorder_bars(false);
-                }
-            }
-
-	        lambda.current = vis_state.lambda;
-
-            //var termElem = document.getElementById(termID + vis_state.term);
-
-            //if (termElem !== undefined)
-            that.term_on(vis_state.term);
-        }
 
         that.state_url = function () {
 
@@ -1404,8 +1418,6 @@ function LDAvis (json_file, ready_func) {
             vis_state.term = "";
 
             topic_clear();
-
-            //that.state_save(true);
             
             // make sure term ids are all correct
             d3.selectAll(".terms").attr("id", function(d) {

@@ -162,7 +162,7 @@ function map_setup(maps) {
 
     function updateLDAVis() {
 
-        history.pushState(null, "Query", location.origin + location.pathname);
+        //history.pushState(null, "Query", location.origin + location.pathname);
 
         $("#chart").html("");
         $("#doc-list").html("");
