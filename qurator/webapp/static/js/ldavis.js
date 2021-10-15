@@ -3,19 +3,7 @@ function LDAvis (json_file, ready_func) {
     var that = {};
 
     // This section sets up the logic for event handling
-    var current_clicked = {
-        what: "nothing",
-        element: undefined
-    },
-    current_hover = {
-        what: "nothing",
-        element: undefined
-    },
-    old_winning_state = {
-        what: "nothing",
-        element: undefined
-    },
-    vis_state = {
+    var vis_state = {
         lambda: 1,
         topic: 0,
         term: "",
