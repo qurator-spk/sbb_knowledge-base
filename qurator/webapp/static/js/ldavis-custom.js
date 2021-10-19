@@ -58,27 +58,36 @@ function map_setup(maps) {
     var map_name = null;
 
     var request_counter=0;
+    var topic_docs = [];
+    var meta_info = {};
 
-    function make_doc_list(topic_docs) {
+    function make_doc_list(new_topic_docs, new_meta_info=null) {
 
         request_counter += 1;
 
+        topic_docs = new_topic_docs;
+
         (function(counter_at_request) {
 
+            var trigger_counter = 0;
             var search_id = $("#search-for").val().match(/Q[0-9]+/);
 
-            $("#doc-list").html(spinner_html);
+            if (new_meta_info === null) $("#doc-list").html(spinner_html);
 
-            function triggerNextDoc (meta_info) {
+            function triggerNextDoc () {
+                trigger_counter += 1;
 
                 if (topic_docs.length <= 0) return;
                 if (counter_at_request < request_counter) return;
+                if (trigger_counter > 50) return;
 
                 var next_doc = topic_docs.shift();
 
                 var url="https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN" + next_doc;
 
                 var meta = meta_info[next_doc];
+
+                if (meta === undefined) triggerNextDoc();
 
                 var author="";
 
@@ -107,6 +116,7 @@ function map_setup(maps) {
                         function (result) {
 
                             if (result.length == 0) return;
+                            if (counter_at_request < request_counter) return;
 
                             var image_button = `
                                 <a class="btn btn-info btn-sm ml-3"
@@ -116,35 +126,48 @@ function map_setup(maps) {
                                 </a>
                             `;
 
+
                             $("#doc-list-" + ppn).append(image_button);
                         }
                     ).always(
                         function() {
-                            triggerNextDoc(meta_info);
+                            triggerNextDoc();
                         }
                     );
                 })("PPN" + next_doc);
             }
 
-            let post_data = { "ppns" : topic_docs };
+            if (new_meta_info !== null) {
+                meta_info = new_meta_info;
 
-            $.ajax({
-                    url:  "meta_data",
-                    data: JSON.stringify(post_data),
-                    type: 'POST',
-                    contentType: "application/json",
-                    success:
-                        function(result) {
-                            $("#doc-list").html("");
+                triggerNextDoc();
+            }
+            else {
+                let post_data = { "ppns" : topic_docs };
 
-                            triggerNextDoc(result);
-                        },
-                    error:
-                        function(error) {
-                            $("#doc-list").html("Not available.");
-                        }
-                }
-            );
+                $.ajax({
+                        url:  "meta_data",
+                        data: JSON.stringify(post_data),
+                        type: 'POST',
+                        contentType: "application/json",
+                        success:
+                            function(result) {
+
+                                if (counter_at_request < request_counter) return;
+
+                                $("#doc-list").html("");
+
+                                meta_info = result;
+
+                                triggerNextDoc();
+                            },
+                        error:
+                            function(error) {
+                                $("#doc-list").html("Not available.");
+                            }
+                    }
+                );
+            }
 
         })(request_counter);
     }
@@ -157,13 +180,17 @@ function map_setup(maps) {
 
         if (order_by.length > 0) order_by = "/" + order_by;
 
-        $.get("topic_docs/" + map_name + "/" + topic_num + order_by, make_doc_list);
+        $.get("topic_docs/" + map_name + "/" + topic_num + order_by,
+            function(topic_docs) {
+                make_doc_list(topic_docs);
+            });
     }
 
     var search_term = "";
+    var suggestions_html = "";
     var last_search="";
 
-    function update_suggestions() {
+    function update_suggestions(success) {
 
         //console.log("update_suggestions");
 
@@ -179,16 +206,18 @@ function map_setup(maps) {
         $.get("suggestion/" + map_name + "/" + search_term).done(
             function(suggestions) {
 
-                var tmp="";
+                suggestions_html="";
                 $.each(suggestions,
                    function(index, item){
-                        tmp += `<option value="${item}">${item}</option>`
+                        suggestions_html += `<option value="${item}">${item}</option>`
                     });
 
                 //console.log("Suggestions: ", tmp);
 
-                $('#suggestions').html(tmp);
+                $('#suggestions').html(suggestions_html);
                 $('#suggestions').focus();
+
+                success();
             }
         );
     }
@@ -207,12 +236,12 @@ function map_setup(maps) {
 
         var docs_timeout=null;
 
-        update_suggestions();
+        //update_suggestions();
 
         LDAvis("topic_models/" + map_name,
             function(vis) {
 
-                (function(term_on, term_off, topic_click, topic_off, state_url) {
+                (function(term_on, term_off, term_click, topic_click, topic_off, state_url) {
 
                     function update_on_search_input () {
 
@@ -221,31 +250,37 @@ function map_setup(maps) {
                         //console.log("update_on_search_input: " + search_term);
 
                         if (search_term == "") {
-                            term_off(null);
+                            last_search=search_term;
+                            term_click("");
+                            term_off("");
                             get_docs("");
-
                             vis.state_save(true);
                             return;
                         }
 
-                        if ($('#suggestions option').filter(
-                            function(){
-                                return this.value.toUpperCase() === search_term.toUpperCase();
-                            }).length)
-                        {
-                            vis.term_hover(search_term);
+                        update_suggestions(
+                            function() {
 
-                            clearTimeout(docs_timeout);
+                                if ($('#suggestions option').filter(
+                                    function(){
+                                        return this.value.toUpperCase() === search_term.toUpperCase();
+                                    }).length)
+                                {
+                                    last_search=search_term;
+                                    term_click(search_term);
+                                    term_on(search_term);
 
-                            docs_timeout = setTimeout(
-                                function() {
-                                    get_docs(search_term);
-                                }, 2000);
+                                    clearTimeout(docs_timeout);
 
-                            vis.state_save(true);
+                                    docs_timeout = setTimeout(
+                                        function() {
+                                            get_docs(search_term);
+                                        }, 2000);
 
-                            last_search = search_term;
-                        }
+                                    vis.state_save(true);
+                                }
+                            }
+                        );
                     }
 
                      $("#search-for").on('input', update_on_search_input);
@@ -259,6 +294,14 @@ function map_setup(maps) {
 
                             $("#search-for").val(term);
 
+                            if (($('#suggestions option').filter(
+                                function(){
+                                    return this.value.toUpperCase() === search_term.toUpperCase();
+                                }).length) && (term !== search_term)) {
+
+                                term_off(search_term);
+                            }
+
                             term_on(term);
                         };
 
@@ -268,6 +311,7 @@ function map_setup(maps) {
                             //console.log("term_off:" + term + "=>" +  search_term);
 
                             $("#search-for").val(search_term);
+                            $("#suggestions").html(suggestions_html);
 
                             term_off(term);
 
@@ -294,22 +338,28 @@ function map_setup(maps) {
                                         get_docs("");
                                     }, 2000);
                             }
+                         };
+
+                     vis.term_click =
+                        function(term) {
+
+                            update_on_search_input();
 
                             vis.state_save(true);
-                         };
+                        };
 
                      vis.topic_click =
                         function ( newtopic_num) {
 
                             topic_num = newtopic_num;
 
-                            $("#doc-list").html(spinner_html);
+                            //$("#doc-list").html(spinner_html);
 
                             var text = $("#search-for").val();
 
-                            get_docs(text);
-
                             topic_click(newtopic_num);
+
+                            get_docs(text);
                         };
 
                      vis.topic_off =
@@ -326,28 +376,42 @@ function map_setup(maps) {
                                 "&n_topics=" + $("#ntopic-select" ).val();
                         };
 
-                     vis.topic_on(topic_num);
-                     vis.topic_click(topic_num);
+                 })(vis.term_on, vis.term_off, vis.term_click, vis.topic_click, vis.topic_off, vis.state_url);
 
-                     var term = $("#search-for").val();
+                 var term = $("#search-for").val();
 
-                     if (term !== "") {
-                        last_search = term;
-                        vis.term_on(term);
-                        get_docs(term);
-                     }
+                 if (term === "") {
+                    vis.topic_click(topic_num);
+                    get_docs("");
+                 }
+                 else {
+                     update_suggestions(
+                        function(){
+                            vis.topic_click(topic_num);
+                            last_search = term;
+                            vis.term_click(term);
+                            vis.term_on(term);
+                            get_docs(term);
 
-                     vis.state_save(true);
 
-                 })(vis.term_on, vis.term_off, vis.topic_click, vis.topic_off, vis.state_url);
+                         vis.state_save(true);
+                        }
+                     );
+                 }
             }
         );
     }
+
+    var suggestion_timeout=null;
 
     $("#map-select" )
       .change(
         function () {
             topic_num = 0;
+            last_search = "";
+            $("#search-for").val("")
+
+            if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
 
             updateNTopicSelect();
 
@@ -361,6 +425,10 @@ function map_setup(maps) {
       .change(
         function () {
             topic_num = 0;
+            last_search = "";
+            $("#search-for").val("")
+
+            if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
 
             updateLDAVis();
         }
@@ -369,17 +437,29 @@ function map_setup(maps) {
     $("#search-for").on("keyup",
         function(e) {
 
-            //console.log("keyup");
-
-            clearTimeout($(this).data('timeout'));
+            if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
 
             if ($("#search-for").val() == last_search) return;
 
             last_search = $("#search-for").val();
 
-            //console.log(last_search);
+            suggestion_timeout = setTimeout(
+                function() {
+                    update_suggestions(function(){});
+                }, 500);
+        }
+    );
 
-            $(this).data('timeout', setTimeout($.proxy(update_suggestions, this), 500));
+    var scroll_timeout=null;
+
+    $("#doc-list" ).scroll(
+        function() {
+            if (scroll_timeout !== null) clearTimeout(scroll_timeout);
+
+            scroll_timeout = setTimeout(
+                function() {
+                    make_doc_list(topic_docs, meta_info); // load next N-elements
+                }, 1000);
         }
     );
 

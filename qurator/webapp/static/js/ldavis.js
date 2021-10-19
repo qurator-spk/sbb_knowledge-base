@@ -63,6 +63,7 @@ function LDAvis (json_file, ready_func) {
     var topicID = visID + "-topic";
     var lambdaID = visID + "-lambda";
     var termID = visID + "-term";
+    var termGroupID = visID + "-term-group";
     var wikiID = visID + "-wiki";
     var topicDown = topicID + "-down";
     var topicUp = topicID + "-up";
@@ -164,7 +165,6 @@ function LDAvis (json_file, ready_func) {
             function() {
                 // remove term selection if it exists (from a saved URL)
                 //that.term_off(vis_state.term);
-                //vis_state.term = "";
 
                 var value_old = document.getElementById(topicID).value;
                 var value_new = Math.min(K, +value_old + 1).toFixed(0);
@@ -183,7 +183,6 @@ function LDAvis (json_file, ready_func) {
             function() {
 		        // remove term selection if it exists (from a saved URL)
 		        //that.term_off(vis_state.term);
-		        //vis_state.term = "";
 
                 var value_old = document.getElementById(topicID).value;
                 var value_new = Math.max(0, +value_old - 1).toFixed(0);
@@ -200,7 +199,6 @@ function LDAvis (json_file, ready_func) {
         d3.select("#" + topicID).on("keyup",
             function() {
                 //that.term_off(vis_state.term);
-                //vis_state.term = "";
 
                 that.topic_off(vis_state.topic)
 
@@ -542,7 +540,43 @@ function LDAvis (json_file, ready_func) {
             .attr("opacity", 0.4);
 
         // Add word labels to the side of each bar
-        basebars
+        var labels = basebars
+                .append("g")
+                //.attr("x", -5)
+                //.attr("y", function(d) {
+                //    return y(d.Term) + 12 + barheight + margin.bottom + 2 * rMax;
+                //})
+                .attr("transform", function(d) {
+                    return "translate(-25, " + (y(d.Term) + 12) + ")";
+                })
+                .attr("class", "term-group")
+                .attr("id", function(d) {
+                    return (termGroupID + d.Term)
+                });
+
+        labels.append("text")
+            .attr("class", "terms")
+            .attr("cursor", "pointer")
+            .attr("id", function(d) {
+                    return (termID + d.Term)
+                })
+            .style("text-anchor", "end") // right align text - use 'middle' for center alignment
+            .text(function(d) {
+                return d.Term;
+            })
+            .on("mouseover", function() {
+                that.term_hover(this.innerHTML);
+            })
+            .on("mouseout", function() {
+                that.term_off(this.__data__.Term);
+            })
+            .on("click", function() {
+                    that.term_click(this.__data__.Term);
+                    that.state_save(true);
+                }
+            );
+
+        labels
             .append("a")
             .attr("class", "wikidata")
             .attr("id", function(d) {
@@ -558,27 +592,7 @@ function LDAvis (json_file, ready_func) {
                     return "https://wikidata.org/wiki/" + result[1];
                 })
             .append("text")
-            .attr("class", "terms")
-            .attr("x", -5)
-            .attr("y", function(d) {
-                return y(d.Term) + 12;
-            })
-            .attr("cursor", "pointer")
-            .attr("id", function(d) {
-                return (termID + d.Term)
-            })
-            .style("text-anchor", "end") // right align text - use 'middle' for center alignment
-            .text(function(d) {
-                return d.Term;
-            })
-            .on("mouseover", function() {
-                that.term_hover(this.innerHTML);
-            })
-            .on("mouseout", function() {
-                vis_state.term = "";
-                that.term_off(this.__data__.Term);
-                that.state_save(true);
-            });
+            .html("&nbsp;[&#8594;]");
 
 	    d3.select("#chart-heading").html("Most Salient Terms<sup>(1)</sup>")
 	
@@ -626,6 +640,25 @@ function LDAvis (json_file, ready_func) {
 
         // function to re-order the bars (gray and red), and terms:
         function reorder_bars(increase) {
+
+            var term_clicked_id = termID + vis_state.term_clicked;
+
+            if (vis_state.term_clicked != "") {
+                var termClickedElem = document.getElementById(term_clicked_id);
+
+                if (termClickedElem != null) {
+                    termClickedElem.style.textDecoration = null;
+                    //console.log("reorder_bars: 651(textDecoration=null): " + termClickedElem.id);
+                }
+            }
+
+            var termElem = document.getElementById(termID + vis_state.term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "normal";
+                //console.log("reorder_bars: 659(normal)" + termElem.id);
+            }
+
             // grab the bar-chart data for this topic only:
             var dat2 = lamData.filter(
                 function(d) {
@@ -663,17 +696,10 @@ function LDAvis (json_file, ready_func) {
                 .selectAll(".bar-totals")
                 .data(dat3, function(d) { return d.Term; });
 
-             var labels = d3.select("#bar-freqs")
-                .selectAll(".wikidata")
+            var labels = d3.select("#bar-freqs")
+                .selectAll(".term-group")
                 .data(dat3, function(d) { return d.Term; });
 
-//            // Change word labels
-//            var labels = d3.select("#bar-freqs")
-//                .selectAll(".terms")
-//                .data(dat3, function(d) {
-//                    return d.Term;
-//                });
-//
             // Create red bars (drawn over the gray ones) to signify the frequency under the selected topic
             var redbars = d3.select("#bar-freqs")
                 .selectAll(".overlay")
@@ -704,6 +730,36 @@ function LDAvis (json_file, ready_func) {
                 .attr("opacity", 0.4);
 
             var labelsEnter = labels.enter()
+                .append("g")
+                .attr("x", -5)
+                .attr("transform", function(d) {
+                    return "translate(-25, " + (y(d.Term) + 12 + barheight + margin.bottom + 2 * rMax) + ")";
+                })
+                .attr("class", "term-group")
+                .attr("id", function(d) {
+                    return (termGroupID + d.Term)
+                });
+
+            labelsEnter.append("text")
+                .attr("class", "terms")
+                .attr("cursor", "pointer")
+                .attr("id", function(d) {
+                    return (termID + d.Term)
+                })
+                .style("text-anchor", "end")
+                .text(function(d) { return d.Term; })
+                .on("mouseover", function() {
+                    that.term_hover(this.innerHTML);
+                })
+                .on("mouseout", function() {
+                    that.term_off(this.__data__.Term);
+                })
+                .on("click", function() {
+                    that.term_click(this.__data__.Term);
+                    that.state_save(true);
+                });
+
+            labelsEnter
                 .append("a")
                 .attr("class","wikidata")
                 .attr("id", function(d) {
@@ -714,34 +770,12 @@ function LDAvis (json_file, ready_func) {
 
                         var qidMatcher = /^(Q[0-9]+)\(/g;
 
-                        var result = qidMatcher.exec(d.Term);
+                        var matches = qidMatcher.exec(d.Term);
 
-                        //console.log("reorder:" + result[1]);
-
-                        return "https://wikidata.org/wiki/" + result[1];
+                        return "https://wikidata.org/wiki/" + matches[1];
                     })
                 .append("text")
-                .attr("x", -5)
-                .attr("class", "terms")
-                .attr("y", function(d) {
-                    return y(d.Term) + 12 + barheight + margin.bottom + 2 * rMax;
-                })
-                .attr("cursor", "pointer")
-                .style("text-anchor", "end")
-                .attr("id", function(d) {
-                    return (termID + d.Term)
-                })
-                .text(function(d) {
-                    return d.Term;
-                })
-                .on("mouseover", function() {
-                    that.term_hover(this.innerHTML);
-                })
-                .on("mouseout", function() {
-                    vis_state.term = "";
-                    that.term_off(this.__data__.Term);
-                    that.state_save(true);
-                });
+                .html("&nbsp;[&#8594;]");
 
             var redbarsEnter = redbars.enter().append("rect")
                 .attr("class", "overlay")
@@ -752,7 +786,6 @@ function LDAvis (json_file, ready_func) {
                 .attr("height", y.rangeBand())
                 .style("fill", color2)
                 .attr("opacity", 0.8);
-
 
             if (increase) {
                 graybarsEnter
@@ -768,8 +801,8 @@ function LDAvis (json_file, ready_func) {
                 labelsEnter
                     .transition().duration(duration)
                     .delay(duration)
-                    .attr("y", function(d) {
-                        return y(d.Term) + 12;
+                    .attr("transform", function(d) {
+                        return "translate(-25," + (y(d.Term) + 12) + ")";
                     });
 
                 redbarsEnter
@@ -790,10 +823,17 @@ function LDAvis (json_file, ready_func) {
                     .attr("y", function(d) {
                         return y(d.Term);
                     });
-                labels.selectAll(".terms").transition().duration(duration)
+
+                /*labels.selectAll(".terms").transition().duration(duration)
                     .delay(duration)
                     .attr("y", function(d) {
                         return y(d.Term) + 12;
+                    });*/
+
+                labels.transition().duration(duration)
+                    .delay(duration)
+                    .attr("transform", function(d) {
+                        return "translate(-25," + (y(d.Term) + 12) + ")";
                     });
 
                 redbars.transition().duration(duration)
@@ -817,16 +857,13 @@ function LDAvis (json_file, ready_func) {
                     })
                     .remove();
 
-                var labelsExit = labels.exit();
-
-                labelsExit.selectAll(".terms")
+                labels.exit()
                     .transition().duration(duration)
                     .delay(duration)
-                    .attr("y", function(d, i) {
-                        return barheight + margin.bottom + 18 + i * 18;
-                    });
-
-                labelsExit.remove();
+                    .attr("transform", function(d) {
+                        return "translate(-25," + (barheight + margin.bottom + 18 + i * 18) + ")";
+                    })
+                    .remove();
 
                 redbars.exit()
                     .transition().duration(duration)
@@ -858,9 +895,10 @@ function LDAvis (json_file, ready_func) {
 
                 labelsEnter
                     .transition().duration(duration)
-                    .attr("y", function(d) {
-                        return y(d.Term) + 12;
+                    .attr("transform", function(d) {
+                        return "translate(-25," + (y(d.Term) + 12) + ")";
                     });
+
 
                 redbarsEnter
                     .attr("width", 50) // FIXME by looking up old width of these bars
@@ -882,9 +920,9 @@ function LDAvis (json_file, ready_func) {
                         return x(d.Total);
                     });
 
-                labels.selectAll(".terms").transition().duration(duration)
-                    .attr("y", function(d) {
-                        return y(d.Term) + 12;
+                labels.transition().duration(duration)
+                    .attr("transform", function(d) {
+                        return "translate(-25," + (y(d.Term) + 12) + ")";
                     });
 
                 redbars.transition().duration(duration)
@@ -904,16 +942,13 @@ function LDAvis (json_file, ready_func) {
                     })
                     .remove();
 
-                var labelsExit = labels.exit();
-
-                labelsExit.selectAll(".terms")
+                labels.exit()
                     .transition()
                     .duration(duration)
-                    .attr("y", function(d, i) {
-                        return barheight + margin.bottom + 18 + i * 18 + 2 * rMax;
-                    });
-
-                labelsExit.remove();
+                    .attr("transform", function(d) {
+                        return "translate(-25," + (barheight + margin.bottom + 18 + i * 18 + 2 * rMax) + ")";
+                    })
+                    .remove();
 
                 redbars.exit()
                     .transition().duration(duration)
@@ -926,6 +961,24 @@ function LDAvis (json_file, ready_func) {
                 newaxis.transition().duration(duration)
                     .transition().duration(duration)
                     .call(xAxis);
+            }
+
+            term_clicked_id = termID + vis_state.term_clicked;
+
+            if (vis_state.term_clicked != "") {
+                var termClickedElem = document.getElementById(term_clicked_id);
+
+                if (termClickedElem != null) {
+                    termClickedElem.style.textDecoration = "underline";
+                    //console.log("topic_on: 954(underline): " + termClickedElem.id);
+                }
+            }
+
+            termElem = document.getElementById(termID + vis_state.term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "bold";
+                //console.log("topic_on: 962(bold)" + termElem.id);
             }
         }
 
@@ -940,17 +993,6 @@ function LDAvis (json_file, ready_func) {
             var circle = document.getElementById(topicID + topic);
 
             if ((circle !== null) && (circle !== undefined)) {
-            
-                // whenever the topic changes we have to remove the underline style
-                // from any clicked term
-                var old_term_clicked_id = termID + vis_state.term_clicked;
-                var topic_clicked_id = topicID + vis_state.topic_clicked;
-                if (vis_state.term_clicked != "" && circle.id != topic_clicked_id) {
-                    var oldterm = document.getElementById(old_term_clicked_id);
-                    if (oldterm != null) {
-                        oldterm.style.textDecoration = null;
-                    }
-                }
 
                 // grab data bound to this element
                 var d = circle.__data__
@@ -960,6 +1002,13 @@ function LDAvis (json_file, ready_func) {
                 // change opacity and fill of the selected circle
                 circle.style.opacity = highlight_opacity;
                 circle.style.fill = color2;
+            }
+
+            var termElem = document.getElementById(termID + vis_state.term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "normal";
+                //console.log("topic_on: 992(normal):" + termElem.id);
             }
 
             // set text with info relevant to topic of interest
@@ -1034,19 +1083,25 @@ function LDAvis (json_file, ready_func) {
                 });
 
             // Change word labels
+            d3.selectAll(".term-group")
+                .data(dat3)
+                .attr("id", function(d) {
+                    return (termGroupID + d.Term)
+                })
+                .attr("transform", function(d) {
+                    return "translate(-25," + (y(d.Term) + 12) + ")";
+                });
+
             d3.selectAll(".terms")
                 .data(dat3)
-                .attr("x", -5)
-                .attr("y", function(d) {
-                    return y(d.Term) + 12;
-                })
                 .attr("id", function(d) {
                     return (termID + d.Term)
                 })
                 .style("text-anchor", "end") // right align text - use 'middle' for center alignment
                 .text(function(d) {
                     return d.Term;
-                })
+                });
+
 
             // Create red bars (drawn over the gray ones) to signify the frequency under the selected topic
             d3.select("#bar-freqs").selectAll(".overlay")
@@ -1076,6 +1131,24 @@ function LDAvis (json_file, ready_func) {
             d3.selectAll(".xaxis")
             //.attr("class", "xaxis")
                 .call(xAxis);
+
+            var term_clicked_id = termID + vis_state.term_clicked;
+
+            if (vis_state.term_clicked != "") {
+                var termClickedElem = document.getElementById(term_clicked_id);
+
+                if (termClickedElem != null) {
+                    termClickedElem.style.textDecoration = "underline";
+                    //console.log("topic_on: 1105(underline): " + termClickedElem.id);
+                }
+            }
+
+            termElem = document.getElementById(termID + vis_state.term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "bold";
+                //console.log("topic_on: 1113(bold)" + termElem.id);
+            }
         }
 
         that.topic_off = function (topic) {
@@ -1083,10 +1156,28 @@ function LDAvis (json_file, ready_func) {
             var circle = document.getElementById(topicID + topic);
 
             if ((circle !== null) && (circle !== undefined)) {
-
-                // go back to original opacity/fill
+            // go back to original opacity/fill
                 circle.style.opacity = base_opacity;
                 circle.style.fill = color1;
+            }
+
+            // whenever the topic changes we have to remove the underline style
+            // from any clicked term
+            var old_term_clicked_id = termID + vis_state.term_clicked;
+            var topic_clicked_id = topicID + vis_state.topic_clicked;
+            if  (vis_state.term_clicked != "") {
+                var oldtermElem = document.getElementById(old_term_clicked_id);
+                if (oldtermElem != null) {
+                    oldtermElem.style.textDecoration = null;
+                    //console.log("topic_off: 1135(oldtermElem.style.textDecoration = null): " + oldtermElem.id);
+                }
+            }
+                                  
+            var termElem = document.getElementById(termID + vis_state.term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "normal";
+                //console.log("topic_off: 1141(normal): " + termElem.id);
             }
 
             d3.select("#chart-heading").html("Top-" + R + " Most Salient Terms <sup>(1)</sup>");
@@ -1138,19 +1229,29 @@ function LDAvis (json_file, ready_func) {
                     var result = qidMatcher.exec(d.Term);
 
                     return "https://wikidata.org/wiki/" + result[1];
-                }).exit().remove();
+                })
+                .exit().remove();
 
             //Change word labels
+            d3.selectAll(".term-group")
+                .data(dat2)
+                //.attr("x", -5)
+                .attr("id", function(d) {
+                    return termGroupID + d.Term;
+                })
+                .attr("transform", function(d) {
+                    return "translate(-25," + (y(d.Term) + 12) + ")";
+                }).exit().remove();
+
             d3.selectAll(".terms")
                 .data(dat2)
-                .attr("x", -5)
-                .attr("y", function(d) {
-                    return y(d.Term) + 12;
-                })
                 .style("text-anchor", "end") // right align text - use 'middle' for center alignment
+                .attr("id", function(d) {
+                    return termID + d.Term;
+                })
                 .text(function(d) {
                     return d.Term;
-                }).exit().remove();
+                });
 
             // adapted from http://bl.ocks.org/mbostock/1166403
             var xAxis = d3.svg.axis().scale(x)
@@ -1163,32 +1264,28 @@ function LDAvis (json_file, ready_func) {
             d3.selectAll(".xaxis")
                 .attr("class", "xaxis")
                 .call(xAxis);
+
+            termElem = document.getElementById(termID + vis_state.term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "bold";
+                //console.log("topic_off: 1233(bold): " + termElem.id);
+            }
         }
 
         // event definition for mousing over a term
         that.term_hover = function(term) {
 
-            if (vis_state.term != "" && vis_state.term != term) {
+            if (vis_state.term != term) {
                 that.term_off(vis_state.term);
+                that.term_on(term);
             }
-
-            // vis_state.term = term;
-            that.term_on(term);
-            that.state_save(true);
         }
 
         // updates vis when a term is selected via click or hover
         that.term_on = function (term) {
 
             if (term == null) return null;
-
-            vis_state.term = term;
-
-            var termElem = document.getElementById(termID + term);
-
-            if ((termElem !== undefined) && (termElem !== null)) {
-                termElem.style["fontWeight"] = "bold";
-            }
 
             var dat2 = mdsData3.filter(function(d2) {
                 return d2.Term == term
@@ -1241,23 +1338,30 @@ function LDAvis (json_file, ready_func) {
             // Alter the guide
             d3.select(".circleGuideTitle")
                 .text("Conditional topic distribution given term = '" + term + "'");
+
+
+            var termElem = null;
+
+            if (vis_state.term !== "") {
+                termElem = document.getElementById(termID + vis_state.term);
+
+                if ((termElem !== undefined) && (termElem !== null)) {
+                    termElem.style["fontWeight"] = "normal";
+                    //console.log("term_on: 1315(normal): " + termElem.id);
+                }
+            }
+
+            vis_state.term = term;
+
+            termElem = document.getElementById(termID + term);
+
+            if ((termElem !== undefined) && (termElem !== null)) {
+                termElem.style["fontWeight"] = "bold";
+                //console.log("term_on: 1325(bold): " + termElem.id)
+            }
         }
 
         that.term_off = function (term) {
-            if (term != null) {
-                var termElem = document.getElementById(termID + term);
-
-                if ((termElem !== undefined) && (termElem !== null)) {
-                    termElem.style["fontWeight"] = "normal";
-                }
-            }
-            else {
-                var termElem = document.getElementById(termID + vis_state.term);
-
-                if ((termElem !== undefined) && (termElem !== null)) {
-                    termElem.style["fontWeight"] = "normal";
-                }
-            }
 
             d3.selectAll(".dot")
                 .data(mdsData)
@@ -1286,77 +1390,26 @@ function LDAvis (json_file, ready_func) {
             d3.select(".lineGuideSmall")
                 .attr("y1", mdsheight + 2 * newSmall)
                 .attr("y2", mdsheight + 2 * newSmall);
-        }
 
-        // serialize the visualization state using fragment identifiers -- http://en.wikipedia.org/wiki/Fragment_identifier
-        // location.hash holds the address information
+            var termElem = null;
 
-        var url_params = new URLSearchParams(window.location.search);
+            if (term !== "") termElem = document.getElementById(termID + term);
+            else termElem = document.getElementById(termID + vis_state.term);
 
-        if (url_params.has("lambda")) {
-            vis_state.lambda=Number(url_params.get("lambda"));
-
-            // Force l (lambda identifier) to be in [0, 1]:
-            vis_state.lambda = Math.min(1, Math.max(0, vis_state.lambda));
-
-            // impose the value of lambda:
-            document.getElementById(lambdaID).value = vis_state.lambda;
-            document.getElementById(lambdaID + "-value").innerHTML = vis_state.lambda;
-
-            lambda.current = vis_state.lambda;
-        }
-
-        if (url_params.has("topic")) {
-            vis_state.topic=Number(url_params.get("topic"));
-
-            // Force k (topic identifier) to be an integer between 0 and K:
-            vis_state.topic = Math.round(Math.min(K, Math.max(0, vis_state.topic)));
-
-            // select the topic and transition the order of the bars (if approporiate)
-            if (!isNaN(vis_state.topic)) {
-                document.getElementById(topicID).value = vis_state.topic;
-
-                if (vis_state.topic > 0) that.topic_on(vis_state.topic);
-
-                if (vis_state.lambda < 1 && vis_state.topic > 0) {
-                    reorder_bars(false);
-                }
+            if ((termElem !== undefined) && (termElem !== null)) {
+                    termElem.style["fontWeight"] = "normal";
+                    //console.log("term_off: 1368(normal):" + termElem.id);
             }
 
-            if (vis_state.topic == 0) {
-                $("#lambdaInput").addClass("d-none");
-                $("#doc-card").addClass("d-none");
-            }
+            vis_state.term = "";
         }
-
-        if (url_params.has("term")) {
-            vis_state.term=url_params.get("term");
-
-            //var termElem = document.getElementById(termID + vis_state.term);
-
-            //if (termElem !== undefined)
-            that.term_on(vis_state.term);
-        }
-
-            // Idea: write a function to parse the URL string
-            // only accept values in [0,1] for lambda, {0, 1, ..., K} for topics (any string is OK for term)
-            // Allow for subsets of the three to be entered:
-            // (1) topic only (lambda = 1 term = "")
-            // (2) lambda only (topic = 0 term = "") visually the same but upon hovering a topic, the effect of lambda will be seen
-            // (3) term only (topic = 0 lambda = 1) only fires when the term is among the R most salient
-            // (4) topic + lambda (term = "")
-            // (5) topic + term (lambda = 1)
-            // (6) lambda + term (topic = 0) visually lambda doesn't make a difference unless a topic is hovered
-            // (7) topic + lambda + term
-
-            // Short-term: assume format of "#topic=k&lambda=l&term=s" where k, l, and s are strings (b/c they're from a URL)
 
 
         that.state_url = function () {
 
             var term_param="";
-            if (vis_state.term !== "") {
-                term_param = "&term=" + vis_state.term;
+            if (vis_state.term_clicked !== "") {
+                term_param = "&term=" + vis_state.term_clicked;
             }
 
             return location.origin + location.pathname + "?topic=" + vis_state.topic +
@@ -1402,15 +1455,16 @@ function LDAvis (json_file, ready_func) {
                 }
             }
 
-            if (vis_state.term != "") {
-                that.term_off(vis_state.term);
-            }
-            vis_state.term = "";
+            that.term_off(vis_state.term);
 
             topic_clear();
             
             // make sure term ids are all correct
-            d3.selectAll(".terms").attr("id", function(d) {
+            d3.selectAll(".term-group").attr("id", function(d) {
+                return (termGroupID + d.Term)
+            });
+
+            d3.selectAll(".term").attr("id", function(d) {
                 return (termID + d.Term)
             });
 
@@ -1438,48 +1492,106 @@ function LDAvis (json_file, ready_func) {
                     document.getElementById(old_topic_clicked_id).style.strokeWidth = null;
                 }
 
-                //console.log(newtopic_num);
+                ////console.log(newtopic_num);
 
                 // save state of topic clicked
                 vis_state.topic = newtopic_num;
                 vis_state.topic_clicked = newtopic_num;
+            };
+
+        that.term_click = function(term) {
+
+            var termElem = null;
+
+            if (term !== "") {
+                termElem = document.getElementById(termID + term);
             }
-        
-        function term_click(newterm, newterm_term) {
 
-            //console.log(newterm);
-
-            if (!inShinyMode) {
-              return null;
+            if ((termElem !== undefined) && (termElem !== null)) {
+                // underline clicked term
+                termElem.style.textDecoration = "underline";
+                //console.log("term_click: 1481(underline): " + termElem.id)
             }
-            // make sure term ids are up to date    
-            d3.selectAll(".terms").attr("id", function(d) {
-              return (termID + d.Term)
-            });
 
-            // make sure wiki ids are up to date
-            d3.selectAll(".wikidata").attr("id", function(d) {
-              return (wikiID + d.Term)
-            });
-                
-            // underline clicked term
-            newterm.style.textDecoration = "underline";
-            
             // set style of old clicked term back to non-underline
             var old_term_clicked_id = termID + vis_state.term_clicked;
-            if (old_term_clicked_id != newterm.id) {
-                var oldterm = document.getElementById(old_term_clicked_id);
-                if (oldterm != null) {
-                    oldterm.style.textDecoration = null;
+
+            if (old_term_clicked_id != termID + term) {
+                var oldtermElem = document.getElementById(old_term_clicked_id);
+
+                if ((oldtermElem !== null) && (oldtermElem !== undefined)) {
+                    oldtermElem.style.textDecoration = null;
                 }
             }
-            
+
             // save state of term clicked
-            vis_state.term_clicked = newterm_term;
-            
-            // update shiny term input object to know about new term clicked
-            Shiny.onInputChange(shinyClickedTerm, newterm_term);
+            vis_state.term_clicked = term;
+            //console.log("term_click 1497 vis_state.term_clicked = " + term);
         }
+
+
+        function init_state() {
+
+            // Idea: write a function to parse the URL string
+            // only accept values in [0,1] for lambda, {0, 1, ..., K} for topics (any string is OK for term)
+            // Allow for subsets of the three to be entered:
+            // (1) topic only (lambda = 1 term = "")
+            // (2) lambda only (topic = 0 term = "") visually the same but upon hovering a topic, the effect of lambda will be seen
+            // (3) term only (topic = 0 lambda = 1) only fires when the term is among the R most salient
+            // (4) topic + lambda (term = "")
+            // (5) topic + term (lambda = 1)
+            // (6) lambda + term (topic = 0) visually lambda doesn't make a difference unless a topic is hovered
+            // (7) topic + lambda + term
+
+            // Short-term: assume format of "#topic=k&lambda=l&term=s" where k, l, and s are strings (b/c they're from a URL)
+
+            // serialize the visualization state using fragment identifiers -- http://en.wikipedia.org/wiki/Fragment_identifier
+            // location.hash holds the address information
+
+            var url_params = new URLSearchParams(window.location.search);
+
+            if (url_params.has("lambda")) {
+                vis_state.lambda=Number(url_params.get("lambda"));
+
+                // Force l (lambda identifier) to be in [0, 1]:
+                vis_state.lambda = Math.min(1, Math.max(0, vis_state.lambda));
+
+                // impose the value of lambda:
+                document.getElementById(lambdaID).value = vis_state.lambda;
+                document.getElementById(lambdaID + "-value").innerHTML = vis_state.lambda;
+
+                lambda.current = vis_state.lambda;
+            }
+
+            if (url_params.has("topic")) {
+                vis_state.topic=Number(url_params.get("topic"));
+
+                // Force k (topic identifier) to be an integer between 0 and K:
+                vis_state.topic = Math.round(Math.min(K, Math.max(0, vis_state.topic)));
+
+                // select the topic and transition the order of the bars (if approporiate)
+                if (!isNaN(vis_state.topic)) {
+                    document.getElementById(topicID).value = vis_state.topic;
+
+                    if (vis_state.topic > 0) that.topic_on(vis_state.topic);
+
+                    if (vis_state.lambda < 1 && vis_state.topic > 0) {
+                        reorder_bars(false);
+                    }
+                }
+
+                if (vis_state.topic == 0) {
+                    $("#lambdaInput").addClass("d-none");
+                    $("#doc-card").addClass("d-none");
+                }
+            }
+
+            if (url_params.has("term")) {
+                that.term_click(url_params.get("term"));
+            }
+        };
+
+        init_state();
 
         ready_func(that);
     });
