@@ -43,6 +43,8 @@ function map_setup(maps) {
 
         var selected_map = $("#map-select" ).val();
 
+        var old_n_topics = $("#ntopic-select").val();
+
         $("#ntopic-select").html("");
         n_topics[selected_map].forEach(
             function(n_top, index) {
@@ -52,6 +54,8 @@ function map_setup(maps) {
                 $("#ntopic-select").append($(html));
             }
         );
+
+        if (map_data[[selected_map,old_n_topics]] !== undefined) $("#ntopic-select").val(old_n_topics);
     }
 
     var vis = null;
@@ -192,16 +196,12 @@ function map_setup(maps) {
 
     function update_suggestions(success) {
 
-        //console.log("update_suggestions");
-
         search_term = $("#search-for").val();
 
         if($('#suggestions option').filter(
             function(){
                 return this.value.toUpperCase() === search_term;
             }).length) return;
-
-        //console.log("get suggestions :" + "suggestion/" + map_name + "/" + search_term);
 
         $.get("suggestion/" + map_name + "/" + search_term).done(
             function(suggestions) {
@@ -211,8 +211,6 @@ function map_setup(maps) {
                    function(index, item){
                         suggestions_html += `<option value="${item}">${item}</option>`
                     });
-
-                //console.log("Suggestions: ", tmp);
 
                 $('#suggestions').html(suggestions_html);
                 $('#suggestions').focus();
@@ -224,10 +222,14 @@ function map_setup(maps) {
 
     function updateLDAVis() {
 
+        request_counter += 1;
+
         $("#chart").html("");
         $("#doc-list").html("");
-        $("#mds").html("<h6 id=\"mds-heading\" class=\"mt-2 mb-0\"></h6>");
         $("svg").remove();
+        $("#mds").html(spinner_html);
+        $("#mds-heading").text("");
+        $("#mds-input").addClass("d-none");
 
         var selected_map = $("#map-select" ).val();
 
@@ -236,18 +238,19 @@ function map_setup(maps) {
 
         var docs_timeout=null;
 
-        //update_suggestions();
+        $.get("topic_models/" + map_name,
+            function(data) {
 
-        LDAvis("topic_models/" + map_name,
-            function(vis) {
+                $("#mds").html("");
+                $("#mds-input").removeClass("d-none");
+
+                vis = LDAvis(data);
 
                 (function(term_on, term_off, term_click, topic_click, topic_off, state_url) {
 
                     function update_on_search_input () {
 
                         search_term = $("#search-for").val();
-
-                        //console.log("update_on_search_input: " + search_term);
 
                         if (search_term == "") {
                             last_search=search_term;
@@ -308,8 +311,6 @@ function map_setup(maps) {
                      vis.term_off =
                         function(term) {
 
-                            //console.log("term_off:" + term + "=>" +  search_term);
-
                             $("#search-for").val(search_term);
                             $("#suggestions").html(suggestions_html);
 
@@ -353,8 +354,6 @@ function map_setup(maps) {
 
                             topic_num = newtopic_num;
 
-                            //$("#doc-list").html(spinner_html);
-
                             var text = $("#search-for").val();
 
                             topic_click(newtopic_num);
@@ -392,14 +391,25 @@ function map_setup(maps) {
                             vis.term_click(term);
                             vis.term_on(term);
                             get_docs(term);
-
-
-                         vis.state_save(true);
                         }
                      );
                  }
+
+                 vis.state_save(true);
             }
-        );
+        ).
+        fail(
+            function(error) {
+
+                var err_msg = `
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        Map not available.
+                    </div>
+                `;
+
+                $("#mds").html(err_msg);
+                console.log(error);
+            });
     }
 
     var suggestion_timeout=null;
@@ -467,6 +477,8 @@ function map_setup(maps) {
 
     if (url_params.has("selected_map")) {
         $("#map-select" ).val(url_params.get("selected_map"));
+
+        updateNTopicSelect();
     }
 
     if (url_params.has("n_topics")) {

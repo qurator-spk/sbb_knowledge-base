@@ -146,7 +146,7 @@ class TopicModels:
         self._models = {}
         self._corpus = {}
 
-        self._config = pd.DataFrame.from_dict(app.config['TOPIC_MODELS'])
+        self._config = pd.DataFrame.from_dict(app.config['TOPIC_MODELS']).dropna(how="any")
 
     def get_model(self, file):
 
@@ -201,9 +201,6 @@ class TopicModels:
         corpus = pd.read_pickle(abs_file).reset_index(drop=True)
 
         self._corpus[corpus_file] = corpus
-
-        # import ipdb;
-        # ipdb.set_trace()
 
         return corpus
 
@@ -290,7 +287,10 @@ def get_topic_docs(file, topic, order_by=None):
 def get_topic_models(file=None):
 
     if file is None or len(file) == 0:
-        return jsonify(app.config['TOPIC_MODELS'])
+
+        return jsonify(
+            [i for _, i in
+             pd.DataFrame.from_dict(app.config['TOPIC_MODELS']).dropna(how="any").to_dict(orient="index").items()])
     else:
         ret = topic_models.get_model(file)
 
