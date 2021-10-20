@@ -91,7 +91,10 @@ function map_setup(maps) {
 
                 var meta = meta_info[next_doc];
 
-                if (meta === undefined) triggerNextDoc();
+                if (meta === undefined) {
+                    triggerNextDoc();
+                    return;
+                }
 
                 var search_params = ""
                 if (search_id != null) search_params = `&search_id=${search_id}`;
