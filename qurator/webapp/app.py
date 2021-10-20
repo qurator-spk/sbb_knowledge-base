@@ -13,6 +13,9 @@ import json
 import random
 import string
 import re
+import numpy as np
+
+from multiprocessing import Semaphore
 
 app = Flask(__name__)
 
@@ -38,6 +41,8 @@ class Digisam:
 
     def __init__(self, fulltext_path, ner_el_path):
 
+        self._sem = Semaphore(1)
+
         self._fulltext_data_path = fulltext_path
         self._ner_el_path = ner_el_path
 
@@ -58,8 +63,10 @@ class Digisam:
 
     def get_fulltext(self, ppn):
 
-        if Digisam._fulltext_conn is None:
-            Digisam._fulltext_conn = self.create_connection(self._fulltext_data_path)
+        with self._sem:
+
+            if Digisam._fulltext_conn is None:
+                Digisam._fulltext_conn = self.create_connection(self._fulltext_data_path)
 
         df = pd.read_sql_query("select file_name, text from text where ppn=?;", Digisam._fulltext_conn, params=(ppn,)).\
             sort_values('file_name')
@@ -68,8 +75,9 @@ class Digisam:
 
     def get_ner(self, ppn):
 
-        if Digisam._ner_el_conn is None:
-            Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
+        with self._sem:
+            if Digisam._ner_el_conn is None:
+                Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
 
         docs = pd.read_sql('select * from tagged where ppn==?', params=(ppn,), con=Digisam._ner_el_conn)
 
@@ -87,21 +95,22 @@ class Digisam:
 
     def get_el_con(self):
 
-        if Digisam._ner_el_conn is None:
-            Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
+        with self._sem:
+            if Digisam._ner_el_conn is None:
+                Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
 
-            Digisam._ner_el_conn. \
-                execute('create table if not exists "entity_linking_gt"'
-                        '("index" integer primary key,"user" TEXT, "entity_id" TEXT, "page_title" TEXT, '
-                        '"wikidata" TEXT, "ppn" TEXT, start_page INTEGER, stop_page INTEGER, "label", TEXT)')
+                Digisam._ner_el_conn. \
+                    execute('create table if not exists "entity_linking_gt"'
+                            '("index" integer primary key,"user" TEXT, "entity_id" TEXT, "page_title" TEXT, '
+                            '"wikidata" TEXT, "ppn" TEXT, start_page INTEGER, stop_page INTEGER, "label", TEXT)')
 
-            Digisam._ner_el_conn. \
-                execute('create index if not exists idx_place_gt on '
-                        'entity_linking_gt(entity_id, wikidata, ppn, start_page, stop_page, user);')
+                Digisam._ner_el_conn. \
+                    execute('create index if not exists idx_place_gt on '
+                            'entity_linking_gt(entity_id, wikidata, ppn, start_page, stop_page, user);')
 
-            Digisam._ner_el_conn. \
-                execute('create index if not exists idx_ppn_gt on '
-                        'entity_linking_gt(ppn, user);')
+                Digisam._ner_el_conn. \
+                    execute('create index if not exists idx_ppn_gt on '
+                            'entity_linking_gt(ppn, user);')
 
         return self._ner_el_conn
 
@@ -122,9 +131,27 @@ class Digisam:
 
     def get_meta_data(self, ppn):
 
-        if self._meta_data is None:
+        with self._sem:
+            if self._meta_data is None:
 
-            self._meta_data = pd.read_pickle(app.config['META_DATA'])
+                roles = ['name{}_role_roleTerm'.format(i) for i in range(0, 75)]
+
+                self._meta_data = pd.read_pickle(app.config['META_DATA'])
+
+                has_author = self._meta_data.loc[
+                    ((self._meta_data[roles] == 'aut').sum(axis=1) > 0)
+                    | ((self._meta_data[roles] == 'asn').sum(axis=1) > 0)]
+
+                aut_roles = pd.DataFrame((has_author[roles] == 'aut').
+                                         idxmax(axis=1).str.replace("role_roleTerm", "displayForm"),
+                                         columns=['aut_column'])
+
+                asn_roles = pd.DataFrame((has_author[roles] == 'asn').
+                                         idxmax(axis=1).str.replace("role_roleTerm", "displayForm"),
+                                         columns=['asn_column'])
+
+                self._meta_data = self._meta_data.merge(aut_roles, left_index=True, right_index=True, how="outer")
+                self._meta_data = self._meta_data.merge(asn_roles, left_index=True, right_index=True, how="outer")
 
         if ppn in self._meta_data.index:
 
@@ -239,13 +266,35 @@ def after(response):
 @app.route('/meta_data', methods=['POST'])
 @app.route('/meta_data/<ppn>', methods=['GET'])
 def get_meta_data(ppn=None):
+    
+    def author_filter(_meta):
+        
+        _author = _meta[_meta["aut_column"]] if _meta["aut_column"] != 'nan' is not None else None
+
+        _author = _author if _author is not None else \
+            _meta[_meta["asn_column"]] if _meta["asn_column"] != 'nan' is not None else None
+
+        _author = _author if _author is not None and _author != 'None' else _meta["originInfo-publication0_publisher"]
+        _author = _author if _author is not None and _author != 'None' else ""
+        
+        return _author
 
     if request.method == 'GET':
-        return jsonify(digisam.get_meta_data(ppn))
+
+        meta = digisam.get_meta_data(ppn)
+
+        return jsonify({"title": meta.get("titleInfo_title", "Unknown"), "author": author_filter(meta),
+                        "date": meta["originInfo-publication0_dateIssued"]})
     else:
         data = request.json
 
-        ret = {ppn: digisam.get_meta_data(ppn) for ppn in data['ppns']}
+        ret = {}
+
+        for ppn in data['ppns']:
+            meta = digisam.get_meta_data(ppn)
+
+            ret[ppn] = {"title": meta.get("titleInfo_title", "Unknown"), "author": author_filter(meta),
+                        "date": meta["originInfo-publication0_dateIssued"]}
 
         return jsonify(ret)
 

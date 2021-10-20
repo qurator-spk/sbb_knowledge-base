@@ -93,21 +93,12 @@ function map_setup(maps) {
 
                 if (meta === undefined) triggerNextDoc();
 
-                var author="";
-
-                if ((meta.name0_displayForm != "None") && (meta.name0_role_roleTerm != "fnd")) {
-                    author = `; ${meta.name0_displayForm}`;
-                }
-                else if (meta["originInfo-publication0_publisher"] != "None") {
-                    author = `; ${meta["originInfo-publication0_publisher"]}`;
-                }
-
                 var search_params = ""
                 if (search_id != null) search_params = `&search_id=${search_id}`;
 
                 var item = `
                     <li class="list-group-item text-left" id="doc-list-PPN${next_doc}">
-                        <a href="${url}" target="_blank" rel="noopener noreferrer"> ${meta.titleInfo_title} </a> ${author}
+                        <a href="${url}" target="_blank" rel="noopener noreferrer"> ${meta.title} </a> ; ${meta.author}; ${meta.date}
                         <a class="btn btn-info btn-sm ml-3"
                             href="index.html?ppn=${next_doc}&model_id=precomputed&el_model_id=precomputed&task=ner${search_params}"
                             target="_blank" rel="noopener noreferrer">NER+EL</a>
@@ -129,7 +120,6 @@ function map_setup(maps) {
                                     Graphical Objects (${result.ids.length})
                                 </a>
                             `;
-
 
                             $("#doc-list-" + ppn).append(image_button);
                         }
