@@ -13,11 +13,16 @@ import json
 import random
 import string
 import re
-import numpy as np
 
 from multiprocessing import Semaphore
 
+from flask_cachecontrol import (
+    FlaskCacheControl,
+    cache_for)
+
 app = Flask(__name__)
+flask_cache_control = FlaskCacheControl()
+flask_cache_control.init_app(app)
 
 app.config.from_json('config.json' if not os.environ.get('CONFIG') else os.environ.get('CONFIG'))
 
@@ -265,6 +270,7 @@ def after(response):
 
 @app.route('/meta_data', methods=['POST'])
 @app.route('/meta_data/<ppn>', methods=['GET'])
+@cache_for(minutes=3)
 def get_meta_data(ppn=None):
     
     def author_filter(_meta):
@@ -306,6 +312,7 @@ def get_ppnexamples():
 
 @app.route('/topic_docs/<file>/<topic>')
 @app.route('/topic_docs/<file>/<topic>/<order_by>')
+@cache_for(minutes=3)
 def get_topic_docs(file, topic, order_by=None):
 
     docs = topic_models.get_docs(file)
@@ -333,6 +340,7 @@ def get_topic_docs(file, topic, order_by=None):
 
 @app.route('/topic_models')
 @app.route('/topic_models/<file>')
+@cache_for(minutes=10)
 def get_topic_models(file=None):
 
     if file is None or len(file) == 0:
@@ -347,6 +355,7 @@ def get_topic_models(file=None):
 
 
 @app.route('/suggestion/<file>/<text>')
+@cache_for(minutes=3)
 def get_suggestion(file, text):
 
     search_parts = re.findall(r'Q[0-9]+\w*\((.*?)\)', text)
@@ -364,6 +373,7 @@ def get_suggestion(file, text):
 
 
 @app.route('/digisam-fulltext/<ppn>')
+@cache_for(minutes=10)
 def fulltext(ppn):
 
     df = digisam.get_fulltext(ppn)
@@ -395,6 +405,7 @@ def fulltext(ppn):
 
 
 @app.route('/digisam-ner/<ppn>')
+@cache_for(minutes=3)
 def ner(ppn):
 
     ner_result = digisam.get_ner(ppn)
@@ -415,6 +426,7 @@ def ner(ppn):
 
 
 @app.route('/digisam-el/<ppn>/<threshold>')
+@cache_for(minutes=10)
 def el(ppn, threshold=0.15):
 
     threshold = float(threshold)

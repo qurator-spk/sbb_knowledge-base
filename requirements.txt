@@ -22,6 +22,7 @@ pytest
 pytest-cov
 flask
 flask-htpasswd
+flask-cachecontrol
 somajo
 scipy
 gensim

@@ -171,16 +171,30 @@ function map_setup(maps) {
 
     var topic_num = 0;
 
-    function get_docs(order_by) {
+    var docs_topic = null;
+    var docs_order_by = null;
 
-        if (topic_num == 0) return;
+    var docs_timeout=null;
+
+    function get_docs(order_by, timeout=2000) {
 
         if (order_by.length > 0) order_by = "/" + order_by;
 
-        $.get("topic_docs/" + map_name + "/" + topic_num + order_by,
-            function(topic_docs) {
-                make_doc_list(topic_docs);
-            });
+        if (docs_timeout !== null) clearTimeout(docs_timeout);
+
+        docs_timeout = setTimeout(
+            function() {
+                if (topic_num == 0) return;
+                if ((docs_topic === topic_num) && (docs_order_by === order_by)) return;
+
+                docs_order_by = order_by;
+                docs_topic = topic_num;
+
+                $.get("topic_docs/" + map_name + "/" + topic_num + order_by,
+                    function(topic_docs) {
+                        make_doc_list(topic_docs);
+                    });
+            }, timeout);
     }
 
     var search_term = "";
@@ -229,8 +243,6 @@ function map_setup(maps) {
         var n_topics = $("#ntopic-select" ).val();
         map_name = map_data[[selected_map,n_topics]]
 
-        var docs_timeout=null;
-
         $.get("topic_models/" + map_name,
             function(data) {
 
@@ -239,7 +251,7 @@ function map_setup(maps) {
 
                 vis = LDAvis(data);
 
-                (function(term_on, term_off, term_click, topic_click, topic_off, state_url) {
+                (function(term_on, term_off, term_click, topic_click, topic_on, topic_off, state_url) {
 
                     function update_on_search_input () {
 
@@ -266,12 +278,7 @@ function map_setup(maps) {
                                     term_click(search_term);
                                     term_on(search_term);
 
-                                    clearTimeout(docs_timeout);
-
-                                    docs_timeout = setTimeout(
-                                        function() {
-                                            get_docs(search_term);
-                                        }, 2000);
+                                    get_docs(search_term);
 
                                     vis.state_save(true);
                                 }
@@ -314,23 +321,11 @@ function map_setup(maps) {
                                     return this.value.toUpperCase() === search_term.toUpperCase();
                                 }).length)
                             {
-                                clearTimeout(docs_timeout);
-
-                                docs_timeout = setTimeout(
-                                    function() {
-                                        get_docs(search_term);
-                                    }, 2000);
-
+                                get_docs(search_term);
                                 term_on(search_term);
                             }
                             else if (search_term === "") {
-
-                                clearTimeout(docs_timeout);
-
-                                docs_timeout = setTimeout(
-                                    function() {
-                                        get_docs("");
-                                    }, 2000);
+                                get_docs("");
                             }
                          };
 
@@ -347,13 +342,21 @@ function map_setup(maps) {
 
                             topic_num = newtopic_num;
 
+                            topic_click(newtopic_num);
+                        };
+
+                     vis.topic_on =
+                        function (topic) {
+                            var prev_topic = topic_num;
+                            topic_num = topic;
+
+                            topic_on(topic);
+
                             var text = $("#search-for").val();
 
-                            topic_click(newtopic_num);
-
-                            get_docs(text);
-
                             d3.select("#doc-list-heading").text("Documents for Topic " + topic_num);
+
+                            get_docs(text, 1000);
                         };
 
                      vis.topic_off =
@@ -370,7 +373,7 @@ function map_setup(maps) {
                                 "&n_topics=" + $("#ntopic-select" ).val();
                         };
 
-                 })(vis.term_on, vis.term_off, vis.term_click, vis.topic_click, vis.topic_off, vis.state_url);
+                 })(vis.term_on, vis.term_off, vis.term_click, vis.topic_click, vis.topic_on, vis.topic_off, vis.state_url);
 
                  var term = $("#search-for").val();
 
