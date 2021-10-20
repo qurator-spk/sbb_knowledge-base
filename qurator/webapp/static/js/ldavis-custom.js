@@ -352,6 +352,8 @@ function map_setup(maps) {
                             topic_click(newtopic_num);
 
                             get_docs(text);
+
+                            d3.select("#doc-list-heading").text("Documents for Topic " + topic_num);
                         };
 
                      vis.topic_off =

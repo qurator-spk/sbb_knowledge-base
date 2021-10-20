@@ -982,7 +982,6 @@ function LDAvis (data) {
 
         // set text with info relevant to topic of interest
         d3.select("#chart-heading").text("Top-" + R + " Most Relevant Terms for Topic " + topics + " (" + Freq + "% of tokens)");
-        d3.select("#doc-list-heading").text("Documents for Topic " + topics);
         $("#lambdaInput").removeClass("d-none");
         $("#doc-card").removeClass("d-none");
 
