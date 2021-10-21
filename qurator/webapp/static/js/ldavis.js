@@ -242,11 +242,14 @@ function LDAvis (data) {
 
     // Create new svg element that contains the MDS plot
     var mds_svg = d3.select("#mds").append("svg")
-        .attr("width", mdswidth + margin.left + margin.right)
-        .attr("height", mdsheight + 2 * margin.top + margin.bottom + 2 * rMax);
+        .attr("width", "75%")
+        .attr("height", "auto")
+        .attr("viewBox", `0 0 ${mdswidth + margin.left + margin.right} ${mdsheight + 2 * margin.top + margin.bottom + 2 * rMax}`);
 
     // Create a group for the mds plot
     var mdsplot = mds_svg.append("g")
+        .attr("width", mdswidth + margin.left + margin.right)
+        .attr("height", mdsheight + 2 * margin.top + margin.bottom + 2 * rMax)
         .attr("id", "leftpanel")
         .attr("class", "points")
         .attr("transform", "translate(" + margin.left +  "," + 1 * margin.bottom + ")"); //margin.bottom is a hack!!
@@ -456,10 +459,15 @@ function LDAvis (data) {
 
     // Create new svg element that contains the bar chart.
     var chart_svg = d3.select("#chart").append("svg")
-        .attr("width", barwidth + termwidth  + margin.left + margin.right)
-        .attr("height", barheight + 2 * margin.bottom + 5);
+        //.attr("width", barwidth + termwidth  + margin.left + margin.right)
+        //.attr("height", barheight + 2 * margin.bottom + 5);
+        .attr("width", "75%")
+        .attr("height", "auto")
+        .attr("viewBox", `0 0 ${barwidth + termwidth  + margin.left + margin.right} ${barheight + 2 * margin.bottom + 5}`);
 
     var chart = chart_svg.append("g")
+        .attr("width", barwidth + termwidth  + margin.left + margin.right)
+        .attr("height", barheight + 2 * margin.bottom + 5)
         .attr("transform", "translate(" + +(termwidth + margin.left) + ", " + "13)")
         .attr("id", "bar-freqs");
 

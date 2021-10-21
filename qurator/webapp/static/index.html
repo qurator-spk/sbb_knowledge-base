@@ -20,21 +20,21 @@
 <div class="container-fluid" style="height: 95vh;">
 
     <div class="row" style="margin-top: 5vh">
-        <div class="col-9 text-center">
-            <h1>NER+EL auf den digitalisierten Sammlungen</h1>
+        <div class="col-sm-9 col text-center" id="page-title">
+            <h1 >NER+EL auf den digitalisierten Sammlungen</h1>
         </div>
-        <div class="col-3 text-center" id="auth-area">
+        <div class="col-sm-3 col text-center" id="auth-area">
         </div>
     </div>
     <div class="row">
-        <div class="col-9">
+        <div class="col-xl-9 col-lg">
             <div class="row" style="margin-top: 2vh">
-                <div class="col-12">
+                <div class="col">
                     <div class="card">
                         <div class="card-block">
                             <form class="mt-3 mb-3" role="form" id="nerform">
                                 <div class="form-group row ml-2">
-                                    <div class="col-3 my-auto">
+                                    <div class="col-xl-3 col-lg my-auto">
                                         <label for="task" class="col-form-label">Task:</label>
                                         <br>
                                         <select id="task" class="selectpicker col-md-auto inp">
@@ -44,13 +44,13 @@
                                             <option value="bert-tokens">BERT Tokens</option>
                                         </select>
                                     </div>
-                                    <div class="col-2 justify-content-center my-auto" id="model_select">
+                                    <div class="col-xl-2 col-lg justify-content-center my-auto" id="model_select">
                                         <label for="model" class="col-form-label">NER-Model:</label>
                                         <br>
                                         <select id="model" class="selectpicker inp">
                                         </select>
                                     </div>
-                                    <div class="col-2 justify-content-center my-auto" id="el_model_select">
+                                    <div class="col-xl-2 col-lg justify-content-center my-auto" id="el_model_select">
                                         <label for="el-model" class="col-form-label">EL-Model:</label>
                                         <br>
                                         <select id="el-model" class="selectpicker inp">
@@ -58,14 +58,14 @@
                                             <option value="ned/ned">German</option>
                                         </select>
                                     </div>
-                                    <div class="col-3 justify-content-center my-auto">
+                                    <div class="col-xl-3 col-lg justify-content-center my-auto">
                                         <label for="ppn" class="col-form-label">PPN:</label>
                                         <br>
                                         <input id="ppn" list="ppnexamples" class=" inp" type="text" required/>
                                         <datalist id="ppnexamples">
                                         </datalist>
                                     </div>
-                                    <div class="col-2 my-auto">
+                                    <div class="col-xl-2 col-lg my-auto">
                                         <button class="btn btn-primary" id="go-button" type="submit">Go</button>
                                     </div>
                                 </div>
@@ -73,11 +73,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-12 mt-3" id="resultregion">
+            </div>
+            <div class="row mt-3">
+                <div class="col" id="resultregion">
                 </div>
             </div>
         </div>
-        <div class="col-3">
+        <div class="col-xl-3 col-lg">
             <div style="overflow-y:scroll;height: 75vh;">
                 <div id="legende" class="mt-3"></div>
                 <div id="entity-linking"></div>

@@ -228,16 +228,6 @@ function sbb_tools() {
 
         ned.ppn = ppn;
 
-        $.get("meta_data/" + ppn).done(
-            function(result) {
-
-                var title = `
-                <p class="my-auto"><b>"${result.titleInfo_title}", ${result.name0_displayForm}, ${result["originInfo-publication0_dateIssued"]}:</b></p>
-                `;
-
-                ned.setTitle(title);
-            }
-        );
 
         function append_candidate(entity, candidate) {
 
@@ -521,6 +511,21 @@ function sbb_tools() {
         var el_model = $('#el-model').val();
         var ner_url = "";
         var ned_url= el_model+"?return_full=0&priority=0";
+
+         $.get("meta_data/" + ppn).done(
+            function(meta) {
+
+                var author = meta.author;
+                if (author.length > 0) author += ", ";
+
+                var title = `
+                <p class="my-auto"><h1>${meta.title}</h1></p>
+                <p class="my-auto"><h2>${author} ${meta.date}:</h2></p>
+                `;
+
+                $("#page-title").html(title);
+            }
+        );
 
         function make_NED(ner_result, el_result) {
             var ned = NED2(ppn, ner_url, "ned/parse", ned_url, "#resultregion", "#entity-linking", ner_result, el_result);

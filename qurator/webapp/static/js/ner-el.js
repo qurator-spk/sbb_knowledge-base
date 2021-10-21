@@ -553,7 +553,7 @@ function NED(ner_url, parse_url, ned_url,
             },
         setTitle:
             function(title) {
-                $("#doc-title").html(title);
+                $("#page-title").html(title);
             }
     };
 
