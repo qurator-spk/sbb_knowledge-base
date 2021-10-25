@@ -89,7 +89,11 @@ def read_linking_table(con, min_proba, min_surface_len, filter_type, min_occuren
 
         tmp = df.drop_duplicates(subset=['ppn', 'wikidata'])
         vc = tmp.wikidata.value_counts()
-        min_count = int(len(tmp.ppn.unique()) / 100.0 * min_occurences)
+
+        num_ppns = len(tmp.ppn.unique())
+        print("Number of PPNs: {}".format(num_ppns))
+
+        min_count = int(num_ppns / 100.0 * min_occurences)
 
         print('Removing entities that occur less than {} times...'.format(min_count))
         df = df.loc[df.wikidata.isin(vc.loc[vc >= min_count].index)]

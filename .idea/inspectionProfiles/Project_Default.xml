@@ -4,7 +4,7 @@
     <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredPackages">
         <value>
-          <list size="24">
+          <list size="27">
             <item index="0" class="java.lang.String" itemvalue="gensim" />
             <item index="1" class="java.lang.String" itemvalue="sklearn" />
             <item index="2" class="java.lang.String" itemvalue="cloudpickle" />
@@ -29,6 +29,9 @@
             <item index="21" class="java.lang.String" itemvalue="somajo" />
             <item index="22" class="java.lang.String" itemvalue="dask" />
             <item index="23" class="java.lang.String" itemvalue="flask" />
+            <item index="24" class="java.lang.String" itemvalue="flask-cachecontrol" />
+            <item index="25" class="java.lang.String" itemvalue="flask-htpasswd" />
+            <item index="26" class="java.lang.String" itemvalue="gunicorn" />
           </list>
         </value>
       </option>
