@@ -22,14 +22,14 @@ corpus:	ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER.pkl ned-corpus-
 
 docs:	ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-LOC.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-ORG.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-PER,LOC,ORG.pkl
 
-ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl:	ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl
+ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl:	ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ned-docs-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl
 	lda-grid-search --processes=$(PROCESSES) --gen-vis-data --num-runs=1 --max-passes=$(MAX_PASSES) --passes-step=$(MAX_PASSES) --max-topics=$(MAX_TOPICS) --topic-step=$(TOPIC_STEP) --mods-info-file=$(MODS_INFO) $@ $^
 
-.PRECIOUS: ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl
+.PRECIOUS: ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl
 
-grid-search-%:	ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ;
+grid-search-%:	ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ;
 
 config-%:
-	make-topicm-config data/topic_modelling/ned-lda-grid-search-num_topics-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-$*.pkl $*
+	make-topicm-config data/topic_modelling/ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-$*.pkl $*
 
 config:	config-PER config-LOC config-ORG config-PER,LOC,ORG
