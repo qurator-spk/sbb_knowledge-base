@@ -494,4 +494,5 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
             generate_vis_data(result_file, lda, bow, dictionary, ppns, mods_info, n_jobs=processes+1)
 
-    pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence']).to_pickle(out_file)
+    pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence', 'mb_size']). \
+        to_pickle(out_file)
