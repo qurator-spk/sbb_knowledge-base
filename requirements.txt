@@ -27,3 +27,4 @@ somajo
 scipy
 gensim
 gunicorn
+pyldavis
