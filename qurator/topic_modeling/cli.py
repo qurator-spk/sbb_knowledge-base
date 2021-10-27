@@ -18,6 +18,7 @@ from pathlib import Path
 
 import gensim
 from gensim.models import CoherenceModel
+from pprint import pprint
 
 import logging
 logging.basicConfig(filename='gensim.log', format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
@@ -496,3 +497,21 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
     pd.DataFrame(lda_eval, columns=['num_passes', 'num_topics', 'run', 'coherence', 'mb_size']). \
         to_pickle(out_file)
+
+
+@click.command()
+@click.argument('grid-search-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('name', type=str, required=True, nargs=1)
+def make_config(grid_search_file, name):
+
+    lda_eval = pd.read_pickle(grid_search_file)
+
+    topic_models = []
+
+    for i, row in lda_eval.iterrows():
+
+        result_file = "{}-{}.json".format(Path(grid_search_file).stem, i)
+
+        topic_models.append({"name": name, "data": result_file, "num_topics": row.num_topics})
+
+    pprint(json.dumps(topic_models))
