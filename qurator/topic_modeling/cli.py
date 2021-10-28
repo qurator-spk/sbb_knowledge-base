@@ -18,7 +18,7 @@ from pathlib import Path
 
 import gensim
 from gensim.models import CoherenceModel
-from pprint import pprint
+# from pprint import pprint
 
 import logging
 logging.basicConfig(filename='gensim.log', format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
@@ -521,7 +521,7 @@ def make_config(grid_search_file, entity_types):
 
     for i, row in lda_eval.iterrows():
 
-        result_file = "{}/{}-{}.json".format(Path(grid_search_file), Path(grid_search_file).stem, i)
+        result_file = "{}/{}-{}.json".format(os.path(grid_search_file).dirname, Path(grid_search_file).stem, i)
 
         topic_models.append({"name": map_name, "data": result_file, "num_topics": row.num_topics})
 
