@@ -525,4 +525,4 @@ def make_config(grid_search_file, entity_types):
 
         topic_models.append({"name": map_name, "data": result_file, "num_topics": row.num_topics})
 
-    pprint(json.dumps(topic_models))
+    pprint(topic_models)
