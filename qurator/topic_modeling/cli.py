@@ -501,7 +501,7 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
 @click.command()
 @click.argument('grid-search-file', type=click.Path(exists=True), required=True, nargs=1)
-@click.argument('entity-type', type=str, required=True, nargs=1)
+@click.argument('entity-types', type=str, required=True, nargs=1)
 def make_config(grid_search_file, entity_types):
 
     names = {'PER': 'Persons', 'LOC': 'Locations', 'ORG': 'Organisations'}
