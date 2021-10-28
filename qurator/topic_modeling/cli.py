@@ -501,8 +501,9 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
 @click.command()
 @click.argument('grid-search-file', type=click.Path(exists=True), required=True, nargs=1)
+@click.argument('corpus-file', type=click.Path(exists=True), required=True, nargs=1)
 @click.argument('entity-types', type=str, required=True, nargs=1)
-def make_config(grid_search_file, entity_types):
+def make_config(grid_search_file, corpus_file, entity_types):
 
     names = {'PER': 'Persons', 'LOC': 'Locations', 'ORG': 'Organisations'}
 
@@ -523,6 +524,12 @@ def make_config(grid_search_file, entity_types):
 
         result_file = "{}-{}.json".format(Path(grid_search_file).stem, i+1)
 
-        topic_models.append({"name": map_name, "data": result_file, "num_topics": row.num_topics})
+        topic_models.append(
+            {
+                "name": map_name,
+                "data": result_file,
+                "corpus": Path(corpus_file).stem,
+                "num_topics": row.num_topics
+            })
 
     print(json.dumps(topic_models, indent=2))

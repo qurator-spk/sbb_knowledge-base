@@ -30,6 +30,6 @@ ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl:	ned-corpus-
 grid-search-%:	ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-%.pkl ;
 
 config-%:
-	make-topicm-config data/topic_modelling/ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-$*.pkl $*
+	make-topicm-config data/topic_modelling/ned-lda-grid-search-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-$*.pkl ned-corpus-min_proba$(MIN_PROBA)-min_freq$(MIN_FREQ)-$*.pkl $*
 
 config:	config-PER config-LOC config-ORG config-PER,LOC,ORG
