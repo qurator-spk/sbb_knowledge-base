@@ -501,8 +501,19 @@ def lda_grid_search(out_file, corpus_file, docs_file, num_runs, max_passes, pass
 
 @click.command()
 @click.argument('grid-search-file', type=click.Path(exists=True), required=True, nargs=1)
-@click.argument('name', type=str, required=True, nargs=1)
-def make_config(grid_search_file, name):
+@click.argument('entity-type', type=str, required=True, nargs=1)
+def make_config(grid_search_file, entity_type):
+
+    names = {'PER': 'Persons', 'LOC': 'Locations', 'ORG': 'Organisations'}
+
+    parts = []
+
+    for k in names.keys():
+
+        if k in entity_type:
+            parts.append(k)
+
+    map_name = ",".join(parts)
 
     lda_eval = pd.read_pickle(grid_search_file)
 
@@ -512,6 +523,6 @@ def make_config(grid_search_file, name):
 
         result_file = "{}-{}.json".format(Path(grid_search_file).stem, i)
 
-        topic_models.append({"name": name, "data": result_file, "num_topics": row.num_topics})
+        topic_models.append({"name": map_name, "data": result_file, "num_topics": row.num_topics})
 
     pprint(json.dumps(topic_models))
