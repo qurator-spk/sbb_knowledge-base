@@ -109,6 +109,8 @@ function update() {
         has_results = false;
         tools.reset_view();
 
+         $("#page-title").html(" <h1 >NER+EL auf den digitalisierten Sammlungen</h1>");
+
         return;
     }
     else {
