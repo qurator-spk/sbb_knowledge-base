@@ -528,7 +528,7 @@ def make_config(grid_search_file, corpus_file, entity_types):
             {
                 "name": map_name,
                 "data": result_file,
-                "corpus": Path(corpus_file).stem,
+                "corpus": os.path.basename(corpus_file),
                 "num_topics": row.num_topics
             })
 
