@@ -435,7 +435,7 @@ def el(ppn, threshold=0.15):
 
     if len(el_result) == 0:
 
-        el_result = digisam.get_el('PPN' + ppn)
+        el_result = digisam.get_el('PPN' + ppn, threshold)
 
         if len(el_result) == 0:
 

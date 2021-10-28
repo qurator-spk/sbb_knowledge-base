@@ -37,7 +37,7 @@
                                     <div class="col-xl-3 col-lg my-auto">
                                         <label for="task" class="col-form-label">Task:</label>
                                         <br>
-                                        <select id="task" class="selectpicker col-md-auto inp">
+                                        <select id="task" class="selectpicker col-md-auto inp form-control form-control-sm ">
                                             <option value="fulltext">OCR-Text aus ALTO Datei</option>
                                             <option value="tokenize">Wort- und Satztokenisierung</option>
                                             <option value="ner" selected>Named Entity Recognition + Linking</option>
@@ -47,13 +47,13 @@
                                     <div class="col-xl-2 col-lg justify-content-center my-auto" id="model_select">
                                         <label for="model" class="col-form-label">NER-Model:</label>
                                         <br>
-                                        <select id="model" class="selectpicker inp">
+                                        <select id="model" class="selectpicker inp form-control form-control-sm">
                                         </select>
                                     </div>
                                     <div class="col-xl-2 col-lg justify-content-center my-auto" id="el_model_select">
                                         <label for="el-model" class="col-form-label">EL-Model:</label>
                                         <br>
-                                        <select id="el-model" class="selectpicker inp">
+                                        <select id="el-model" class="selectpicker form-control form-control-sm inp">
                                             <option value="precomputed">Precomputed</option>
                                             <option value="ned/ned">German</option>
                                         </select>
@@ -61,12 +61,12 @@
                                     <div class="col-xl-3 col-lg justify-content-center my-auto">
                                         <label for="ppn" class="col-form-label">PPN:</label>
                                         <br>
-                                        <input id="ppn" list="ppnexamples" class=" inp" type="text" required/>
+                                        <input id="ppn" list="ppnexamples" class="form-control form-control-sm inp" type="text" required/>
                                         <datalist id="ppnexamples">
                                         </datalist>
                                     </div>
-                                    <div class="col-xl-2 col-lg my-auto">
-                                        <button class="btn btn-primary" id="go-button" type="submit">Go</button>
+                                    <div class="col-xl col-lg my-auto">
+                                        <button class="btn btn-primary mt-2" id="go-button" type="submit">Go</button>
                                     </div>
                                 </div>
                             </form>

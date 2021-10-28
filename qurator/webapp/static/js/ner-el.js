@@ -32,12 +32,11 @@ function NED(ner_url, parse_url, ned_url,
                 <p class"my-auto"> <b> Search-for-QID: </b></p>
             </div>
             <div class="card-body">
-                <div class="input-group justify-content-center">
+                <div class="input-group input-group-sm justify-content-center">
                   <div class="input-group-prepend">
                     <button class="btn btn-outline-secondary" type="button" id="entity-prev">Prev</button>
                   </div>
-                  <input type="text" list="suggestions" id="search-for" autocomplete="off">
-                  <datalist id="suggestions"></datalist>
+                  <input type="text" class="form-control" id="search-for" autocomplete="off">
                   </input>
                   <div class="input-group-append">
                     <button class="btn btn-outline-secondary" type="button" id="entity-next">Next</button>
