@@ -19,7 +19,7 @@ function NED(ner_url, parse_url, ned_url,
                 <p> <b> Entity-Linking: </b> </p>
                 <span class="ml-1" style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe </span>
                 <span class="ml-1" style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL-conf-low </span>
-                <span class="ml-1" style="padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray">EL-conf-medium </span>
+                <span class="ml-1" style="padding: 2px;border-style:solid;border-width: 3px;border-radius: 20px;border-color: gray">EL-conf-medium </span>
             </div>
             <div class="card-body" id="linking-list">
             </div>
@@ -222,7 +222,7 @@ function NED(ner_url, parse_url, ned_url,
                 return "padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray";
 
             if (max_proba > 0.5)
-                return "padding: 2px;border-style:solid;border-width: 2px;border-radius: 20px;border-color: gray";
+                return "padding: 2px;border-style:solid;border-width: 3px;border-radius: 20px;border-color: gray";
 
             return "padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray";
         }
