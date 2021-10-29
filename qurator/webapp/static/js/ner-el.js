@@ -17,9 +17,9 @@ function NED(ner_url, parse_url, ned_url,
          `<div class="card">
             <div class="card-header">
                 <p> <b> Entity-Linking: </b> </p>
-                <span class="ml-1" style="padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe </span>
-                <span class="ml-1" style="padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL-conf-low </span>
-                <span class="ml-1" style="padding: 2px;border-style:solid;border-width: 3px;border-radius: 20px;border-color: gray">EL-conf-medium </span>
+                <span class="d-inline-block ml-1 mt-2" style="white-space:nowrap;padding: 2px;border-style:dotted;border-width: thin;border-radius: 20px;border-color: gray">EL not availabe </span>
+                <span class="d-inline-block ml-1 mt-2" style="white-space:nowrap;padding: 2px;border-style:solid;border-width: thin;border-radius: 20px;border-color: gray">EL-conf-low </span>
+                <span class="d-inline-block ml-1 mt-2" style="white-space:nowrap;padding: 2px;border-style:solid;border-width: 3px;border-radius: 20px;border-color: gray">EL-conf-medium </span>
             </div>
             <div class="card-body" id="linking-list">
             </div>
