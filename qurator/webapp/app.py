@@ -440,7 +440,7 @@ def el(ppn, threshold=0.15):
         if len(el_result) == 0:
 
             if ppn.startswith('PPN'):
-                el_result = digisam.get_el(ppn[3:])
+                el_result = digisam.get_el(ppn[3:], threshold)
 
             if len(el_result) == 0:
                 return 'bad request!', 400
