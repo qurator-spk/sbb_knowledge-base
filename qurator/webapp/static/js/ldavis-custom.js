@@ -199,9 +199,12 @@ function map_setup(maps) {
 
     var search_term = "";
     var suggestions_html = "";
-    var last_search="";
 
     function update_suggestions(success) {
+
+        if ($("#search-for").val() == search_term) return;
+
+        //console.log("update_suggestions");
 
         search_term = $("#search-for").val();
 
@@ -210,21 +213,38 @@ function map_setup(maps) {
                 return this.value.toUpperCase() === search_term;
             }).length) return;
 
-        $.get("suggestion/" + map_name + "/" + search_term).done(
-            function(suggestions) {
+        (function(last_search_term) {
+            $.get("suggestion/" + map_name + "/" + search_term).done(
+                function(suggestions) {
 
-                suggestions_html="";
-                $.each(suggestions,
-                   function(index, item){
-                        suggestions_html += `<option value="${item}">${item}</option>`
-                    });
+                    //console.log(">=update_suggestions");
 
-                $('#suggestions').html(suggestions_html);
-                $('#suggestions').focus();
+                    if (last_search_term != search_term) return;
 
-                success();
-            }
-        );
+                    suggestions_html="";
+                    $.each(suggestions,
+                       function(index, item){
+                            suggestions_html += `<option value="${item}">${item}</option>`
+                        });
+
+                    if (last_search_term != search_term) return;
+
+                    $('#search-for').attr("list", ""); // Chrome bug!!! decouple before updating otherwise incredible slow!!!
+
+                    $('#suggestions').html(suggestions_html);
+
+                    $('#search-for').attr("list", "suggestions");
+
+                    $('#suggestions').focus();
+
+                    success();
+
+                    //console.log("update_suggestions>=");
+                }
+            );
+         })(search_term);
+
+        //console.log("update_suggestions done");
     }
 
     function updateLDAVis() {
@@ -255,10 +275,9 @@ function map_setup(maps) {
 
                     function update_on_search_input () {
 
-                        search_term = $("#search-for").val();
+                        //console.log("update_on_search_input");
 
-                        if (search_term == "") {
-                            last_search=search_term;
+                        if ($("#search-for").val() == "") {
                             term_click("");
                             term_off("");
                             get_docs("");
@@ -274,7 +293,6 @@ function map_setup(maps) {
                                         return this.value.toUpperCase() === search_term.toUpperCase();
                                     }).length)
                                 {
-                                    last_search=search_term;
                                     term_click(search_term);
                                     term_on(search_term);
 
@@ -293,8 +311,6 @@ function map_setup(maps) {
 
                             //console.log("term_on");
 
-                            search_term = $("#search-for").val();
-
                             $("#search-for").val(term);
 
                             if (($('#suggestions option').filter(
@@ -310,6 +326,8 @@ function map_setup(maps) {
 
                      vis.term_off =
                         function(term) {
+
+                            //console.log("term_on");
 
                             $("#search-for").val(search_term);
                             $("#suggestions").html(suggestions_html);
@@ -332,6 +350,8 @@ function map_setup(maps) {
                      vis.term_click =
                         function(term) {
 
+                            //console.log("term_click");
+
                             update_on_search_input();
 
                             vis.state_save(true);
@@ -347,6 +367,9 @@ function map_setup(maps) {
 
                      vis.topic_on =
                         function (topic) {
+
+                            //console.log("topic_on");
+
                             var prev_topic = topic_num;
                             topic_num = topic;
 
@@ -361,6 +384,9 @@ function map_setup(maps) {
 
                      vis.topic_off =
                         function (topic) {
+
+                            //console.log("topic_off");
+
                             topic_num = topic;
 
                             topic_off(topic);
@@ -385,7 +411,6 @@ function map_setup(maps) {
                      update_suggestions(
                         function(){
                             vis.topic_click(topic_num);
-                            last_search = term;
                             vis.term_click(term);
                             vis.term_on(term);
                             get_docs(term);
@@ -416,7 +441,6 @@ function map_setup(maps) {
       .change(
         function () {
             topic_num = 0;
-            last_search = "";
             $("#search-for").val("")
 
             if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
@@ -433,7 +457,6 @@ function map_setup(maps) {
       .change(
         function () {
             topic_num = 0;
-            last_search = "";
             $("#search-for").val("")
 
             if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
@@ -446,10 +469,6 @@ function map_setup(maps) {
         function(e) {
 
             if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
-
-            if ($("#search-for").val() == last_search) return;
-
-            last_search = $("#search-for").val();
 
             suggestion_timeout = setTimeout(
                 function() {
