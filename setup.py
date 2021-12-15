@@ -43,6 +43,7 @@ setup(
         "print-wiki-article=qurator.wikipedia.ner:print_article_command_line",
         "train-test-split-wiki=qurator.wikipedia.ner:train_test_split",
 
+        "find-entities=qurator.utils.entities:find_entities",
         "parquet2csv=qurator.utils.parquet:to_csv",
         "csv2sqlite=qurator.utils.csv:to_sqlite",
         "df2sqlite=qurator.utils.pickle:to_sqlite",
