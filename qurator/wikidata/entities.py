@@ -36,7 +36,7 @@ def load_entities(path, lang, site):
     ent['dateofbirth'] = pd.to_datetime(ent.dateofbirth, yearfirst=True, errors="coerce")
     ent['inception'] = pd.to_datetime(ent.inception, yearfirst=True, errors="coerce")
 
-    coords = ent.coords.str.extract(r'Point\(([\-0-9E.]+)\w.([\-0-9E.]+)\)'). \
+    coords = ent.coords.str.extract(r'Point\(([\-0-9E.]+)\W.([\-0-9E.]+)\)'). \
         rename(columns={0: "longitude", 1: "latitude"})
 
     ent['longitude'] = coords.longitude

@@ -3,7 +3,10 @@ import requests
 import json
 
 
-def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, priority=None):
+def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, priority=None, max_candidates=None,
+        max_dist=None):
+
+    return_full = json_file is not None
 
     if json_file is not None and os.path.exists(json_file):
 
@@ -20,10 +23,23 @@ def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, prio
 
         ner_parsed = json.loads(resp.content)
 
-        ned_rest_endpoint = ned_rest_endpoint + '/ned?return_full=' + str(int(json_file is not None)).lower()
+        ned_rest_endpoint = ned_rest_endpoint + '/ned?return_full=' + str(int(return_full)).lower()
 
         if priority is not None:
             ned_rest_endpoint += "&priority=" + str(int(priority))
+
+        if return_full:
+            ned_rest_endpoint += "&threshold=0.01"  # The JSON representation of the full results permits evaluation
+            # for an arbitrary threshold >= 0.01
+
+        elif threshold is not None:
+            ned_rest_endpoint += "&threshold=" + str(float(threshold))
+
+        if max_candidates is not None:
+            ned_rest_endpoint += "&max_candidates=" + str(int(max_candidates))
+
+        if max_dist is not None:
+            ned_rest_endpoint += "&max_dist=" + str(float(max_dist))
 
         resp = requests.post(url=ned_rest_endpoint, json=ner_parsed, timeout=3600000)
 
@@ -48,9 +64,6 @@ def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, prio
                 if 'ranking' in ned_result[eid]:
                     ranking = ned_result[eid]['ranking']
 
-                    # tsv.loc[rids, 'ID'] = ranking[0][1]['wikidata']
-                    # if threshold is None or ranking[0][1]['proba_1'] >= threshold else ''
-
                     tmp = "|".join([ranking[i][1]['wikidata']
                                     for i in range(len(ranking))
                                     if threshold is None or ranking[i][1]['proba_1'] >= threshold])
@@ -61,6 +74,12 @@ def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, prio
                                     if threshold is None or ranking[i][1]['proba_1'] >= threshold])
 
                     tsv.loc[rids, 'conf'] = tmp if len(tmp) > 0 else '-'
+                else:
+                    tsv.loc[rids, 'ID'] = 'NIL'
+                    tsv.loc[rids, 'conf'] = '-'
+            else:
+                tsv.loc[rids, 'ID'] = 'NIL'
+                tsv.loc[rids, 'conf'] = '-'
 
             rids = []
             entity = ""

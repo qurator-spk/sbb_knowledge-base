@@ -18,10 +18,14 @@ from .tsv import read_tsv, write_tsv
               help="REST endpoint of sbb_ned service. See https://github.com/qurator-spk/sbb_ned for details.")
 @click.option('--ned-json-file', type=str, default=None)
 @click.option('--noproxy', type=bool, is_flag=True, help='disable proxy. default: proxy is enabled.')
-@click.option('--ned-threshold', type=float, default=None)
-@click.option('--ned-priority', type=int, default=1)
+@click.option('--ned-threshold', type=float, default=None, help='Minimum overall confidence for returned candidates. ')
+@click.option('--ned-priority', type=int, default=1,
+              help="Processing priority on the server. Default 1. Higher: 0 Lower: 2")
+@click.option('--max-candidates', type=int, default=None,
+              help="Number of candidates to consider per entity.")
+@click.option('--max-dist', type=float, default=None, help='Maximum nearest neighbour distance.')
 def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, ned_json_file, noproxy, ned_threshold,
-                  ned_priority):
+                  ned_priority, max_candidates, max_dist):
 
     if noproxy:
         os.environ['no_proxy'] = '*'
@@ -49,7 +53,7 @@ def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, 
         if ned_rest_endpoint is not None:
 
             tsv, ned_result = ned(tsv, ner_result, ned_rest_endpoint, json_file=ned_json_file, threshold=ned_threshold,
-                                  priority=ned_priority)
+                                  priority=ned_priority, max_candidates=max_candidates, max_dist=max_dist)
 
             if ned_json_file is not None and not os.path.exists(ned_json_file):
 
