@@ -24,8 +24,10 @@ from .tsv import read_tsv, write_tsv
 @click.option('--max-candidates', type=int, default=None,
               help="Number of candidates to consider per entity.")
 @click.option('--max-dist', type=float, default=None, help='Maximum nearest neighbour distance.')
+@click.option('--not-after', type=int, default=None,
+              help="Consider only entities that already existed before this year. Default: Don't use.")
 def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, ned_json_file, noproxy, ned_threshold,
-                  ned_priority, max_candidates, max_dist):
+                  ned_priority, max_candidates, max_dist, not_after):
 
     if noproxy:
         os.environ['no_proxy'] = '*'
@@ -53,7 +55,8 @@ def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, 
         if ned_rest_endpoint is not None:
 
             tsv, ned_result = ned(tsv, ner_result, ned_rest_endpoint, json_file=ned_json_file, threshold=ned_threshold,
-                                  priority=ned_priority, max_candidates=max_candidates, max_dist=max_dist)
+                                  priority=ned_priority, max_candidates=max_candidates, max_dist=max_dist,
+                                  not_after=not_after)
 
             if ned_json_file is not None and not os.path.exists(ned_json_file):
 

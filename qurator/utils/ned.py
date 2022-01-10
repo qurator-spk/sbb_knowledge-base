@@ -4,7 +4,7 @@ import json
 
 
 def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, priority=None, max_candidates=None,
-        max_dist=None):
+        max_dist=None, not_after=None):
 
     return_full = json_file is not None
 
@@ -40,6 +40,14 @@ def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, prio
 
         if max_dist is not None:
             ned_rest_endpoint += "&max_dist=" + str(float(max_dist))
+
+        if not_after is not None:
+            ner_parsed['__CONTEXT__'] = \
+                {
+                    'time': {
+                        'not_after': not_after
+                    }
+                }
 
         resp = requests.post(url=ned_rest_endpoint, json=ner_parsed, timeout=3600000)
 
