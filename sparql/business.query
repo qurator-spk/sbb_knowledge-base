@@ -1,4 +1,4 @@
-SELECT ?organisation ?label ?sitelink ?inception
+SELECT ?organisation ?label ?sitelink ?inception ?gndid
 WHERE
 {
   ?organisation wdt:P31/wdt:P279* wd:Q4830453;rdfs:label ?label. # instance of any subclass of business
@@ -7,5 +7,8 @@ WHERE
   FILTER (CONTAINS(str(?sitelink), "__SITE__")) .
   OPTIONAL {
     ?organisation wdt:P571 ?inception
+  }
+  OPTIONAL {
+    ?organisation wdt:P227 ?gndid
   }
 }

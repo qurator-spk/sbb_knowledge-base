@@ -1,8 +1,11 @@
-SELECT ?organisation ?label ?sitelink
+SELECT ?organisation ?label ?sitelink ?gndid
 WHERE
 {
   ?organisation wdt:P31/wdt:P279* wd:Q14623646;rdfs:label ?label. # instance of any subclass of  fictional organisation
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?organisation.
   FILTER (CONTAINS(str(?sitelink), "__SITE__")).
+  OPTIONAL {
+    ?organisation wdt:P227 ?gndid
+  }
 }

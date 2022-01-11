@@ -1,8 +1,11 @@
-SELECT ?location ?label ?sitelink
+SELECT ?location ?label ?sitelink ?gndid
 WHERE
 {
   ?location wdt:P31/wdt:P279* wd:Q3895768;rdfs:label ?label. # instance of any subclass of fictional location
   FILTER(LANG(?label) = "__LANG__").
   ?sitelink schema:about ?location.
   FILTER (CONTAINS(str(?sitelink), "__SITE__")).
+  OPTIONAL {
+    ?location wdt:P227 ?gndid
+  }
 }

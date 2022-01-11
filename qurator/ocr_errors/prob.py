@@ -1,4 +1,4 @@
-# OCR-Error probabilities taken from
+# OCR-Error probabilities taken from:
 # "Deep Statistical Analysis of OCR Errors for Effective Post-OCR Processing" Nguyen, Jatowt et. al.
 
 errors_1_1 = \
