@@ -27,10 +27,6 @@ setup(
         "select-by-lang-and-entropy=qurator.sbb.select:by_lang_and_entropy",
         "select-by-lang=qurator.sbb.select:by_lang",
 
-        "collectcorpus=qurator.bert.corpus:collect",
-        "bert-pregenerate-trainingdata=qurator.bert.pregenerate_training_data:main",
-        "bert-finetune=qurator.bert.finetune_on_pregenerated:main",
-
         "extract-wiki-full-text-parquet=qurator.wikipedia.xml:to_parquet",
         "extract-wiki-full-text-sqlite=qurator.wikipedia.xml:to_sqlite",
         "extract-wiki-ner-entities=qurator.wikipedia.entities:extract",
