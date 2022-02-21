@@ -1,7 +1,6 @@
 numpy
 pandas
 dask
-# pyarrow==0.12.1
 tqdm
 ipython
 ipdb
@@ -10,8 +9,6 @@ jupyter_contrib_nbextensions
 matplotlib
 seaborn
 sklearn
-pytorch-pretrained-bert==0.6.2
-tensorflow-gpu==1.15.5
 click
 langid
 seqeval
