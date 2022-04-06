@@ -204,8 +204,6 @@ function map_setup(maps) {
 
         if ($("#search-for").val() == search_term) return;
 
-        //console.log("update_suggestions");
-
         search_term = $("#search-for").val();
 
         if($('#suggestions option').filter(
@@ -216,8 +214,6 @@ function map_setup(maps) {
         (function(last_search_term) {
             $.get("suggestion/" + map_name + "/" + search_term).done(
                 function(suggestions) {
-
-                    //console.log(">=update_suggestions");
 
                     if (last_search_term != search_term) return;
 
@@ -238,13 +234,9 @@ function map_setup(maps) {
                     $('#suggestions').focus();
 
                     success();
-
-                    //console.log("update_suggestions>=");
                 }
             );
          })(search_term);
-
-        //console.log("update_suggestions done");
     }
 
     function updateLDAVis() {
@@ -260,7 +252,7 @@ function map_setup(maps) {
 
         var selected_map = $("#map-select" ).val();
 
-        var n_topics = $("#ntopic-select" ).val();
+        var n_topics = $("#ntopic-select").val();
         map_name = map_data[[selected_map,n_topics]]
 
         $.get("topic_models/" + map_name,
@@ -274,8 +266,6 @@ function map_setup(maps) {
                 (function(term_on, term_off, term_click, topic_click, topic_on, topic_off, state_url) {
 
                     function update_on_search_input () {
-
-                        //console.log("update_on_search_input");
 
                         if ($("#search-for").val() == "") {
                             term_click("");
@@ -441,9 +431,17 @@ function map_setup(maps) {
       .change(
         function () {
             topic_num = 0;
-            $("#search-for").val("")
+            $("#search-for").val("");
 
             if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
+
+            var url_params = new URLSearchParams(window.location.search);
+
+            if (url_params.has("topic")) {
+                url_params.set("topic", topic_num);
+
+                window.history.replaceState({}, '', `${location.pathname}?${url_params}`);
+            }
 
             updateNTopicSelect();
 
@@ -460,6 +458,14 @@ function map_setup(maps) {
             $("#search-for").val("")
 
             if (suggestion_timeout !== null) clearTimeout(suggestion_timeout);
+
+            var url_params = new URLSearchParams(window.location.search);
+
+            if (url_params.has("topic")) {
+                url_params.set("topic", topic_num);
+
+                window.history.replaceState({}, '', `${location.pathname}?${url_params}`);
+            }
 
             updateLDAVis();
         }

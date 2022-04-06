@@ -1388,8 +1388,10 @@ function LDAvis (data) {
             term_param = "&term=" + vis_state.term_clicked;
         }
 
-        return location.origin + location.pathname + "?topic=" + vis_state.topic +
+        var url =  location.origin + location.pathname + "?topic=" + vis_state.topic +
             "&lambda=" + vis_state.lambda + term_param;
+
+        return url;
     }
 
     that.state_save = function(replace) {
@@ -1559,6 +1561,9 @@ function LDAvis (data) {
             if (vis_state.topic == 0) {
                 $("#lambdaInput").addClass("d-none");
                 $("#doc-card").addClass("d-none");
+                $("#doc-card").addClass("d-none");
+                $("#docCollapse").removeClass("show");
+                $("#termCollapse").addClass("show");
             }
         }
 
