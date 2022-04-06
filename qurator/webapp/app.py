@@ -78,13 +78,21 @@ class Digisam:
 
         return df
 
-    def get_ner(self, ppn):
+    def get_ner(self, ppn, page=None):
 
         with self._sem:
             if Digisam._ner_el_conn is None:
                 Digisam._ner_el_conn = self.create_connection(self._ner_el_path)
 
-        docs = pd.read_sql('select * from tagged where ppn==?', params=(ppn,), con=Digisam._ner_el_conn)
+        if page is None:
+            docs = pd.read_sql('select * from tagged where ppn==?', params=(ppn,), con=Digisam._ner_el_conn)
+        else:
+            file_name = (8 - len(str(page))) * '0' + page + ".xml"
+
+            print(file_name)
+
+            docs = pd.read_sql('select * from tagged where ppn==? and file_name==?', params=(ppn, file_name),
+                               con=Digisam._ner_el_conn)
 
         if docs is None or len(docs) == 0:
             return []
@@ -405,19 +413,20 @@ def fulltext(ppn):
 
 
 @app.route('/digisam-ner/<ppn>')
+@app.route('/digisam-ner/<ppn>/<page>')
 @cache_for(minutes=3)
-def ner(ppn):
+def ner(ppn, page=None):
 
-    ner_result = digisam.get_ner(ppn)
+    ner_result = digisam.get_ner(ppn, page)
 
     if len(ner_result) == 0:
 
-        ner_result = digisam.get_ner('PPN' + ppn)
+        ner_result = digisam.get_ner('PPN' + ppn, page)
 
         if len(ner_result) == 0:
 
             if ppn.startswith('PPN'):
-                ner_result = digisam.get_ner(ppn[3:])
+                ner_result = digisam.get_ner(ppn[3:], page)
 
             if len(ner_result) == 0:
                 return 'bad request!', 400
