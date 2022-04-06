@@ -25,7 +25,7 @@
                 <select class="custom-select" id="ntopic-select"></select>
             </div>
             <div class="mt-2 mb-0">
-                <h6 id="mds-heading" ></h6>
+                <h6 id="mds-heading"></h6>
                 <div id="mds">
                 </div>
             </div>
@@ -42,20 +42,13 @@
         <div class="col-lg-6 col-md text-center">
             <div class="form-group form-inline mb-3 mt-3">
                 <label for="search-for" class="ml-3">Search:</label>
-                <input type="text" list="suggestions" style="width:75vh;" class="ml-3" id="search-for" autocomplete="off"/>
-                 <datalist id="suggestions">
-                 </datalist>
+                <input type="text" list="suggestions" style="width:75vh;" class="ml-3" id="search-for"
+                       autocomplete="off"/>
+                <datalist id="suggestions">
+                </datalist>
             </div>
             <div id="accordion">
-                <div class="card">
-                    <div class="card-header" id="headingOne">
-                        <h5 class="mb-0">
-                            <button id="chart-heading" class="btn btn-link" data-toggle="collapse"
-                                    data-target="#collapseOne"
-                                    aria-expanded="true" aria-controls="collapseOne"></button>
-                        </h5>
-                    </div>
-                    <div class="card d-none" id="doc-card">
+                <div class="card d-none" id="doc-card">
                     <div class="card-header" id="headingTwo">
                         <h5 class="mb-0">
                             <button id="doc-list-heading" class="btn btn-link collapsed" data-toggle="collapse"
@@ -70,6 +63,14 @@
                             No content yet.
                         </ul>
                     </div>
+                </div>
+                <div class="card">
+                    <div class="card-header" id="headingOne">
+                        <h5 class="mb-0">
+                            <button id="chart-heading" class="btn btn-link" data-toggle="collapse"
+                                    data-target="#collapseOne"
+                                    aria-expanded="true" aria-controls="collapseOne"></button>
+                        </h5>
                     </div>
                     <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
                         <div id="lambdaInput" class="card-body mt-0 text-center d-none">
@@ -103,8 +104,8 @@
                 </div>
             </div>
         </div>
-        <script src="js/ldavis-custom.js"> </script>
     </div>
+    <script src="js/ldavis-custom.js"></script>
 </div>
 </body>
 </html>
