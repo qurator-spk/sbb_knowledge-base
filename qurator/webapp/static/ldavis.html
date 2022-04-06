@@ -55,7 +55,22 @@
                                     aria-expanded="true" aria-controls="collapseOne"></button>
                         </h5>
                     </div>
-
+                    <div class="card d-none" id="doc-card">
+                    <div class="card-header" id="headingTwo">
+                        <h5 class="mb-0">
+                            <button id="doc-list-heading" class="btn btn-link collapsed" data-toggle="collapse"
+                                    data-target="#collapseTwo"
+                                    aria-expanded="false" aria-controls="collapseTwo">
+                                Relevant Documents for Topic
+                            </button>
+                        </h5>
+                    </div>
+                    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                        <ul class="card-body list-group" id="doc-list" style="height: 70vh;overflow-y: scroll;">
+                            No content yet.
+                        </ul>
+                    </div>
+                    </div>
                     <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
                         <div id="lambdaInput" class="card-body mt-0 text-center d-none">
                             <div id="lambdaZero">
@@ -84,22 +99,6 @@
                                     Sievert &amp; Shirley (2014)</a>
                             </text>
                         </div>
-                    </div>
-                </div>
-                <div class="card d-none" id="doc-card">
-                    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                        <ul class="card-body list-group" id="doc-list" style="height: 70vh;overflow-y: scroll;">
-                            No content yet.
-                        </ul>
-                    </div>
-                    <div class="card-header" id="headingTwo">
-                        <h5 class="mb-0">
-                            <button id="doc-list-heading" class="btn btn-link collapsed" data-toggle="collapse"
-                                    data-target="#collapseTwo"
-                                    aria-expanded="false" aria-controls="collapseTwo">
-                                Relevant Documents for Topic
-                            </button>
-                        </h5>
                     </div>
                 </div>
             </div>
