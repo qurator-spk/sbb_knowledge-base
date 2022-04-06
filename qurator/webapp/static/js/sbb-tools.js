@@ -125,7 +125,7 @@ function sbb_tools() {
             })
             .fail(
                 function() {
-                    console.log('Failed.');
+                    console.log('Failed. 1');
                     $("#resultregion").html('Failed.');
                 });
     }
@@ -560,7 +560,7 @@ function sbb_tools() {
                         })
                     .fail(
                         function() {
-                            console.log('Failed.');
+                            console.log('Failed 2.');
                             $("#resultregion").html('Failed.');
                         });
                 }
@@ -572,8 +572,8 @@ function sbb_tools() {
             }
         ).fail(
             function() {
-                console.log('Failed.');
-                $("#resultregion").html('Failed.');
+                console.log('Failed 3.');
+                $("#resultregion").html('Document not available.');
             }
         );
     }
