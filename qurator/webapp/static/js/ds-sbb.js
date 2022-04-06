@@ -104,7 +104,9 @@ $(document).ready(
 function update() {
 
     if (has_results) {
-        $(".inp").prop("disabled", false);
+        if (tools.hasUser()) $(".inp").prop("disabled", false);
+
+        $(".inp_anonym").prop("disabled", false);
         $("#go-button").text("Go");
         has_results = false;
         tools.reset_view();
@@ -116,6 +118,7 @@ function update() {
     else {
         has_results = true;
         $(".inp").prop("disabled", true);
+        $(".inp_anonym").prop("disabled", true);
         $("#go-button").text("Clear");
     }
 

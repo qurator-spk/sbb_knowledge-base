@@ -623,6 +623,10 @@ function sbb_tools() {
 
                     do_on_fulltext(ppn, show_BERT_tokens);
                  }
+            },
+        hasUser:
+            function() {
+                return basic_auth.getUser() != null;
             }
     };
 
