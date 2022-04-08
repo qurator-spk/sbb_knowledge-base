@@ -6,6 +6,7 @@ from tqdm import tqdm
 import csv
 import click
 import sqlite3
+import gzip
 import pandas as pd
 import json
 import unicodedata
@@ -382,7 +383,17 @@ def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
 
 def get_entity_coordinates(alto_file, image):
 
-    tree = ElementTree.parse(alto_file)
+    if alto_file.endswith(".xml"):
+
+        tree = ElementTree.parse(alto_file)
+
+    elif alto_file.endswith(".xml.gz"):
+
+        with gzip.open(alto_file, 'r') as f:
+            tree = ElementTree.parse(f)
+    else:
+        raise RuntimeError("Unsupported file format.")
+
     root = tree.getroot()
 
     measurement_unit = root.find('.//{http://www.loc.gov/standards/alto/ns-v2#}MeasurementUnit').text.lower()
@@ -402,7 +413,7 @@ def get_entity_coordinates(alto_file, image):
         x_factor = float(image.width)/page_width
         y_factor = float(image.height)/page_height
     else:
-        RuntimeError('Unsupported unit of measurement.')
+        raise RuntimeError('Unsupported unit of measurement.')
 
     entity_map = alto_read_entity_map(root)
 

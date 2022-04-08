@@ -8,11 +8,13 @@ from qurator.sbb.xml import get_entity_coordinates
 from flask_htpasswd import HtPasswdAuth
 
 import io
+from io import BytesIO
 from PIL import Image, ImageDraw
 import json
 import random
 import string
 import re
+import requests
 
 from multiprocessing import Semaphore
 
@@ -527,16 +529,34 @@ def find_file(path, ppn, page, ending):
 @app.route('/image/<ppn>/<page>')
 def get_image(ppn, page):
 
-    image_file = find_file(app.config['IMAGE_PATH'], ppn, page, '.tif')
+    ppn = str(ppn)
 
-    if image_file is None:
-        return 'bad request!', 400
+    try:
+        ppn_ = ppn if ppn.startswith("PPN") else "PPN" + ppn
+        page_ = (8 - len(str(page))) * '0' + str(page)
 
-    img = Image.open(image_file)
+        url = 'https://content.staatsbibliothek-berlin.de/dc/{}-{}/full/full/0/default.tif'.format(ppn_, page_)
+
+        r = requests.get(url)
+
+        img = Image.open(BytesIO(r.content))
+
+    except requests.exceptions.HTTPError:
+
+        image_file = find_file(app.config['IMAGE_PATH'], ppn, page, '.tif')
+
+        if image_file is None:
+            return 'bad request!', 400
+
+        img = Image.open(image_file)
 
     img = img.convert('RGB')
 
     alto_file = find_file(app.config['ALTO_PATH'], ppn, page, '.xml')
+
+    if alto_file is None:
+
+        alto_file = find_file(app.config['ALTO_PATH'], ppn, page, '.xml.gz')
 
     if alto_file is not None:
 
