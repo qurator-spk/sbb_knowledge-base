@@ -531,17 +531,25 @@ def get_image(ppn, page):
 
     ppn = str(ppn)
 
+    img = None
+
     try:
-        ppn_ = ppn if ppn.startswith("PPN") else "PPN" + ppn
-        page_ = (8 - len(str(page))) * '0' + str(page)
 
-        url = 'https://content.staatsbibliothek-berlin.de/dc/{}-{}/full/full/0/default.tif'.format(ppn_, page_)
+        if len(app.config.get('IMAGE_URL', "")) > 0:
+            ppn_ = ppn if ppn.startswith("PPN") else "PPN" + ppn
+            page_ = (8 - len(str(page))) * '0' + str(page)
 
-        r = requests.get(url)
+            url = app.config['IMAGE_URL'].replace('__PPN__', ppn_).replace('__PAGE__', page_)
 
-        img = Image.open(BytesIO(r.content))
+            r = requests.get(url)
+
+            img = Image.open(BytesIO(r.content))
 
     except requests.exceptions.HTTPError:
+
+        pass
+
+    if img is None:
 
         image_file = find_file(app.config['IMAGE_PATH'], ppn, page, '.tif')
 
