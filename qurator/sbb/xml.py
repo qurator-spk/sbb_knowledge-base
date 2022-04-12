@@ -205,12 +205,13 @@ class AnnotateTask:
 
     conn = None
 
-    def __init__(self, source_dir, dest_dir, ppn,  filename):
+    def __init__(self, source_dir, dest_dir, ppn,  filename, no_gzip):
 
         self._source_dir = source_dir
         self._dest_dir = dest_dir
         self._ppn = ppn
         self._filename = filename
+        self._no_gzip = no_gzip
 
     def __call__(self, *args, **kwargs):
 
@@ -242,7 +243,12 @@ class AnnotateTask:
 
             os.makedirs(ppn_path, exist_ok=True)
 
-            tree.write(ppn_path + '/' + self._filename)
+            if self._no_gzip:
+
+                tree.write(ppn_path + '/' + self._filename)
+            else:
+                with gzip.open(ppn_path + '/' + self._filename + ".gz", 'w') as f:
+                    tree.write(f)
 
             return self._filename, self._ppn
 
@@ -352,11 +358,11 @@ class AnnotateTask:
         AnnotateTask.conn.execute('pragma journal_mode=wal')
 
     @staticmethod
-    def get_all(source_dir, dest_dir):
+    def get_all(source_dir, dest_dir, no_gzip):
 
         for ppn, filename in alto_xml_files_from_dir(source_dir):
 
-            yield AnnotateTask(source_dir, dest_dir, ppn, filename)
+            yield AnnotateTask(source_dir, dest_dir, ppn, filename, no_gzip)
 
 
 @click.command()
@@ -364,7 +370,8 @@ class AnnotateTask:
 @click.argument('source-dir', type=click.Path(), required=True, nargs=1)
 @click.argument('dest-dir', type=click.Path(), required=True, nargs=1)
 @click.option('--processes', default=0, help='number of parallel processes. default: 0.')
-def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
+@click.option('--no-gzip', is_flag=True, default=False, help="Use in order to prevent gzipping of result files.")
+def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes, no_gzip):
     """
     Read NER tagging results from TAGGED_SQLITE_FILE.
     Read ALTO XML files in subfolders of directory SOURCE_DIR.
@@ -376,7 +383,7 @@ def altoannotator(tagged_sqlite_file, source_dir, dest_dir, processes):
 
     os.makedirs(dest_dir, exist_ok=True)
 
-    for _ in prun(AnnotateTask.get_all(source_dir, dest_dir), processes=processes,
+    for _ in prun(AnnotateTask.get_all(source_dir, dest_dir, no_gzip), processes=processes,
                   initializer=AnnotateTask.initialize, initargs=(tagged_sqlite_file,)):
         pass
 
