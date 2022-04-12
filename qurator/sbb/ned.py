@@ -157,6 +157,7 @@ def run_on_corpus(sqlite_file, lang_file, el_endpoints, chunk_size, noproxy, sta
 
         con.execute('create index if not exists idx_place on entity_linking(entity_id, ppn, start_page, stop_page);')
         con.execute('create index if not exists idx_wikidata on entity_linking(wikidata, ppn);')
+        con.execute('create index if not exists idx_ppn2 on entity_linking(ppn);')
 
         ppns = pd.read_sql('select ppn from tagged', con=con).drop_duplicates().reset_index(drop=True)
 
