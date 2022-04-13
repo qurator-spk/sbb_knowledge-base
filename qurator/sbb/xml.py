@@ -46,13 +46,18 @@ def alto_xml_files_from_dir(source_dir):
 
     for ppn in tqdm(ppn_list):
 
-        current_ppn_dir = os.listdir(source_dir + '/' + ppn)
-        for filename in current_ppn_dir:
+        try:
+            current_ppn_dir = os.listdir(source_dir + '/' + ppn)
 
-            if not filename.endswith(".xml"):
-                continue
+            for filename in current_ppn_dir:
 
-            yield ppn, filename
+                if not filename.endswith(".xml"):
+                    continue
+
+                yield ppn, filename
+
+        except PermissionError:
+            pass
 
 
 def alto_add_entity_map(root, entity_map):
@@ -213,6 +218,15 @@ class AnnotateTask:
         self._filename = filename
         self._no_gzip = no_gzip
 
+    def target_file(self):
+
+        ppn_path = self._dest_dir + '/' + self._ppn
+
+        if self._no_gzip:
+            return ppn_path + '/' + self._filename
+        else:
+            return ppn_path + '/' + self._filename + ".gz"
+
     def __call__(self, *args, **kwargs):
 
         try:
@@ -244,18 +258,18 @@ class AnnotateTask:
             os.makedirs(ppn_path, exist_ok=True)
 
             if self._no_gzip:
-
-                tree.write(ppn_path + '/' + self._filename)
+                tree.write(self.target_file())
             else:
-                with gzip.open(ppn_path + '/' + self._filename + ".gz", 'w') as f:
+                with gzip.open(self.target_file(), 'w') as f:
                     tree.write(f)
 
             return self._filename, self._ppn
 
         except Exception as exx:
             logger.error(exx)
+            pass
 
-            return None, None
+        return None, None
 
     @staticmethod
     def tag_content(root, ner_data):
@@ -362,7 +376,12 @@ class AnnotateTask:
 
         for ppn, filename in alto_xml_files_from_dir(source_dir):
 
-            yield AnnotateTask(source_dir, dest_dir, ppn, filename, no_gzip)
+            task = AnnotateTask(source_dir, dest_dir, ppn, filename, no_gzip)
+
+            if os.path.exists(task.target_file()):
+                continue
+
+            yield task
 
 
 @click.command()
