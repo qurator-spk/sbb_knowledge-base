@@ -119,7 +119,7 @@ function update() {
         has_results = true;
         $(".inp").prop("disabled", true);
         $(".inp_anonym").prop("disabled", true);
-        $("#go-button").text("Clear");
+        $("#go-button").text("New");
     }
 
     var task = $('#task').val();
