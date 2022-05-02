@@ -4,11 +4,14 @@ import json
 
 
 def ned(tsv, ner_result, ned_rest_endpoint, json_file=None, threshold=None, priority=None, max_candidates=None,
-        max_dist=None, not_after=None):
+        max_dist=None, not_after=None, ned_result=None):
 
     return_full = json_file is not None
 
-    if json_file is not None and os.path.exists(json_file):
+    if ned_result is not None:
+        pass
+
+    elif json_file is not None and os.path.exists(json_file):
 
         print('Loading {}'.format(json_file))
 
