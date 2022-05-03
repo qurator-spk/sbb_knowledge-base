@@ -29,13 +29,41 @@ from .tsv import read_tsv, write_tsv
 @click.option('--not-after-context-field', type=str, default=None,
               help="Determine not-after date from this context field.")
 @click.option('--context-split', type=bool, is_flag=True, help="Perform EL for different contexts.")
+@click.option('--ner-rest-endpoints', type=str, default=None,
+              help="JSON dict with multi-language REST endpoints of sbb_ner service. "
+                   "See https://github.com/qurator-spk/sbb_ner for details.")
+@click.option('--ned-rest-endpoints', type=str, default=None,
+              help="JSON dict with multi-language REST endpoints of sbb_ned service. "
+                   "See https://github.com/qurator-spk/sbb_ned for details.")
+@click.option('--lang', type=str, default=None,
+              help="Language identifier.")
 def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, ned_json_file, noproxy, ned_threshold,
-                  ned_priority, max_candidates, max_dist, not_after, not_after_context_field, context_split):
+                  ned_priority, max_candidates, max_dist, not_after, not_after_context_field, context_split,
+                  ner_rest_endpoints, ned_rest_endpoints, lang):
 
     if noproxy:
         os.environ['no_proxy'] = '*'
 
     tsv, urls, contexts = read_tsv(tsv_file)
+
+    if ner_rest_endpoints is not None:
+        ner_rest_endpoints = json.loads(ner_rest_endpoints)
+
+    if ned_rest_endpoints is not None:
+        ned_rest_endpoints = json.loads(ned_rest_endpoints)
+
+    if lang is not None:
+        if ner_rest_endpoints is not None:
+            if lang in ner_rest_endpoints:
+                ner_rest_endpoint = ner_rest_endpoints[lang]
+            else:
+                raise RuntimeError('No NER-endpoint for language {}.'.format(lang))
+
+        if ned_rest_endpoints is not None:
+            if lang in ned_rest_endpoints:
+                ned_rest_endpoint = ned_rest_endpoints[lang]
+            else:
+                raise RuntimeError('No NED-endpoint for language {}.'.format(lang))
 
     try:
         if ner_rest_endpoint is not None:
