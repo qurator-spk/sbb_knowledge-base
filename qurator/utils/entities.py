@@ -90,12 +90,12 @@ def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, 
                               for _, sen in tmp.groupby('sen')]
             else:
                 ner_results = []
-                for part in tmp.groupby('url_id', as_index=False):
+                for url_id, part in tmp.groupby('url_id', as_index=False):
                     part_result = \
                         [[{'word': str(row.TOKEN), 'prediction': row['NE-TAG']} for _, row in sen.iterrows()]
                          for _, sen in part.groupby('sen')]
 
-                    ner_results.append((part, part_result))
+                    ner_results.append((url_id, part, part_result))
         else:
             raise RuntimeError("Either NER rest endpoint or NER-TAG information within tsv_file required.")
 
@@ -119,7 +119,9 @@ def find_entities(tsv_file, tsv_out_file, ner_rest_endpoint, ned_rest_endpoint, 
                         ned_result = json.load(fp)
 
                 parts = []
-                for idx, (part, part_ner_result) in enumerate(ner_results):
+                for idx, (url_id, part, part_ner_result) in enumerate(ner_results):
+
+                    print("Using context: ", contexts[idx])
 
                     _not_after = not_after
                     if not_after_context_field is not None and not_after_context_field in contexts[idx]:

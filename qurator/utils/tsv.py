@@ -93,7 +93,7 @@ def extract_doc_links(tsv_file):
 
                 print('Line error: |', line, '|Number of Tabs: ', line.count('\t'))
 
-        if url is not None:
+        if url is not None or context is not None:
             parts.append({"url": url, 'header': header, 'text': "".join(text), 'context': context})
 
     return parts
