@@ -25,6 +25,8 @@ def write_tsv(tsv, urls, contexts, tsv_out_file):
     if len(urls) == 0:
         print('Writing to {}...'.format(tsv_out_file))
 
+        tsv = tsv[out_columns]
+
         tsv.to_csv(tsv_out_file, sep="\t", quoting=3, index=False)
     else:
         pd.DataFrame([], columns=out_columns).to_csv(tsv_out_file, sep="\t", quoting=3, index=False)
@@ -36,6 +38,8 @@ def write_tsv(tsv, urls, contexts, tsv_out_file):
                     f.write('# ' + urls[int(url_id)] + '\n')
                 elif contexts[int(url_id)] is not None:
                     f.write('#__CONTEXT__:' + json.dumps(contexts[int(url_id)]) + '\n')
+
+            part = part[out_columns]
 
             part.to_csv(tsv_out_file, sep="\t", quoting=3, index=False, mode='a', header=False)
 
