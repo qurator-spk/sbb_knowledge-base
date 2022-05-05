@@ -43,6 +43,7 @@ setup(
         "parquet2csv=qurator.utils.parquet:to_csv",
         "csv2sqlite=qurator.utils.csv:to_sqlite",
         "df2sqlite=qurator.utils.pickle:to_sqlite",
+        "df-concatenate=qurator.utils.pickle:concatenate",
         "batchner=qurator.sbb.ner:on_db_file",
         "ned-statistics=qurator.sbb.ned:ned_statistics",
         "show-ner-models=qurator.sbb.ner:show_models",
