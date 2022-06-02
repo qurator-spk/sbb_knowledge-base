@@ -159,9 +159,10 @@ def read_docs(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entitie
               filter_type=None, min_occurences=None):
     entities = None
     if entities_file is not None:
-        print("Reading id2work information from entities table ...")
-        with sqlite3.connect(entities_file) as con:
-            entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
+        print("Reading id2work information from {} ...".format(entities_file))
+        # with sqlite3.connect(entities_file) as con:
+        #    entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
+        entities = pd.read_pickle(entities_file).set_index('QID')
 
     with sqlite3.connect(sqlite_file) as con:
 
@@ -268,9 +269,10 @@ def read_corpus(sqlite_file, processes, min_surface_len=2, min_proba=0.25, entit
                 min_occurences=None):
     entities = None
     if entities_file is not None:
-        print("Reading id2work information from entities table ...")
-        with sqlite3.connect(entities_file) as con:
-            entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
+        print("Reading id2work information from {} ...".format(entities_file))
+        # with sqlite3.connect(entities_file) as con:
+        #    entities = pd.read_sql('SELECT * from entities', con=con).set_index('QID')
+        entities = pd.read_pickle(entities_file).set_index('QID')
 
     with sqlite3.connect(sqlite_file) as con:
 
