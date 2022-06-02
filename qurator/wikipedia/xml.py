@@ -6,8 +6,8 @@ with warnings.catch_warnings():
     from tqdm import tqdm as tqdm
     import re
     import pandas as pd
-    import pyarrow as pa
-    import pyarrow.parquet as pq
+#    import pyarrow as pa
+#    import pyarrow.parquet as pq
     import click
     import sqlite3
 
@@ -20,41 +20,41 @@ def _get_namespace(tag):
     return namespace
 
 
-@click.command()
-@click.argument('wikipedia-xml-file', type=click.Path(exists=True), required=True, nargs=1)
-@click.argument('parquet-file', type=click.Path(), required=True, nargs=1)
-@click.option('--chunk-size', default=2*10**4, help='size of parquet chunks. default:2*10**4')
-def to_parquet(wikipedia_xml_file, parquet_file, chunk_size):
-    """
-    Takes a wikipedia xml multistream dump file, extracts page_id, page_title and page_text of each article
-    and writes that information into a chunked apache parquet file that can be read for instance by means of dask.
-
-    WIKIPEDIA_XML_FILE: wikipedia multistream xml dump of all pages.
-
-    PARQUET_FILE: result file.
-    """
-
-    context = iter(iterparse(wikipedia_xml_file, events=("end",)))
-
-    def write_pages(pages):
-
-        if len(pages) == 0:
-            return
-
-        df_pages = pd.DataFrame.from_dict(pages).reset_index(drop=True)
-
-        df_pages['range'] = (df_pages['page_id'] / 10000).astype(int)
-
-        # noinspection PyArgumentList
-        table = pa.Table.from_pandas(df_pages)
-
-        pq.write_to_dataset(table, root_path=parquet_file, partition_cols=['range'])
-
-        return
-
-    parse_xml(chunk_size, context, write_pages)
-
-    return
+# @click.command()
+# @click.argument('wikipedia-xml-file', type=click.Path(exists=True), required=True, nargs=1)
+# @click.argument('parquet-file', type=click.Path(), required=True, nargs=1)
+# @click.option('--chunk-size', default=2*10**4, help='size of parquet chunks. default:2*10**4')
+# def to_parquet(wikipedia_xml_file, parquet_file, chunk_size):
+#     """
+#     Takes a wikipedia xml multistream dump file, extracts page_id, page_title and page_text of each article
+#     and writes that information into a chunked apache parquet file that can be read for instance by means of dask.
+#
+#     WIKIPEDIA_XML_FILE: wikipedia multistream xml dump of all pages.
+#
+#     PARQUET_FILE: result file.
+#     """
+#
+#     context = iter(iterparse(wikipedia_xml_file, events=("end",)))
+#
+#     def write_pages(pages):
+#
+#         if len(pages) == 0:
+#             return
+#
+#         df_pages = pd.DataFrame.from_dict(pages).reset_index(drop=True)
+#
+#         df_pages['range'] = (df_pages['page_id'] / 10000).astype(int)
+#
+#         # noinspection PyArgumentList
+#         table = pa.Table.from_pandas(df_pages)
+#
+#         pq.write_to_dataset(table, root_path=parquet_file, partition_cols=['range'])
+#
+#         return
+#
+#     parse_xml(chunk_size, context, write_pages)
+#
+#     return
 
 
 @click.command()
