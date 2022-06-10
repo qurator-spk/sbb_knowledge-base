@@ -4,7 +4,7 @@ from tqdm import tqdm as tqdm
 import click
 import requests
 import os
-from flask import json
+import json
 
 
 @click.command()
